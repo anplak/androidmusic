@@ -1,11 +1,12 @@
 # Android Music Player
 
-A minimal offline music player for Android that allows users to select and play local audio files without any network dependency.
+A minimal offline music player for Android that automatically discovers and plays local audio files without any network dependency.
 
 ## Features
 
 - **Offline-first**: No network or account required
-- **File picker integration**: Select audio files from device storage using the system file picker
+- **Automatic library scanning**: Discovers all audio files on device via MediaStore
+- **Music library browsing**: Scrollable list of tracks with title, artist, and duration
 - **Audio playback**: Play, pause, and seek through audio tracks
 - **Modern UI**: Built with Jetpack Compose and Material Design 3
 - **Error handling**: Clear feedback when playback issues occur
@@ -36,34 +37,40 @@ The app follows **MVVM architecture** with unidirectional data flow:
 - Handles lifecycle-aware player management
 - Provides play, pause, seek, and error handling
 
+**MusicLibraryRepository** (`data/MusicLibraryRepository.kt`)
+- Queries MediaStore for device audio files
+- Extracts track metadata (title, artist, album, duration)
+- Executes queries off main thread using coroutines
+
+**LibraryViewModel** (`ui/LibraryViewModel.kt`)
+- Manages library screen state (Loading, Content, Empty)
+- Session caching to avoid redundant scans
+- Loads library on first access
+
 **PlaybackViewModel** (`ui/PlaybackViewModel.kt`)
-- Manages UI state and business logic
+- Manages playback UI state and business logic
 - Coordinates between AudioPlayer and UI layer
-- Extracts track metadata from URIs
 - Lifecycle-aware: automatically releases player resources
 
 **UI Layer** (Compose)
 - `MusicPlayerApp`: Root composable that orchestrates app flow
-- `EmptyStateScreen`: Shown when no track is selected
-- `NowPlayingScreen`: Main playback UI with controls
+- `LibraryScreen`: Scrollable list of all tracks
+- `NowPlayingScreen`: Playback UI with controls and back navigation
 - `PermissionRationaleScreen`: Permission request UI
 
 **Permission Handling** (`ui/PermissionHandler.kt`)
 - Runtime permission management for media access
 - API level-aware: uses `READ_MEDIA_AUDIO` on API 33+ and `READ_EXTERNAL_STORAGE` on older versions
 
-**File Selection** (`ui/AudioFilePicker.kt`)
-- System file picker integration using `ACTION_OPEN_DOCUMENT`
-- Returns content URIs compatible with scoped storage
-
 ### Data Flow
 
 1. User grants media permission
-2. User selects audio file via system picker
-3. ViewModel receives URI and creates TrackInfo
-4. AudioPlayer loads and prepares media
-5. Playback state flows to UI via StateFlow
-6. UI recomposes to reflect current state
+2. App scans device audio via MediaStore (off main thread)
+3. Library screen displays list of discovered tracks
+4. User taps a track from the library
+5. App navigates to Now Playing screen and starts playback
+6. Playback state flows to UI via StateFlow
+7. User can navigate back to library while playback continues
 
 ## Technology Stack
 
@@ -73,14 +80,16 @@ The app follows **MVVM architecture** with unidirectional data flow:
 - **Audio**: ExoPlayer 2.19.1
 - **Concurrency**: Kotlin Coroutines and Flow
 - **Build**: Gradle with Kotlin DSL and version catalog
+- **Testing**: JUnit, Mockito, Coroutines Test
 
-## Current Limitations (Story 1 Scope)
+## Current Limitations
 
-This is the foundational implementation (Story 1). The following features are intentionally out of scope:
+The following features are intentionally out of scope for the current iteration:
 
-- Library scanning and browsing
 - Background playback and notification controls
 - Playlists and favorites
+- Albums/artists views and filtering
+- Sorting options
 - Listening history
 - Recommendations and discovery
 - Search functionality
@@ -94,22 +103,33 @@ To validate the app:
 1. **Permission scenarios**
    - First launch: permission should be requested
    - Deny permission: rationale screen should appear
-   - Grant permission: file picker should become accessible
+   - Grant permission: library should load
 
-2. **File selection**
-   - Select different audio formats (MP3, M4A, FLAC)
-   - Verify track title displays correctly
+2. **Library scanning**
+   - Verify loading indicator appears during scan
+   - Check that all device audio files appear in the list
+   - Verify title, artist, and duration display correctly
 
-3. **Playback controls**
+3. **Empty state**
+   - On a device with no music files, verify empty state message
+
+4. **Track selection**
+   - Tap a track to start playback
+   - Verify Now Playing screen shows correct track info
+
+5. **Playback controls**
    - Play/pause functionality
    - Seek bar interaction
    - Time display accuracy
 
-4. **Error handling**
-   - Select corrupted/invalid file
-   - Verify error dialog appears with clear message
+6. **Navigation**
+   - Back button returns to library
+   - Playback pauses when returning to library
 
-5. **Configuration changes**
+7. **Error handling**
+   - If a track fails to play, verify error dialog appears
+
+8. **Configuration changes**
    - Rotate device during playback
    - Verify state persists (ViewModel survives)
 
@@ -118,6 +138,8 @@ To validate the app:
 ```
 app/src/main/java/com/anplak/androidmusic/
 ├── MainActivity.kt                    # App entry point
+├── data/
+│   └── MusicLibraryRepository.kt     # MediaStore access
 ├── player/
 │   ├── AudioPlayer.kt                # ExoPlayer wrapper
 │   ├── PlaybackState.kt              # Playback state model
@@ -125,10 +147,10 @@ app/src/main/java/com/anplak/androidmusic/
 │   └── TrackInfo.kt                  # Track metadata model
 └── ui/
     ├── MusicPlayerApp.kt             # Root composable
-    ├── PlaybackViewModel.kt          # ViewModel
+    ├── LibraryScreen.kt              # Library list UI
+    ├── LibraryViewModel.kt           # Library state management
+    ├── PlaybackViewModel.kt          # Playback state management
     ├── PermissionHandler.kt          # Permission management
-    ├── AudioFilePicker.kt            # File picker integration
-    ├── EmptyStateScreen.kt           # Empty state UI
     ├── NowPlayingScreen.kt           # Now playing UI
     └── PermissionRationaleScreen.kt  # Permission rationale UI
 ```
@@ -137,7 +159,6 @@ app/src/main/java/com/anplak/androidmusic/
 
 Planned features for upcoming stories:
 
-- **Story 2**: Music library scan and browsing
 - **Story 3**: Background playback and notification controls
 - **Story 4**: Persistent favorites and playlists
 - **Story 5**: Auto-generated playlists and smart shuffle

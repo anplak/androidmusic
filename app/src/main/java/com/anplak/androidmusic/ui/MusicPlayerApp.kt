@@ -11,17 +11,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun MusicPlayerApp(
-    viewModel: PlaybackViewModel = viewModel()
+    playbackViewModel: PlaybackViewModel = viewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by playbackViewModel.uiState.collectAsState()
     
     val permissionState = rememberAudioPermissionState()
-    
-    val filePicker = rememberAudioFilePicker(
-        onFileSelected = { uri ->
-            viewModel.onFileSelected(uri)
-        }
-    )
     
     MaterialTheme {
         Surface(
@@ -38,9 +32,9 @@ fun MusicPlayerApp(
                 }
                 
                 uiState.selectedTrack == null -> {
-                    EmptyStateScreen(
-                        onSelectMusicClick = {
-                            filePicker.launch()
+                    LibraryScreen(
+                        onTrackSelected = { track ->
+                            playbackViewModel.onTrackSelected(track)
                         }
                     )
                 }
@@ -48,13 +42,15 @@ fun MusicPlayerApp(
                 else -> {
                     NowPlayingScreen(
                         trackTitle = uiState.selectedTrack?.title ?: "",
+                        artistName = uiState.selectedTrack?.artist ?: "",
                         isPlaying = uiState.isPlaying,
                         currentPosition = uiState.currentPosition,
                         duration = uiState.duration,
                         error = uiState.error,
-                        onPlayPauseClick = viewModel::onPlayPause,
-                        onSeek = viewModel::onSeek,
-                        onErrorDismiss = viewModel::onErrorDismissed
+                        onPlayPauseClick = playbackViewModel::onPlayPause,
+                        onSeek = playbackViewModel::onSeek,
+                        onErrorDismiss = playbackViewModel::onErrorDismissed,
+                        onBackClick = playbackViewModel::clearTrack
                     )
                 }
             }

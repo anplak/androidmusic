@@ -13,5 +13,9 @@
     <string name="file_not_found">File not found or cannot be accessed</string>
     <string name="unsupported_format">Unsupported audio format</string>
     <string name="playback_error">Playback error occurred</string>
+    <string name="your_library">Your Library</string>
+    <string name="scanning_library">Scanning library…</string>
+    <string name="no_music_found">No music found</string>
+    <string name="no_music_found_description">Add some music files to your device to see them here.</string>
 </resources>
 

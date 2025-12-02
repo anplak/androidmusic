@@ -1,8 +1,6 @@
 package com.anplak.androidmusic.ui
 
 import android.app.Application
-import android.net.Uri
-import android.provider.OpenableColumns
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.anplak.androidmusic.player.AudioPlayer
@@ -49,12 +47,15 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         }
     }
     
-    fun onFileSelected(uri: Uri) {
-        val trackTitle = extractTrackTitle(uri)
-        val trackInfo = TrackInfo(uri, trackTitle)
-        _selectedTrack.value = trackInfo
-        audioPlayer.setMediaItem(uri)
+    fun onTrackSelected(track: TrackInfo) {
+        _selectedTrack.value = track
+        audioPlayer.setMediaItem(track.uri)
         audioPlayer.play()
+    }
+    
+    fun clearTrack() {
+        _selectedTrack.value = null
+        audioPlayer.pause()
     }
     
     fun onPlayPause() {
@@ -76,23 +77,6 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     override fun onCleared() {
         super.onCleared()
         audioPlayer.release()
-    }
-    
-    private fun extractTrackTitle(uri: Uri): String {
-        val contentResolver = getApplication<Application>().contentResolver
-        
-        // Try to get display name from content resolver
-        contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-            val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-            if (nameIndex >= 0 && cursor.moveToFirst()) {
-                val fileName = cursor.getString(nameIndex)
-                // Remove file extension
-                return fileName.substringBeforeLast('.')
-            }
-        }
-        
-        // Fallback to last path segment
-        return uri.lastPathSegment?.substringBeforeLast('.') ?: "Unknown Track"
     }
 }
 
