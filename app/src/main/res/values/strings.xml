@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Android Music</string>
+    <string name="select_music">Select Music</string>
+    <string name="no_music_selected">No music selected</string>
+    <string name="play">Play</string>
+    <string name="pause">Pause</string>
+    <string name="permission_required">Permission Required</string>
+    <string name="permission_rationale">This app needs access to your audio files to play music.</string>
+    <string name="grant_permission">Grant Permission</string>
+    <string name="error_occurred">An error occurred</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="file_not_found">File not found or cannot be accessed</string>
+    <string name="unsupported_format">Unsupported audio format</string>
+    <string name="playback_error">Playback error occurred</string>
+</resources>
+
