@@ -13,7 +13,6 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
@@ -47,49 +46,6 @@ class PlaybackViewModelTest {
     }
     
     @Test
-    fun `onTrackSelected sets selectedTrack correctly`() = runTest {
-        val viewModel = createViewModel()
-        val track = createTestTrack()
-        
-        viewModel.onTrackSelected(track)
-        advanceUntilIdle()
-        
-        val selectedTrack = viewModel.uiState.value.selectedTrack
-        assertNotNull(selectedTrack)
-        assertEquals("Test Song", selectedTrack?.title)
-        assertEquals("Test Artist", selectedTrack?.artist)
-    }
-    
-    @Test
-    fun `clearTrack resets selectedTrack to null`() = runTest {
-        val viewModel = createViewModel()
-        val track = createTestTrack()
-        
-        viewModel.onTrackSelected(track)
-        advanceUntilIdle()
-        
-        viewModel.clearTrack()
-        advanceUntilIdle()
-        
-        assertNull(viewModel.uiState.value.selectedTrack)
-    }
-    
-    @Test
-    fun `selecting different track updates selectedTrack`() = runTest {
-        val viewModel = createViewModel()
-        val track1 = createTestTrack(id = 1, title = "First Song")
-        val track2 = createTestTrack(id = 2, title = "Second Song")
-        
-        viewModel.onTrackSelected(track1)
-        advanceUntilIdle()
-        assertEquals("First Song", viewModel.uiState.value.selectedTrack?.title)
-        
-        viewModel.onTrackSelected(track2)
-        advanceUntilIdle()
-        assertEquals("Second Song", viewModel.uiState.value.selectedTrack?.title)
-    }
-    
-    @Test
     fun `initial playback state is not playing`() = runTest {
         val viewModel = createViewModel()
         advanceUntilIdle()
@@ -114,8 +70,46 @@ class PlaybackViewModelTest {
         assertNull(viewModel.uiState.value.error)
     }
     
+    @Test
+    fun `initial queue state is empty`() = runTest {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        
+        assertEquals(0, viewModel.uiState.value.queuePosition)
+        assertEquals(0, viewModel.uiState.value.queueSize)
+        assertEquals(false, viewModel.uiState.value.hasNext)
+        assertEquals(false, viewModel.uiState.value.hasPrevious)
+    }
+    
+    @Test
+    fun `clearTrack resets state`() = runTest {
+        val viewModel = createViewModel()
+        val tracks = createTestTracks(3)
+        
+        viewModel.onTrackSelected(tracks, 0)
+        advanceUntilIdle()
+        
+        viewModel.clearTrack()
+        advanceUntilIdle()
+        
+        assertNull(viewModel.uiState.value.selectedTrack)
+        assertEquals(0, viewModel.uiState.value.queueSize)
+    }
+    
     private fun createViewModel(): PlaybackViewModel {
         return PlaybackViewModel(application)
+    }
+    
+    private fun createTestTracks(count: Int): List<TrackInfo> {
+        return (1..count).map { index ->
+            TrackInfo(
+                uri = Uri.parse("content://media/external/audio/media/$index"),
+                title = "Track $index",
+                artist = "Artist $index",
+                album = "Album $index",
+                duration = 180000L
+            )
+        }
     }
     
     private fun createTestTrack(

@@ -7,7 +7,11 @@ A minimal offline music player for Android that automatically discovers and play
 - **Offline-first**: No network or account required
 - **Automatic library scanning**: Discovers all audio files on device via MediaStore
 - **Music library browsing**: Scrollable list of tracks with title, artist, and duration
-- **Audio playback**: Play, pause, and seek through audio tracks
+- **Playback queue**: Selecting a track builds a queue from the library for continuous playback
+- **Queue navigation**: Next/previous controls with queue position indicator
+- **Background playback**: Music continues playing when app is in background or screen is off
+- **Media notification**: Control playback from the notification shade with play/pause, next, previous
+- **Lockscreen and headset controls**: MediaSession integration for system-wide media controls
 - **Modern UI**: Built with Jetpack Compose and Material Design 3
 - **Error handling**: Clear feedback when playback issues occur
 - **Scoped storage support**: Compatible with Android 10+ privacy requirements
@@ -16,7 +20,7 @@ A minimal offline music player for Android that automatically discovers and play
 
 - **Minimum SDK**: Android 8.0 (API 26)
 - **Target SDK**: Android 14 (API 34)
-- **Supported formats**: MP3, M4A, FLAC, and other formats supported by ExoPlayer
+- **Supported formats**: MP3, M4A, FLAC, and other formats supported by Media3
 
 ## Project Setup
 
@@ -31,11 +35,21 @@ The app follows **MVVM architecture** with unidirectional data flow:
 
 ### Core Components
 
+**MusicPlaybackService** (`service/MusicPlaybackService.kt`)
+- Extends Media3 `MediaSessionService` for background audio playback
+- Manages ExoPlayer instance and MediaSession
+- Provides automatic media notification with playback controls
+- Handles foreground service lifecycle
+
 **AudioPlayer** (`player/AudioPlayer.kt`)
-- Wraps ExoPlayer for audio playback management
-- Emits playback state via Kotlin StateFlow
-- Handles lifecycle-aware player management
-- Provides play, pause, seek, and error handling
+- Bridge between UI and MusicPlaybackService via MediaController
+- Emits playback and queue state via Kotlin StateFlow
+- Provides play, pause, seek, next, previous, and error handling
+
+**PlaybackQueue** (`player/PlaybackQueue.kt`)
+- Immutable data class representing the playback queue
+- Supports next, previous, and jump-to operations
+- Factory method to build queue from library at selected position
 
 **MusicLibraryRepository** (`data/MusicLibraryRepository.kt`)
 - Queries MediaStore for device audio files
@@ -48,14 +62,14 @@ The app follows **MVVM architecture** with unidirectional data flow:
 - Loads library on first access
 
 **PlaybackViewModel** (`ui/PlaybackViewModel.kt`)
-- Manages playback UI state and business logic
+- Manages playback UI state and queue operations
 - Coordinates between AudioPlayer and UI layer
-- Lifecycle-aware: automatically releases player resources
+- Exposes queue position and navigation availability
 
 **UI Layer** (Compose)
 - `MusicPlayerApp`: Root composable that orchestrates app flow
 - `LibraryScreen`: Scrollable list of all tracks
-- `NowPlayingScreen`: Playback UI with controls and back navigation
+- `NowPlayingScreen`: Playback UI with play/pause, next/previous, seek, and queue indicator
 - `PermissionRationaleScreen`: Permission request UI
 
 **Permission Handling** (`ui/PermissionHandler.kt`)
@@ -68,25 +82,28 @@ The app follows **MVVM architecture** with unidirectional data flow:
 2. App scans device audio via MediaStore (off main thread)
 3. Library screen displays list of discovered tracks
 4. User taps a track from the library
-5. App navigates to Now Playing screen and starts playback
-6. Playback state flows to UI via StateFlow
-7. User can navigate back to library while playback continues
+5. App builds a playback queue from that track onward
+6. MusicPlaybackService starts playback in foreground
+7. Playback state flows to UI via MediaController and StateFlow
+8. User can navigate back to library while playback continues in background
+9. User can control playback via notification or lockscreen controls
 
 ## Technology Stack
 
 - **Language**: Kotlin
 - **UI**: Jetpack Compose with Material Design 3
 - **Architecture**: MVVM with unidirectional data flow
-- **Audio**: ExoPlayer 2.19.1
+- **Audio**: Jetpack Media3 1.2.1 (ExoPlayer + MediaSession)
 - **Concurrency**: Kotlin Coroutines and Flow
 - **Build**: Gradle with Kotlin DSL and version catalog
-- **Testing**: JUnit, Mockito, Coroutines Test
+- **Testing**: JUnit, Mockito, Robolectric, Coroutines Test
 
 ## Current Limitations
 
 The following features are intentionally out of scope for the current iteration:
 
-- Background playback and notification controls
+- Repeat and shuffle modes
+- Persistent queue across app restarts
 - Playlists and favorites
 - Albums/artists views and filtering
 - Sorting options
@@ -113,25 +130,51 @@ To validate the app:
 3. **Empty state**
    - On a device with no music files, verify empty state message
 
-4. **Track selection**
+4. **Track selection and queue**
    - Tap a track to start playback
    - Verify Now Playing screen shows correct track info
+   - Verify queue position indicator shows (e.g., "3 / 10")
 
-5. **Playback controls**
+5. **Queue navigation**
+   - Next button advances to next track
+   - Previous button goes to previous track
+   - Buttons are disabled at queue boundaries
+
+6. **Playback controls**
    - Play/pause functionality
    - Seek bar interaction
    - Time display accuracy
 
-6. **Navigation**
-   - Back button returns to library
-   - Playback pauses when returning to library
+7. **Background playback**
+   - Start playback and press home button
+   - Verify music continues playing
+   - Lock screen and verify music continues
 
-7. **Error handling**
-   - If a track fails to play, verify error dialog appears
+8. **Notification controls**
+   - Verify media notification appears during playback
+   - Test play/pause from notification
+   - Test next/previous from notification
+   - Tap notification to return to Now Playing
 
-8. **Configuration changes**
-   - Rotate device during playback
-   - Verify state persists (ViewModel survives)
+9. **Lockscreen and headset controls**
+   - Verify lockscreen shows media controls
+   - Test play/pause from lockscreen
+   - Test headset button controls (if available)
+
+10. **Navigation**
+    - Back button returns to library
+    - Playback continues when returning to library
+
+11. **Error handling**
+    - If a track fails to play, verify error dialog appears
+
+12. **Configuration changes**
+    - Rotate device during playback
+    - Verify state persists (ViewModel survives)
+
+13. **App lifecycle**
+    - Swipe app away from recents while playing
+    - Verify playback stops and notification clears
 
 ## Project Structure
 
@@ -141,10 +184,13 @@ app/src/main/java/com/anplak/androidmusic/
 ├── data/
 │   └── MusicLibraryRepository.kt     # MediaStore access
 ├── player/
-│   ├── AudioPlayer.kt                # ExoPlayer wrapper
+│   ├── AudioPlayer.kt                # MediaController bridge
+│   ├── PlaybackQueue.kt              # Queue model
 │   ├── PlaybackState.kt              # Playback state model
 │   ├── PlayerError.kt                # Error types
 │   └── TrackInfo.kt                  # Track metadata model
+├── service/
+│   └── MusicPlaybackService.kt       # Background playback service
 └── ui/
     ├── MusicPlayerApp.kt             # Root composable
     ├── LibraryScreen.kt              # Library list UI
@@ -159,7 +205,6 @@ app/src/main/java/com/anplak/androidmusic/
 
 Planned features for upcoming stories:
 
-- **Story 3**: Background playback and notification controls
 - **Story 4**: Persistent favorites and playlists
 - **Story 5**: Auto-generated playlists and smart shuffle
 - **Story 6**: Listening history and insights

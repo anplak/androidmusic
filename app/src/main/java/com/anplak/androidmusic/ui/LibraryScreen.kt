@@ -24,6 +24,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -34,7 +35,7 @@ import com.anplak.androidmusic.player.TrackInfo
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryScreen(
-    onTrackSelected: (TrackInfo) -> Unit,
+    onTrackSelected: (List<TrackInfo>, Int) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LibraryViewModel = viewModel()
 ) {
@@ -71,7 +72,10 @@ fun LibraryScreen(
                 is LibraryUiState.Content -> {
                     TrackList(
                         tracks = state.tracks,
-                        onTrackSelected = onTrackSelected
+                        onTrackSelected = { track ->
+                            val index = state.tracks.indexOf(track)
+                            onTrackSelected(state.tracks, index)
+                        }
                     )
                 }
             }
@@ -82,14 +86,18 @@ fun LibraryScreen(
 @Composable
 private fun LoadingState() {
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .testTag("loading_state"),
         contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            CircularProgressIndicator()
+            CircularProgressIndicator(
+                modifier = Modifier.testTag("loading_indicator")
+            )
             Text(
                 text = stringResource(R.string.scanning_library),
                 style = MaterialTheme.typography.bodyMedium,
@@ -102,7 +110,9 @@ private fun LoadingState() {
 @Composable
 private fun EmptyLibraryState() {
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .testTag("empty_state"),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -113,7 +123,8 @@ private fun EmptyLibraryState() {
             Text(
                 text = stringResource(R.string.no_music_found),
                 style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.testTag("empty_state_title")
             )
             Text(
                 text = stringResource(R.string.no_music_found_description),
@@ -130,15 +141,19 @@ private fun TrackList(
     onTrackSelected: (TrackInfo) -> Unit
 ) {
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .testTag("track_list"),
         contentPadding = PaddingValues(vertical = 8.dp)
     ) {
         items(
             items = tracks,
             key = { it.uri.toString() }
         ) { track ->
+            val index = tracks.indexOf(track)
             TrackItem(
                 track = track,
+                index = index,
                 onClick = { onTrackSelected(track) }
             )
         }
@@ -148,6 +163,7 @@ private fun TrackList(
 @Composable
 private fun TrackItem(
     track: TrackInfo,
+    index: Int,
     onClick: () -> Unit
 ) {
     ListItem(
@@ -176,6 +192,7 @@ private fun TrackItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
+            .testTag("track_item_$index")
     )
 }
 

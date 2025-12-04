@@ -13,6 +13,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
@@ -29,6 +31,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -45,7 +48,13 @@ fun NowPlayingScreen(
     currentPosition: Long,
     duration: Long,
     error: PlayerError?,
+    queuePosition: Int,
+    queueSize: Int,
+    hasNext: Boolean,
+    hasPrevious: Boolean,
     onPlayPauseClick: () -> Unit,
+    onNextClick: () -> Unit,
+    onPreviousClick: () -> Unit,
     onSeek: (Long) -> Unit,
     onErrorDismiss: () -> Unit,
     onBackClick: () -> Unit,
@@ -56,7 +65,10 @@ fun NowPlayingScreen(
             TopAppBar(
                 title = { },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(
+                        onClick = onBackClick,
+                        modifier = Modifier.testTag("back_button")
+                    ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back to library"
@@ -78,12 +90,24 @@ fun NowPlayingScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            // Queue position indicator
+            if (queueSize > 1) {
+                Text(
+                    text = "$queuePosition / $queueSize",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.testTag("queue_position")
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+            
             Text(
                 text = trackTitle,
                 style = MaterialTheme.typography.headlineMedium,
                 textAlign = TextAlign.Center,
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.testTag("track_title")
             )
             
             if (artistName.isNotBlank()) {
@@ -94,29 +118,78 @@ fun NowPlayingScreen(
                     textAlign = TextAlign.Center,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.testTag("artist_name")
                 )
             }
             
             Spacer(modifier = Modifier.height(48.dp))
             
-            // Playback controls
-            FilledIconButton(
-                onClick = onPlayPauseClick,
-                modifier = Modifier.size(80.dp),
-                colors = IconButtonDefaults.filledIconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                )
+            // Playback controls with prev/next
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(24.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                    contentDescription = if (isPlaying) {
-                        stringResource(R.string.pause)
-                    } else {
-                        stringResource(R.string.play)
-                    },
-                    modifier = Modifier.size(48.dp)
-                )
+                // Previous button
+                IconButton(
+                    onClick = onPreviousClick,
+                    enabled = hasPrevious,
+                    modifier = Modifier
+                        .size(56.dp)
+                        .testTag("previous_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.SkipPrevious,
+                        contentDescription = stringResource(R.string.previous),
+                        modifier = Modifier.size(36.dp),
+                        tint = if (hasPrevious) {
+                            MaterialTheme.colorScheme.onSurface
+                        } else {
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                        }
+                    )
+                }
+                
+                // Play/Pause button
+                FilledIconButton(
+                    onClick = onPlayPauseClick,
+                    modifier = Modifier
+                        .size(80.dp)
+                        .testTag("play_pause_button"),
+                    colors = IconButtonDefaults.filledIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Icon(
+                        imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        contentDescription = if (isPlaying) {
+                            stringResource(R.string.pause)
+                        } else {
+                            stringResource(R.string.play)
+                        },
+                        modifier = Modifier.size(48.dp)
+                    )
+                }
+                
+                // Next button
+                IconButton(
+                    onClick = onNextClick,
+                    enabled = hasNext,
+                    modifier = Modifier
+                        .size(56.dp)
+                        .testTag("next_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.SkipNext,
+                        contentDescription = stringResource(R.string.next),
+                        modifier = Modifier.size(36.dp),
+                        tint = if (hasNext) {
+                            MaterialTheme.colorScheme.onSurface
+                        } else {
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                        }
+                    )
+                }
             }
             
             Spacer(modifier = Modifier.height(48.dp))
@@ -129,7 +202,9 @@ fun NowPlayingScreen(
                     value = currentPosition.toFloat(),
                     onValueChange = { onSeek(it.toLong()) },
                     valueRange = 0f..duration.coerceAtLeast(1L).toFloat(),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("seek_bar")
                 )
                 
                 Row(
@@ -139,12 +214,14 @@ fun NowPlayingScreen(
                     Text(
                         text = formatTime(currentPosition),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.testTag("current_time")
                     )
                     Text(
                         text = formatTime(duration),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.testTag("duration_time")
                     )
                 }
             }
@@ -180,10 +257,14 @@ private fun ErrorDialog(
             Text(text = errorMessage)
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.testTag("error_dismiss_button")
+            ) {
                 Text(text = stringResource(R.string.dismiss))
             }
-        }
+        },
+        modifier = Modifier.testTag("error_dialog")
     )
 }
 
