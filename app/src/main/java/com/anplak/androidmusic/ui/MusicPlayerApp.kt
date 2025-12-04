@@ -33,8 +33,8 @@ fun MusicPlayerApp(
                 
                 uiState.selectedTrack == null -> {
                     LibraryScreen(
-                        onTrackSelected = { track ->
-                            playbackViewModel.onTrackSelected(track)
+                        onTrackSelected = { tracks, selectedIndex ->
+                            playbackViewModel.onTrackSelected(tracks, selectedIndex)
                         }
                     )
                 }
@@ -47,7 +47,13 @@ fun MusicPlayerApp(
                         currentPosition = uiState.currentPosition,
                         duration = uiState.duration,
                         error = uiState.error,
+                        queuePosition = uiState.queuePosition,
+                        queueSize = uiState.queueSize,
+                        hasNext = uiState.hasNext,
+                        hasPrevious = uiState.hasPrevious,
                         onPlayPauseClick = playbackViewModel::onPlayPause,
+                        onNextClick = playbackViewModel::onNext,
+                        onPreviousClick = playbackViewModel::onPrevious,
                         onSeek = playbackViewModel::onSeek,
                         onErrorDismiss = playbackViewModel::onErrorDismissed,
                         onBackClick = playbackViewModel::clearTrack
@@ -57,4 +63,3 @@ fun MusicPlayerApp(
         }
     }
 }
-

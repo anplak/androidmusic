@@ -1,6 +1,8 @@
 package com.anplak.androidmusic.ui
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -27,7 +29,13 @@ class NowPlayingScreenTest {
                 currentPosition = 0L,
                 duration = 180000L,
                 error = null,
+                queuePosition = 1,
+                queueSize = 1,
+                hasNext = false,
+                hasPrevious = false,
                 onPlayPauseClick = {},
+                onNextClick = {},
+                onPreviousClick = {},
                 onSeek = {},
                 onErrorDismiss = {},
                 onBackClick = {}
@@ -47,7 +55,13 @@ class NowPlayingScreenTest {
                 currentPosition = 0L,
                 duration = 180000L,
                 error = null,
+                queuePosition = 1,
+                queueSize = 1,
+                hasNext = false,
+                hasPrevious = false,
                 onPlayPauseClick = {},
+                onNextClick = {},
+                onPreviousClick = {},
                 onSeek = {},
                 onErrorDismiss = {},
                 onBackClick = {}
@@ -67,7 +81,13 @@ class NowPlayingScreenTest {
                 currentPosition = 0L,
                 duration = 180000L,
                 error = null,
+                queuePosition = 1,
+                queueSize = 1,
+                hasNext = false,
+                hasPrevious = false,
                 onPlayPauseClick = {},
+                onNextClick = {},
+                onPreviousClick = {},
                 onSeek = {},
                 onErrorDismiss = {},
                 onBackClick = {}
@@ -87,7 +107,13 @@ class NowPlayingScreenTest {
                 currentPosition = 0L,
                 duration = 180000L,
                 error = null,
+                queuePosition = 1,
+                queueSize = 1,
+                hasNext = false,
+                hasPrevious = false,
                 onPlayPauseClick = {},
+                onNextClick = {},
+                onPreviousClick = {},
                 onSeek = {},
                 onErrorDismiss = {},
                 onBackClick = {}
@@ -109,7 +135,13 @@ class NowPlayingScreenTest {
                 currentPosition = 0L,
                 duration = 180000L,
                 error = null,
+                queuePosition = 1,
+                queueSize = 1,
+                hasNext = false,
+                hasPrevious = false,
                 onPlayPauseClick = { clicked = true },
+                onNextClick = {},
+                onPreviousClick = {},
                 onSeek = {},
                 onErrorDismiss = {},
                 onBackClick = {}
@@ -133,7 +165,13 @@ class NowPlayingScreenTest {
                 currentPosition = 0L,
                 duration = 180000L,
                 error = null,
+                queuePosition = 1,
+                queueSize = 1,
+                hasNext = false,
+                hasPrevious = false,
                 onPlayPauseClick = {},
+                onNextClick = {},
+                onPreviousClick = {},
                 onSeek = {},
                 onErrorDismiss = {},
                 onBackClick = { backClicked = true }
@@ -155,7 +193,13 @@ class NowPlayingScreenTest {
                 currentPosition = 65000L, // 1:05
                 duration = 180000L,
                 error = null,
+                queuePosition = 1,
+                queueSize = 1,
+                hasNext = false,
+                hasPrevious = false,
                 onPlayPauseClick = {},
+                onNextClick = {},
+                onPreviousClick = {},
                 onSeek = {},
                 onErrorDismiss = {},
                 onBackClick = {}
@@ -175,7 +219,13 @@ class NowPlayingScreenTest {
                 currentPosition = 0L,
                 duration = 245000L, // 4:05
                 error = null,
+                queuePosition = 1,
+                queueSize = 1,
+                hasNext = false,
+                hasPrevious = false,
                 onPlayPauseClick = {},
+                onNextClick = {},
+                onPreviousClick = {},
                 onSeek = {},
                 onErrorDismiss = {},
                 onBackClick = {}
@@ -195,7 +245,13 @@ class NowPlayingScreenTest {
                 currentPosition = 0L,
                 duration = 180000L,
                 error = null,
+                queuePosition = 1,
+                queueSize = 1,
+                hasNext = false,
+                hasPrevious = false,
                 onPlayPauseClick = {},
+                onNextClick = {},
+                onPreviousClick = {},
                 onSeek = {},
                 onErrorDismiss = {},
                 onBackClick = {}
@@ -206,5 +262,142 @@ class NowPlayingScreenTest {
         composeTestRule.onNodeWithText("Test Song").assertIsDisplayed()
         // But there should be no empty artist text node causing layout issues
     }
+    
+    @Test
+    fun `shows queue position when queue has multiple tracks`() {
+        composeTestRule.setContent {
+            NowPlayingScreen(
+                trackTitle = "Test Song",
+                artistName = "Artist",
+                isPlaying = false,
+                currentPosition = 0L,
+                duration = 180000L,
+                error = null,
+                queuePosition = 3,
+                queueSize = 10,
+                hasNext = true,
+                hasPrevious = true,
+                onPlayPauseClick = {},
+                onNextClick = {},
+                onPreviousClick = {},
+                onSeek = {},
+                onErrorDismiss = {},
+                onBackClick = {}
+            )
+        }
+        
+        composeTestRule.onNodeWithText("3 / 10").assertIsDisplayed()
+    }
+    
+    @Test
+    fun `next button triggers callback when enabled`() {
+        var nextClicked = false
+        
+        composeTestRule.setContent {
+            NowPlayingScreen(
+                trackTitle = "Test Song",
+                artistName = "Artist",
+                isPlaying = false,
+                currentPosition = 0L,
+                duration = 180000L,
+                error = null,
+                queuePosition = 1,
+                queueSize = 3,
+                hasNext = true,
+                hasPrevious = false,
+                onPlayPauseClick = {},
+                onNextClick = { nextClicked = true },
+                onPreviousClick = {},
+                onSeek = {},
+                onErrorDismiss = {},
+                onBackClick = {}
+            )
+        }
+        
+        composeTestRule.onNodeWithContentDescription("Next").performClick()
+        
+        assertTrue(nextClicked)
+    }
+    
+    @Test
+    fun `previous button triggers callback when enabled`() {
+        var previousClicked = false
+        
+        composeTestRule.setContent {
+            NowPlayingScreen(
+                trackTitle = "Test Song",
+                artistName = "Artist",
+                isPlaying = false,
+                currentPosition = 0L,
+                duration = 180000L,
+                error = null,
+                queuePosition = 2,
+                queueSize = 3,
+                hasNext = true,
+                hasPrevious = true,
+                onPlayPauseClick = {},
+                onNextClick = {},
+                onPreviousClick = { previousClicked = true },
+                onSeek = {},
+                onErrorDismiss = {},
+                onBackClick = {}
+            )
+        }
+        
+        composeTestRule.onNodeWithContentDescription("Previous").performClick()
+        
+        assertTrue(previousClicked)
+    }
+    
+    @Test
+    fun `next button is disabled at end of queue`() {
+        composeTestRule.setContent {
+            NowPlayingScreen(
+                trackTitle = "Test Song",
+                artistName = "Artist",
+                isPlaying = false,
+                currentPosition = 0L,
+                duration = 180000L,
+                error = null,
+                queuePosition = 3,
+                queueSize = 3,
+                hasNext = false,
+                hasPrevious = true,
+                onPlayPauseClick = {},
+                onNextClick = {},
+                onPreviousClick = {},
+                onSeek = {},
+                onErrorDismiss = {},
+                onBackClick = {}
+            )
+        }
+        
+        composeTestRule.onNodeWithContentDescription("Next").assertIsNotEnabled()
+    }
+    
+    @Test
+    fun `previous button is disabled at start of queue`() {
+        composeTestRule.setContent {
+            NowPlayingScreen(
+                trackTitle = "Test Song",
+                artistName = "Artist",
+                isPlaying = false,
+                currentPosition = 0L,
+                duration = 180000L,
+                error = null,
+                queuePosition = 1,
+                queueSize = 3,
+                hasNext = true,
+                hasPrevious = false,
+                onPlayPauseClick = {},
+                onNextClick = {},
+                onPreviousClick = {},
+                onSeek = {},
+                onErrorDismiss = {},
+                onBackClick = {}
+            )
+        }
+        
+        composeTestRule.onNodeWithContentDescription("Previous").assertIsNotEnabled()
+    }
 }
-

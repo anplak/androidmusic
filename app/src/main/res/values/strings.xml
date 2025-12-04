@@ -5,6 +5,8 @@
     <string name="no_music_selected">No music selected</string>
     <string name="play">Play</string>
     <string name="pause">Pause</string>
+    <string name="next">Next</string>
+    <string name="previous">Previous</string>
     <string name="permission_required">Permission Required</string>
     <string name="permission_rationale">This app needs access to your audio files to play music.</string>
     <string name="grant_permission">Grant Permission</string>
