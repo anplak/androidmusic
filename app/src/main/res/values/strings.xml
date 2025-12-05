@@ -19,5 +19,34 @@
     <string name="scanning_library">Scanning library…</string>
     <string name="no_music_found">No music found</string>
     <string name="no_music_found_description">Add some music files to your device to see them here.</string>
+    
+    <!-- Favorites -->
+    <string name="favorites">Favorites</string>
+    <string name="add_to_favorites">Add to favorites</string>
+    <string name="remove_from_favorites">Remove from favorites</string>
+    <string name="no_favorites">No favorites yet</string>
+    <string name="no_favorites_description">Tap the heart icon on any track to add it to your favorites.</string>
+    <string name="added_to_favorites">Added to favorites</string>
+    <string name="removed_from_favorites">Removed from favorites</string>
+    
+    <!-- Playlists -->
+    <string name="playlists">Playlists</string>
+    <string name="add_to_playlist">Add to playlist</string>
+    <string name="remove_from_playlist">Remove from playlist</string>
+    <string name="create_playlist">Create playlist</string>
+    <string name="new_playlist">New Playlist</string>
+    <string name="playlist_name">Playlist name</string>
+    <string name="delete_playlist">Delete playlist</string>
+    <string name="no_playlists">No playlists yet</string>
+    <string name="no_playlists_description">Create a playlist to organize your music.</string>
+    <string name="empty_playlist">This playlist is empty</string>
+    <string name="empty_playlist_description">Add tracks from your library to this playlist.</string>
+    <string name="added_to_playlist">Added to playlist</string>
+    <string name="removed_from_playlist">Removed from playlist</string>
+    <string name="cancel">Cancel</string>
+    <string name="create">Create</string>
+    <string name="more_options">More options</string>
+    <string name="tracks_count">%d tracks</string>
+    <string name="play_all">Play all</string>
 </resources>
 

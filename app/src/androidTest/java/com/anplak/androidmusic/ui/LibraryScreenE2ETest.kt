@@ -45,13 +45,32 @@ class LibraryScreenE2ETest {
      */
     @Test
     fun permissionGranted_showsLibraryScreen() {
-        // Wait for UI to settle
-        composeTestRule.waitForIdle()
+        // Wait for UI to settle and library to load
+        composeTestRule.waitUntil(timeoutMillis = 10_000) {
+            val hasContent = composeTestRule
+                .onAllNodes(hasTestTag("track_list"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+            val hasEmpty = composeTestRule
+                .onAllNodes(hasTestTag("empty_state"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+            hasContent || hasEmpty
+        }
         
-        // Verify we see the library title "Your Library"
-        composeTestRule
-            .onNodeWithText("Your Library")
-            .assertIsDisplayed()
+        // Verify we're on library tab by checking for track_list or empty_state
+        val hasTrackList = composeTestRule
+            .onAllNodes(hasTestTag("track_list"))
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+        val hasEmptyState = composeTestRule
+            .onAllNodes(hasTestTag("empty_state"))
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+        
+        assert(hasTrackList || hasEmptyState) {
+            "Expected track_list or empty_state to be displayed on Library screen"
+        }
     }
 
     /**

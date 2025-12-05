@@ -8,11 +8,11 @@ import android.media.MediaScannerConnection
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
+import com.anplak.androidmusic.data.db.TrackDao
 import com.anplak.androidmusic.player.TrackInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
-import java.io.File
 import kotlin.coroutines.resume
 
 interface MusicLibraryRepository {
@@ -22,7 +22,8 @@ interface MusicLibraryRepository {
 
 class MusicLibraryRepositoryImpl(
     private val contentResolver: ContentResolver,
-    private val context: Context? = null
+    private val context: Context? = null,
+    private val trackDao: TrackDao? = null
 ) : MusicLibraryRepository {
 
     /**
@@ -162,6 +163,16 @@ class MusicLibraryRepositoryImpl(
         }
         
         Log.d(TAG, "Scan complete: ${tracks.size} tracks loaded, $scannedCount scanned, $errorCount errors")
+        
+        // Cache tracks in Room for stable ID mapping (for favorites/playlists)
+        trackDao?.let { dao ->
+            val entities = tracks.map { it.toEntity() }
+            dao.insertAll(entities)
+            // Remove stale entries (tracks that no longer exist in MediaStore)
+            val validIds = tracks.map { it.id }
+            dao.deleteStaleEntries(validIds)
+            Log.d(TAG, "Cached ${entities.size} tracks in local database")
+        }
         
         tracks
     }
