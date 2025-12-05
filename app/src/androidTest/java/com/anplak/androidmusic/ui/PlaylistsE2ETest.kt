@@ -3,7 +3,9 @@ package com.anplak.androidmusic.ui
 import android.Manifest
 import android.os.Build
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -21,6 +23,7 @@ import org.junit.runner.RunWith
  * - Create new playlist
  * - Add track to playlist
  * - View playlist detail
+ * - Track count display
  */
 @RunWith(AndroidJUnit4::class)
 class PlaylistsE2ETest {
@@ -192,6 +195,110 @@ class PlaylistsE2ETest {
         
         composeTestRule
             .onNodeWithTag("playlist_name_input")
+            .assertIsDisplayed()
+    }
+    
+    /**
+     * Test that creating a new playlist via "Add to Playlist" dialog shows correct track count.
+     * 
+     * Bug fix verification: When creating a new playlist and adding a track via the dialog,
+     * the playlist should show "1 track" instead of "0 tracks".
+     */
+    @Test
+    fun createPlaylistAndAddTrack_showsCorrectTrackCount() {
+        composeTestRule.waitForIdle()
+        
+        // Wait for library to load first
+        composeTestRule.waitUntil(timeoutMillis = 10_000) {
+            val hasContent = composeTestRule
+                .onAllNodes(hasTestTag("track_list"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+            val hasEmpty = composeTestRule
+                .onAllNodes(hasTestTag("empty_state"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+            hasContent || hasEmpty
+        }
+        
+        // Check if we have tracks
+        val hasTrackList = composeTestRule
+            .onAllNodes(hasTestTag("track_list"))
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+        
+        if (!hasTrackList) {
+            // No tracks on device - skip test
+            return
+        }
+        
+        // Open the more options menu on the first track
+        composeTestRule
+            .onNodeWithTag("more_button_0")
+            .performClick()
+        
+        composeTestRule.waitForIdle()
+        
+        // Click "Add to playlist" option
+        composeTestRule
+            .onNodeWithTag("add_to_playlist_menu_0")
+            .performClick()
+        
+        composeTestRule.waitForIdle()
+        
+        // Wait for add to playlist dialog
+        composeTestRule.waitUntil(timeoutMillis = 5_000) {
+            composeTestRule
+                .onAllNodes(hasTestTag("add_to_playlist_dialog"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        
+        // Click "Create new playlist" option
+        composeTestRule
+            .onNodeWithTag("create_new_playlist_option")
+            .performClick()
+        
+        composeTestRule.waitForIdle()
+        
+        // Enter playlist name
+        val uniquePlaylistName = "TrackCount Test ${System.currentTimeMillis()}"
+        composeTestRule
+            .onNodeWithTag("new_playlist_name_input")
+            .performTextInput(uniquePlaylistName)
+        
+        // Click create button
+        composeTestRule
+            .onNodeWithTag("create_and_add_button")
+            .performClick()
+        
+        composeTestRule.waitForIdle()
+        
+        // Navigate to playlists tab
+        composeTestRule
+            .onNodeWithTag("nav_playlists")
+            .performClick()
+        
+        composeTestRule.waitForIdle()
+        
+        // Wait for playlists list to load
+        composeTestRule.waitUntil(timeoutMillis = 5_000) {
+            composeTestRule
+                .onAllNodes(hasTestTag("playlists_list"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        
+        // Verify the playlist is shown with the correct name
+        composeTestRule
+            .onNodeWithText(uniquePlaylistName)
+            .assertIsDisplayed()
+        
+        // Verify the playlist shows "1 tracks" (not "0 tracks")
+        // The track count is displayed as supporting text in the playlist item
+        // Note: The app uses "%d tracks" format which doesn't handle singular form
+        composeTestRule
+            .onNodeWithText("1 tracks")
             .assertIsDisplayed()
     }
 }

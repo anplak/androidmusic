@@ -48,5 +48,15 @@
     <string name="more_options">More options</string>
     <string name="tracks_count">%d tracks</string>
     <string name="play_all">Play all</string>
+    
+    <!-- Smart Playlists -->
+    <string name="smart_playlists">Smart Playlists</string>
+    <string name="most_played">Most Played</string>
+    <string name="recently_played">Recently Played</string>
+    <string name="recently_added">Recently Added</string>
+    <string name="smart_playlist_description">Based on your listening history</string>
+    <string name="smart_shuffle">Smart Shuffle</string>
+    <string name="smart_shuffle_description">Weighted shuffle favoring your favorites</string>
+    <string name="your_playlists">Your Playlists</string>
 </resources>
 

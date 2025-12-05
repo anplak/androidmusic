@@ -2,6 +2,7 @@ package com.anplak.androidmusic.data
 
 import com.anplak.androidmusic.data.db.PlaylistDao
 import com.anplak.androidmusic.data.db.PlaylistEntity
+import com.anplak.androidmusic.data.db.PlaylistWithTrackCount
 import com.anplak.androidmusic.player.TrackInfo
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -45,7 +46,7 @@ class PlaylistRepositoryImpl(
     }
 
     override fun getPlaylists(): Flow<List<Playlist>> {
-        return playlistDao.getAllPlaylists().map { entities ->
+        return playlistDao.getAllPlaylistsWithTrackCount().map { entities ->
             entities.map { it.toPlaylist() }
         }
     }
@@ -77,6 +78,15 @@ class PlaylistRepositoryImpl(
     }
 }
 
+private fun PlaylistWithTrackCount.toPlaylist(): Playlist {
+    return Playlist(
+        id = id,
+        name = name,
+        createdAt = createdAt,
+        trackCount = trackCount
+    )
+}
+
 private fun PlaylistEntity.toPlaylist(): Playlist {
     return Playlist(
         id = id,
@@ -84,4 +94,3 @@ private fun PlaylistEntity.toPlaylist(): Playlist {
         createdAt = createdAt
     )
 }
-

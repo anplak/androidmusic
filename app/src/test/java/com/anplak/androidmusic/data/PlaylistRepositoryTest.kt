@@ -3,6 +3,7 @@ package com.anplak.androidmusic.data
 import com.anplak.androidmusic.data.db.PlaylistDao
 import com.anplak.androidmusic.data.db.PlaylistEntity
 import com.anplak.androidmusic.data.db.PlaylistTrackCrossRef
+import com.anplak.androidmusic.data.db.PlaylistWithTrackCount
 import com.anplak.androidmusic.data.db.TrackEntity
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -60,18 +61,27 @@ class PlaylistRepositoryTest {
     }
     
     @Test
-    fun `getPlaylists converts entities to domain models`() = runTest {
+    fun `getPlaylists converts entities to domain models with track count`() = runTest {
         val entities = listOf(
             PlaylistEntity(1, "Playlist 1", 1000L),
             PlaylistEntity(2, "Playlist 2", 2000L)
         )
         fakePlaylistDao.setPlaylists(entities)
+        // Set track count for playlists
+        val tracks = listOf(
+            TrackEntity(1, "Track 1", "Artist", "Album", 180000, "path1", System.currentTimeMillis()),
+            TrackEntity(2, "Track 2", "Artist", "Album", 200000, "path2", System.currentTimeMillis())
+        )
+        fakePlaylistDao.setPlaylistTracks(tracks)
         
         val playlists = repository.getPlaylists().first()
         
         assertEquals(2, playlists.size)
         assertEquals("Playlist 1", playlists[0].name)
         assertEquals("Playlist 2", playlists[1].name)
+        // Verify track count is populated
+        assertEquals(2, playlists[0].trackCount)
+        assertEquals(2, playlists[1].trackCount)
     }
     
     @Test
@@ -123,8 +133,8 @@ class PlaylistRepositoryTest {
     @Test
     fun `getPlaylistTracks converts entities to TrackInfo`() = runTest {
         val tracks = listOf(
-            TrackEntity(1, "Track 1", "Artist", "Album", 180000, "path1"),
-            TrackEntity(2, "Track 2", "Artist", "Album", 200000, "path2")
+            TrackEntity(1, "Track 1", "Artist", "Album", 180000, "path1", System.currentTimeMillis()),
+            TrackEntity(2, "Track 2", "Artist", "Album", 200000, "path2", System.currentTimeMillis())
         )
         fakePlaylistDao.setPlaylistTracks(tracks)
         
@@ -215,6 +225,17 @@ class FakePlaylistDao : PlaylistDao {
     }
     
     override fun getAllPlaylists(): Flow<List<PlaylistEntity>> = playlists
+    
+    override fun getAllPlaylistsWithTrackCount(): Flow<List<PlaylistWithTrackCount>> {
+        return MutableStateFlow(playlists.value.map { playlist ->
+            PlaylistWithTrackCount(
+                id = playlist.id,
+                name = playlist.name,
+                createdAt = playlist.createdAt,
+                trackCount = playlistTracks.value.size
+            )
+        })
+    }
     
     override suspend fun getPlaylistById(playlistId: Long): PlaylistEntity? = playlistById.value
     

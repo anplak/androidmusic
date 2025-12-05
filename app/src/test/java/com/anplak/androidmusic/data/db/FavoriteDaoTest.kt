@@ -114,7 +114,8 @@ class FavoriteDaoTest {
         artist = "Artist",
         album = "Album",
         duration = 180000L,
-        path = "content://media/external/audio/media/$id"
+        path = "content://media/external/audio/media/$id",
+        firstSeenAt = System.currentTimeMillis()
     )
 }
 
