@@ -1,6 +1,7 @@
 package com.anplak.androidmusic.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,11 +12,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
@@ -29,6 +35,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -52,14 +62,19 @@ fun NowPlayingScreen(
     queueSize: Int,
     hasNext: Boolean,
     hasPrevious: Boolean,
+    isFavorite: Boolean,
     onPlayPauseClick: () -> Unit,
     onNextClick: () -> Unit,
     onPreviousClick: () -> Unit,
     onSeek: (Long) -> Unit,
     onErrorDismiss: () -> Unit,
     onBackClick: () -> Unit,
+    onToggleFavorite: () -> Unit,
+    onAddToPlaylist: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var showMenu by remember { mutableStateOf(false) }
+    
     Scaffold(
         topBar = {
             TopAppBar(
@@ -73,6 +88,50 @@ fun NowPlayingScreen(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back to library"
                         )
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = onToggleFavorite,
+                        modifier = Modifier.testTag("favorite_button")
+                    ) {
+                        Icon(
+                            imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                            contentDescription = if (isFavorite) {
+                                stringResource(R.string.remove_from_favorites)
+                            } else {
+                                stringResource(R.string.add_to_favorites)
+                            },
+                            tint = if (isFavorite) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            }
+                        )
+                    }
+                    Box {
+                        IconButton(
+                            onClick = { showMenu = true },
+                            modifier = Modifier.testTag("more_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = stringResource(R.string.more_options)
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.add_to_playlist)) },
+                                onClick = {
+                                    showMenu = false
+                                    onAddToPlaylist()
+                                },
+                                modifier = Modifier.testTag("add_to_playlist_menu")
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

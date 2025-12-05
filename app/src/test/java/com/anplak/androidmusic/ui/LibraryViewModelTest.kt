@@ -3,10 +3,13 @@ package com.anplak.androidmusic.ui
 import android.app.Application
 import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
+import com.anplak.androidmusic.data.FavoritesRepository
 import com.anplak.androidmusic.data.MusicLibraryRepository
 import com.anplak.androidmusic.player.TrackInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -27,12 +30,14 @@ class LibraryViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var application: Application
     private lateinit var fakeRepository: FakeMusicLibraryRepository
+    private lateinit var fakeFavoritesRepository: FakeFavoritesRepository
     
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         application = ApplicationProvider.getApplicationContext()
         fakeRepository = FakeMusicLibraryRepository()
+        fakeFavoritesRepository = FakeFavoritesRepository()
     }
     
     @After
@@ -110,8 +115,37 @@ class LibraryViewModelTest {
         assertEquals(2, fakeRepository.getAllTracksCallCount)
     }
     
+    @Test
+    fun `toggleFavorite calls repository`() = runTest {
+        val viewModel = createViewModel()
+        
+        viewModel.toggleFavorite(1L)
+        advanceUntilIdle()
+        
+        assertEquals(1, fakeFavoritesRepository.toggleFavoriteCallCount)
+        assertEquals(1L, fakeFavoritesRepository.lastToggledTrackId)
+    }
+    
+    @Test
+    fun `Content state includes favorite IDs`() = runTest {
+        val tracks = listOf(createTrack(1, "Song One", "Artist A"))
+        fakeRepository.setTracks(tracks)
+        
+        val viewModel = createViewModel()
+        viewModel.loadLibrary()
+        advanceUntilIdle()
+        
+        // Set favorites AFTER library loads to trigger flow update
+        fakeFavoritesRepository.setFavoriteIds(setOf(1L))
+        advanceUntilIdle()
+        
+        val state = viewModel.uiState.value
+        assertTrue(state is LibraryUiState.Content)
+        assertTrue((state as LibraryUiState.Content).favoriteIds.contains(1L))
+    }
+    
     private fun createViewModel(): LibraryViewModel {
-        return LibraryViewModel(application, fakeRepository)
+        return LibraryViewModel(application, fakeRepository, fakeFavoritesRepository)
     }
     
     private fun createTrack(id: Long, title: String, artist: String): TrackInfo {
@@ -146,3 +180,37 @@ class FakeMusicLibraryRepository : MusicLibraryRepository {
     }
 }
 
+class FakeFavoritesRepository : FavoritesRepository {
+    private val favoriteIds = MutableStateFlow<Set<Long>>(emptySet())
+    private val favorites = MutableStateFlow<List<TrackInfo>>(emptyList())
+    
+    var toggleFavoriteCallCount = 0
+        private set
+    var lastToggledTrackId: Long? = null
+        private set
+    
+    fun setFavoriteIds(ids: Set<Long>) {
+        favoriteIds.value = ids
+    }
+    
+    fun setFavorites(tracks: List<TrackInfo>) {
+        favorites.value = tracks
+    }
+    
+    override suspend fun toggleFavorite(trackId: Long) {
+        toggleFavoriteCallCount++
+        lastToggledTrackId = trackId
+    }
+    
+    override fun isFavorite(trackId: Long): Flow<Boolean> {
+        return MutableStateFlow(favoriteIds.value.contains(trackId))
+    }
+    
+    override fun getAllFavorites(): Flow<List<TrackInfo>> {
+        return favorites
+    }
+    
+    override fun getAllFavoriteIds(): Flow<Set<Long>> {
+        return favoriteIds
+    }
+}

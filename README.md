@@ -7,11 +7,15 @@ A minimal offline music player for Android that automatically discovers and play
 - **Offline-first**: No network or account required
 - **Automatic library scanning**: Discovers all audio files on device via MediaStore
 - **Music library browsing**: Scrollable list of tracks with title, artist, and duration
+- **Favorites**: Mark tracks as favorites with a heart icon, view all favorites in a dedicated tab
+- **Playlists**: Create custom playlists, add/remove tracks, play entire playlists
 - **Playback queue**: Selecting a track builds a queue from the library for continuous playback
 - **Queue navigation**: Next/previous controls with queue position indicator
 - **Background playback**: Music continues playing when app is in background or screen is off
 - **Media notification**: Control playback from the notification shade with play/pause, next, previous
 - **Lockscreen and headset controls**: MediaSession integration for system-wide media controls
+- **Bottom navigation**: Three-tab navigation for Library, Favorites, and Playlists
+- **Persistent storage**: Favorites and playlists persist across app restarts using Room database
 - **Modern UI**: Built with Jetpack Compose and Material Design 3
 - **Error handling**: Clear feedback when playback issues occur
 - **Scoped storage support**: Compatible with Android 10+ privacy requirements
@@ -51,25 +55,70 @@ The app follows **MVVM architecture** with unidirectional data flow:
 - Supports next, previous, and jump-to operations
 - Factory method to build queue from library at selected position
 
+### Database Layer
+
+**AppDatabase** (`data/db/AppDatabase.kt`)
+- Room database singleton for local persistence
+- Stores track cache, favorites, and playlists
+
+**Entities** (`data/db/Entities.kt`)
+- `TrackEntity`: Cached track metadata from MediaStore
+- `FavoriteEntity`: Track ID reference with timestamp
+- `PlaylistEntity`: Playlist name and creation time
+- `PlaylistTrackCrossRef`: Links tracks to playlists with ordering
+
+**DAOs** (`data/db/`)
+- `TrackDao`: Track cache operations
+- `FavoriteDao`: Favorite management
+- `PlaylistDao`: Playlist CRUD and track management
+
+### Repository Layer
+
 **MusicLibraryRepository** (`data/MusicLibraryRepository.kt`)
 - Queries MediaStore for device audio files
-- Extracts track metadata (title, artist, album, duration)
+- Caches tracks in Room for stable ID mapping
 - Executes queries off main thread using coroutines
+
+**FavoritesRepository** (`data/FavoritesRepository.kt`)
+- Toggle favorite status for tracks
+- Query all favorites with reactive Flow
+- Expose favorite IDs for UI state
+
+**PlaylistRepository** (`data/PlaylistRepository.kt`)
+- Create, delete, rename playlists
+- Add/remove tracks from playlists
+- Query playlist tracks with ordering
+
+### ViewModel Layer
 
 **LibraryViewModel** (`ui/LibraryViewModel.kt`)
 - Manages library screen state (Loading, Content, Empty)
+- Exposes favorite status per track
 - Session caching to avoid redundant scans
-- Loads library on first access
 
 **PlaybackViewModel** (`ui/PlaybackViewModel.kt`)
 - Manages playback UI state and queue operations
+- Exposes favorite status for current track
 - Coordinates between AudioPlayer and UI layer
-- Exposes queue position and navigation availability
 
-**UI Layer** (Compose)
-- `MusicPlayerApp`: Root composable that orchestrates app flow
-- `LibraryScreen`: Scrollable list of all tracks
-- `NowPlayingScreen`: Playback UI with play/pause, next/previous, seek, and queue indicator
+**FavoritesViewModel** (`ui/FavoritesViewModel.kt`)
+- Manages favorites list state
+- Handles toggle favorite action
+
+**PlaylistsViewModel** (`ui/PlaylistsViewModel.kt`)
+- Manages playlists list and detail state
+- Handles create/delete playlist operations
+- Manages add/remove tracks from playlists
+
+### UI Layer (Compose)
+
+- `MusicPlayerApp`: Root composable with bottom navigation and screen routing
+- `LibraryScreen`: Scrollable list with favorite toggle and playlist menu
+- `FavoritesScreen`: List of favorited tracks
+- `PlaylistsScreen`: List of playlists with create dialog
+- `PlaylistDetailScreen`: Playlist tracks with play and remove options
+- `NowPlayingScreen`: Playback UI with favorite toggle and add-to-playlist
+- `AddToPlaylistDialog`: Modal for adding tracks to playlists
 - `PermissionRationaleScreen`: Permission request UI
 
 **Permission Handling** (`ui/PermissionHandler.kt`)
@@ -80,13 +129,14 @@ The app follows **MVVM architecture** with unidirectional data flow:
 
 1. User grants media permission
 2. App scans device audio via MediaStore (off main thread)
-3. Library screen displays list of discovered tracks
-4. User taps a track from the library
-5. App builds a playback queue from that track onward
-6. MusicPlaybackService starts playback in foreground
-7. Playback state flows to UI via MediaController and StateFlow
-8. User can navigate back to library while playback continues in background
-9. User can control playback via notification or lockscreen controls
+3. Tracks are cached in Room database for stable IDs
+4. Library screen displays list of discovered tracks with favorite status
+5. User can toggle favorites or add tracks to playlists
+6. User taps a track to build a queue and start playback
+7. MusicPlaybackService starts playback in foreground
+8. Playback state flows to UI via MediaController and StateFlow
+9. Bottom navigation allows switching between Library, Favorites, and Playlists
+10. Favorites and playlists persist across app restarts
 
 ## Technology Stack
 
@@ -94,9 +144,10 @@ The app follows **MVVM architecture** with unidirectional data flow:
 - **UI**: Jetpack Compose with Material Design 3
 - **Architecture**: MVVM with unidirectional data flow
 - **Audio**: Jetpack Media3 1.2.1 (ExoPlayer + MediaSession)
+- **Database**: Room 2.6.1 with KSP annotation processing
 - **Concurrency**: Kotlin Coroutines and Flow
 - **Build**: Gradle with Kotlin DSL and version catalog
-- **Testing**: JUnit, Mockito, Robolectric, Coroutines Test
+- **Testing**: JUnit, Mockito, Robolectric, Room Testing, Coroutines Test
 
 ## Current Limitations
 
@@ -104,7 +155,7 @@ The following features are intentionally out of scope for the current iteration:
 
 - Repeat and shuffle modes
 - Persistent queue across app restarts
-- Playlists and favorites
+- Drag-and-drop playlist reordering
 - Albums/artists views and filtering
 - Sorting options
 - Listening history
@@ -130,49 +181,69 @@ To validate the app:
 3. **Empty state**
    - On a device with no music files, verify empty state message
 
-4. **Track selection and queue**
+4. **Favorites**
+   - Tap heart icon on a track to add to favorites
+   - Verify heart fills in and track appears in Favorites tab
+   - Tap heart again to remove from favorites
+   - Verify empty state in Favorites tab when no favorites
+
+5. **Playlists**
+   - Navigate to Playlists tab
+   - Create a new playlist using the FAB
+   - Add tracks to playlist from library or Now Playing
+   - Open playlist detail and verify tracks appear
+   - Remove tracks from playlist
+   - Delete playlist
+
+6. **Track selection and queue**
    - Tap a track to start playback
    - Verify Now Playing screen shows correct track info
    - Verify queue position indicator shows (e.g., "3 / 10")
 
-5. **Queue navigation**
+7. **Queue navigation**
    - Next button advances to next track
    - Previous button goes to previous track
    - Buttons are disabled at queue boundaries
 
-6. **Playback controls**
+8. **Playback controls**
    - Play/pause functionality
    - Seek bar interaction
    - Time display accuracy
 
-7. **Background playback**
+9. **Background playback**
    - Start playback and press home button
    - Verify music continues playing
    - Lock screen and verify music continues
 
-8. **Notification controls**
-   - Verify media notification appears during playback
-   - Test play/pause from notification
-   - Test next/previous from notification
-   - Tap notification to return to Now Playing
+10. **Notification controls**
+    - Verify media notification appears during playback
+    - Test play/pause from notification
+    - Test next/previous from notification
+    - Tap notification to return to Now Playing
 
-9. **Lockscreen and headset controls**
-   - Verify lockscreen shows media controls
-   - Test play/pause from lockscreen
-   - Test headset button controls (if available)
+11. **Lockscreen and headset controls**
+    - Verify lockscreen shows media controls
+    - Test play/pause from lockscreen
+    - Test headset button controls (if available)
 
-10. **Navigation**
-    - Back button returns to library
-    - Playback continues when returning to library
+12. **Navigation**
+    - Bottom navigation switches between Library, Favorites, Playlists
+    - Back button returns from Now Playing to current tab
+    - Playback continues when navigating between screens
 
-11. **Error handling**
+13. **Persistence**
+    - Add favorites and create playlists
+    - Force stop the app
+    - Relaunch and verify favorites/playlists persist
+
+14. **Error handling**
     - If a track fails to play, verify error dialog appears
 
-12. **Configuration changes**
+15. **Configuration changes**
     - Rotate device during playback
     - Verify state persists (ViewModel survives)
 
-13. **App lifecycle**
+16. **App lifecycle**
     - Swipe app away from recents while playing
     - Verify playback stops and notification clears
 
@@ -182,7 +253,15 @@ To validate the app:
 app/src/main/java/com/anplak/androidmusic/
 ├── MainActivity.kt                    # App entry point
 ├── data/
-│   └── MusicLibraryRepository.kt     # MediaStore access
+│   ├── MusicLibraryRepository.kt     # MediaStore access
+│   ├── FavoritesRepository.kt        # Favorites data access
+│   ├── PlaylistRepository.kt         # Playlists data access
+│   └── db/
+│       ├── AppDatabase.kt            # Room database singleton
+│       ├── Entities.kt               # Database entities
+│       ├── TrackDao.kt               # Track cache DAO
+│       ├── FavoriteDao.kt            # Favorites DAO
+│       └── PlaylistDao.kt            # Playlists DAO
 ├── player/
 │   ├── AudioPlayer.kt                # MediaController bridge
 │   ├── PlaybackQueue.kt              # Queue model
@@ -192,9 +271,15 @@ app/src/main/java/com/anplak/androidmusic/
 ├── service/
 │   └── MusicPlaybackService.kt       # Background playback service
 └── ui/
-    ├── MusicPlayerApp.kt             # Root composable
+    ├── MusicPlayerApp.kt             # Root composable with navigation
     ├── LibraryScreen.kt              # Library list UI
     ├── LibraryViewModel.kt           # Library state management
+    ├── FavoritesScreen.kt            # Favorites list UI
+    ├── FavoritesViewModel.kt         # Favorites state management
+    ├── PlaylistsScreen.kt            # Playlists list UI
+    ├── PlaylistDetailScreen.kt       # Playlist detail UI
+    ├── PlaylistsViewModel.kt         # Playlists state management
+    ├── AddToPlaylistDialog.kt        # Add to playlist modal
     ├── PlaybackViewModel.kt          # Playback state management
     ├── PermissionHandler.kt          # Permission management
     ├── NowPlayingScreen.kt           # Now playing UI
@@ -205,7 +290,6 @@ app/src/main/java/com/anplak/androidmusic/
 
 Planned features for upcoming stories:
 
-- **Story 4**: Persistent favorites and playlists
 - **Story 5**: Auto-generated playlists and smart shuffle
 - **Story 6**: Listening history and insights
 - **Story 7**: Recommendations and discovery

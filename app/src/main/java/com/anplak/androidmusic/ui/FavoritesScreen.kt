@@ -14,7 +14,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -28,7 +27,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,22 +44,18 @@ import com.anplak.androidmusic.player.TrackInfo
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LibraryScreen(
+fun FavoritesScreen(
     onTrackSelected: (List<TrackInfo>, Int) -> Unit,
     onAddToPlaylist: (TrackInfo) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: LibraryViewModel = viewModel()
+    viewModel: FavoritesViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    
-    LaunchedEffect(Unit) {
-        viewModel.loadLibrary()
-    }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = stringResource(R.string.your_library)) },
+                title = { Text(text = stringResource(R.string.favorites)) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -76,16 +70,15 @@ fun LibraryScreen(
                 .padding(paddingValues)
         ) {
             when (val state = uiState) {
-                is LibraryUiState.Loading -> {
+                is FavoritesUiState.Loading -> {
                     LoadingState()
                 }
-                is LibraryUiState.Empty -> {
-                    EmptyLibraryState()
+                is FavoritesUiState.Empty -> {
+                    EmptyFavoritesState()
                 }
-                is LibraryUiState.Content -> {
-                    TrackList(
+                is FavoritesUiState.Content -> {
+                    FavoriteTrackList(
                         tracks = state.tracks,
-                        favoriteIds = state.favoriteIds,
                         onTrackSelected = { track ->
                             val index = state.tracks.indexOf(track)
                             onTrackSelected(state.tracks, index)
@@ -106,31 +99,19 @@ private fun LoadingState() {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .testTag("loading_state"),
+            .testTag("favorites_loading_state"),
         contentAlignment = Alignment.Center
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            CircularProgressIndicator(
-                modifier = Modifier.testTag("loading_indicator")
-            )
-            Text(
-                text = stringResource(R.string.scanning_library),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+        CircularProgressIndicator()
     }
 }
 
 @Composable
-private fun EmptyLibraryState() {
+private fun EmptyFavoritesState() {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .testTag("empty_state"),
+            .testTag("favorites_empty_state"),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -139,13 +120,13 @@ private fun EmptyLibraryState() {
             modifier = Modifier.padding(32.dp)
         ) {
             Text(
-                text = stringResource(R.string.no_music_found),
+                text = stringResource(R.string.no_favorites),
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.testTag("empty_state_title")
+                modifier = Modifier.testTag("favorites_empty_state_title")
             )
             Text(
-                text = stringResource(R.string.no_music_found_description),
+                text = stringResource(R.string.no_favorites_description),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -154,9 +135,8 @@ private fun EmptyLibraryState() {
 }
 
 @Composable
-private fun TrackList(
+private fun FavoriteTrackList(
     tracks: List<TrackInfo>,
-    favoriteIds: Set<Long>,
     onTrackSelected: (TrackInfo) -> Unit,
     onToggleFavorite: (Long) -> Unit,
     onAddToPlaylist: (TrackInfo) -> Unit
@@ -164,7 +144,7 @@ private fun TrackList(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .testTag("track_list"),
+            .testTag("favorites_track_list"),
         contentPadding = PaddingValues(vertical = 8.dp)
     ) {
         items(
@@ -172,10 +152,9 @@ private fun TrackList(
             key = { it.uri.toString() }
         ) { track ->
             val index = tracks.indexOf(track)
-            TrackItem(
+            FavoriteTrackItem(
                 track = track,
                 index = index,
-                isFavorite = favoriteIds.contains(track.id),
                 onClick = { onTrackSelected(track) },
                 onToggleFavorite = { onToggleFavorite(track.id) },
                 onAddToPlaylist = { onAddToPlaylist(track) }
@@ -185,16 +164,15 @@ private fun TrackList(
 }
 
 @Composable
-private fun TrackItem(
+private fun FavoriteTrackItem(
     track: TrackInfo,
     index: Int,
-    isFavorite: Boolean,
     onClick: () -> Unit,
     onToggleFavorite: () -> Unit,
     onAddToPlaylist: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
-    
+
     ListItem(
         headlineContent = {
             Text(
@@ -220,26 +198,18 @@ private fun TrackItem(
                 )
                 IconButton(
                     onClick = onToggleFavorite,
-                    modifier = Modifier.testTag("favorite_button_$index")
+                    modifier = Modifier.testTag("favorites_remove_button_$index")
                 ) {
                     Icon(
-                        imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                        contentDescription = if (isFavorite) {
-                            stringResource(R.string.remove_from_favorites)
-                        } else {
-                            stringResource(R.string.add_to_favorites)
-                        },
-                        tint = if (isFavorite) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        }
+                        imageVector = Icons.Filled.Favorite,
+                        contentDescription = stringResource(R.string.remove_from_favorites),
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
                 Box {
                     IconButton(
                         onClick = { showMenu = true },
-                        modifier = Modifier.testTag("more_button_$index")
+                        modifier = Modifier.testTag("favorites_more_button_$index")
                     ) {
                         Icon(
                             imageVector = Icons.Default.MoreVert,
@@ -256,8 +226,7 @@ private fun TrackItem(
                             onClick = {
                                 showMenu = false
                                 onAddToPlaylist()
-                            },
-                            modifier = Modifier.testTag("add_to_playlist_menu_$index")
+                            }
                         )
                     }
                 }
@@ -266,7 +235,7 @@ private fun TrackItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .testTag("track_item_$index")
+            .testTag("favorites_track_item_$index")
     )
 }
 
@@ -276,3 +245,4 @@ private fun formatDuration(milliseconds: Long): String {
     val seconds = totalSeconds % 60
     return "%d:%02d".format(minutes, seconds)
 }
+

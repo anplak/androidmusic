@@ -33,12 +33,15 @@ class NowPlayingScreenTest {
                 queueSize = 1,
                 hasNext = false,
                 hasPrevious = false,
+                isFavorite = false,
                 onPlayPauseClick = {},
                 onNextClick = {},
                 onPreviousClick = {},
                 onSeek = {},
                 onErrorDismiss = {},
-                onBackClick = {}
+                onBackClick = {},
+                onToggleFavorite = {},
+                onAddToPlaylist = {}
             )
         }
         
@@ -59,12 +62,15 @@ class NowPlayingScreenTest {
                 queueSize = 1,
                 hasNext = false,
                 hasPrevious = false,
+                isFavorite = false,
                 onPlayPauseClick = {},
                 onNextClick = {},
                 onPreviousClick = {},
                 onSeek = {},
                 onErrorDismiss = {},
-                onBackClick = {}
+                onBackClick = {},
+                onToggleFavorite = {},
+                onAddToPlaylist = {}
             )
         }
         
@@ -85,12 +91,15 @@ class NowPlayingScreenTest {
                 queueSize = 1,
                 hasNext = false,
                 hasPrevious = false,
+                isFavorite = false,
                 onPlayPauseClick = {},
                 onNextClick = {},
                 onPreviousClick = {},
                 onSeek = {},
                 onErrorDismiss = {},
-                onBackClick = {}
+                onBackClick = {},
+                onToggleFavorite = {},
+                onAddToPlaylist = {}
             )
         }
         
@@ -111,12 +120,15 @@ class NowPlayingScreenTest {
                 queueSize = 1,
                 hasNext = false,
                 hasPrevious = false,
+                isFavorite = false,
                 onPlayPauseClick = {},
                 onNextClick = {},
                 onPreviousClick = {},
                 onSeek = {},
                 onErrorDismiss = {},
-                onBackClick = {}
+                onBackClick = {},
+                onToggleFavorite = {},
+                onAddToPlaylist = {}
             )
         }
         
@@ -139,12 +151,15 @@ class NowPlayingScreenTest {
                 queueSize = 1,
                 hasNext = false,
                 hasPrevious = false,
+                isFavorite = false,
                 onPlayPauseClick = { clicked = true },
                 onNextClick = {},
                 onPreviousClick = {},
                 onSeek = {},
                 onErrorDismiss = {},
-                onBackClick = {}
+                onBackClick = {},
+                onToggleFavorite = {},
+                onAddToPlaylist = {}
             )
         }
         
@@ -169,12 +184,15 @@ class NowPlayingScreenTest {
                 queueSize = 1,
                 hasNext = false,
                 hasPrevious = false,
+                isFavorite = false,
                 onPlayPauseClick = {},
                 onNextClick = {},
                 onPreviousClick = {},
                 onSeek = {},
                 onErrorDismiss = {},
-                onBackClick = { backClicked = true }
+                onBackClick = { backClicked = true },
+                onToggleFavorite = {},
+                onAddToPlaylist = {}
             )
         }
         
@@ -197,12 +215,15 @@ class NowPlayingScreenTest {
                 queueSize = 1,
                 hasNext = false,
                 hasPrevious = false,
+                isFavorite = false,
                 onPlayPauseClick = {},
                 onNextClick = {},
                 onPreviousClick = {},
                 onSeek = {},
                 onErrorDismiss = {},
-                onBackClick = {}
+                onBackClick = {},
+                onToggleFavorite = {},
+                onAddToPlaylist = {}
             )
         }
         
@@ -223,12 +244,15 @@ class NowPlayingScreenTest {
                 queueSize = 1,
                 hasNext = false,
                 hasPrevious = false,
+                isFavorite = false,
                 onPlayPauseClick = {},
                 onNextClick = {},
                 onPreviousClick = {},
                 onSeek = {},
                 onErrorDismiss = {},
-                onBackClick = {}
+                onBackClick = {},
+                onToggleFavorite = {},
+                onAddToPlaylist = {}
             )
         }
         
@@ -249,12 +273,15 @@ class NowPlayingScreenTest {
                 queueSize = 1,
                 hasNext = false,
                 hasPrevious = false,
+                isFavorite = false,
                 onPlayPauseClick = {},
                 onNextClick = {},
                 onPreviousClick = {},
                 onSeek = {},
                 onErrorDismiss = {},
-                onBackClick = {}
+                onBackClick = {},
+                onToggleFavorite = {},
+                onAddToPlaylist = {}
             )
         }
         
@@ -277,12 +304,15 @@ class NowPlayingScreenTest {
                 queueSize = 10,
                 hasNext = true,
                 hasPrevious = true,
+                isFavorite = false,
                 onPlayPauseClick = {},
                 onNextClick = {},
                 onPreviousClick = {},
                 onSeek = {},
                 onErrorDismiss = {},
-                onBackClick = {}
+                onBackClick = {},
+                onToggleFavorite = {},
+                onAddToPlaylist = {}
             )
         }
         
@@ -305,12 +335,15 @@ class NowPlayingScreenTest {
                 queueSize = 3,
                 hasNext = true,
                 hasPrevious = false,
+                isFavorite = false,
                 onPlayPauseClick = {},
                 onNextClick = { nextClicked = true },
                 onPreviousClick = {},
                 onSeek = {},
                 onErrorDismiss = {},
-                onBackClick = {}
+                onBackClick = {},
+                onToggleFavorite = {},
+                onAddToPlaylist = {}
             )
         }
         
@@ -335,12 +368,15 @@ class NowPlayingScreenTest {
                 queueSize = 3,
                 hasNext = true,
                 hasPrevious = true,
+                isFavorite = false,
                 onPlayPauseClick = {},
                 onNextClick = {},
                 onPreviousClick = { previousClicked = true },
                 onSeek = {},
                 onErrorDismiss = {},
-                onBackClick = {}
+                onBackClick = {},
+                onToggleFavorite = {},
+                onAddToPlaylist = {}
             )
         }
         
@@ -363,12 +399,15 @@ class NowPlayingScreenTest {
                 queueSize = 3,
                 hasNext = false,
                 hasPrevious = true,
+                isFavorite = false,
                 onPlayPauseClick = {},
                 onNextClick = {},
                 onPreviousClick = {},
                 onSeek = {},
                 onErrorDismiss = {},
-                onBackClick = {}
+                onBackClick = {},
+                onToggleFavorite = {},
+                onAddToPlaylist = {}
             )
         }
         
@@ -389,15 +428,51 @@ class NowPlayingScreenTest {
                 queueSize = 3,
                 hasNext = true,
                 hasPrevious = false,
+                isFavorite = false,
                 onPlayPauseClick = {},
                 onNextClick = {},
                 onPreviousClick = {},
                 onSeek = {},
                 onErrorDismiss = {},
-                onBackClick = {}
+                onBackClick = {},
+                onToggleFavorite = {},
+                onAddToPlaylist = {}
             )
         }
         
         composeTestRule.onNodeWithContentDescription("Previous").assertIsNotEnabled()
+    }
+    
+    @Test
+    fun `toggle favorite callback is triggered`() {
+        var favoriteToggled = false
+        
+        composeTestRule.setContent {
+            NowPlayingScreen(
+                trackTitle = "Test Song",
+                artistName = "Artist",
+                isPlaying = false,
+                currentPosition = 0L,
+                duration = 180000L,
+                error = null,
+                queuePosition = 1,
+                queueSize = 1,
+                hasNext = false,
+                hasPrevious = false,
+                isFavorite = false,
+                onPlayPauseClick = {},
+                onNextClick = {},
+                onPreviousClick = {},
+                onSeek = {},
+                onErrorDismiss = {},
+                onBackClick = {},
+                onToggleFavorite = { favoriteToggled = true },
+                onAddToPlaylist = {}
+            )
+        }
+        
+        composeTestRule.onNodeWithContentDescription("Add to favorites").performClick()
+        
+        assertTrue(favoriteToggled)
     }
 }
