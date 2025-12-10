@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
@@ -71,6 +72,7 @@ fun NowPlayingScreen(
     onBackClick: () -> Unit,
     onToggleFavorite: () -> Unit,
     onAddToPlaylist: () -> Unit,
+    onSmartShuffle: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var showMenu by remember { mutableStateOf(false) }
@@ -130,6 +132,20 @@ fun NowPlayingScreen(
                                     onAddToPlaylist()
                                 },
                                 modifier = Modifier.testTag("add_to_playlist_menu")
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.smart_shuffle)) },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Shuffle,
+                                        contentDescription = null
+                                    )
+                                },
+                                onClick = {
+                                    showMenu = false
+                                    onSmartShuffle()
+                                },
+                                modifier = Modifier.testTag("smart_shuffle_menu")
                             )
                         }
                     }

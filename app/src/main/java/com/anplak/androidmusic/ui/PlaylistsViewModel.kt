@@ -8,9 +8,11 @@ import com.anplak.androidmusic.data.PlaylistRepository
 import com.anplak.androidmusic.data.PlaylistRepositoryImpl
 import com.anplak.androidmusic.data.db.AppDatabase
 import com.anplak.androidmusic.player.TrackInfo
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 sealed interface PlaylistsUiState {
@@ -43,6 +45,9 @@ class PlaylistsViewModel @JvmOverloads constructor(
 
     private val _playlists = MutableStateFlow<List<Playlist>>(emptyList())
     val playlists: StateFlow<List<Playlist>> = _playlists.asStateFlow()
+    
+    // Track the current detail loading job to cancel it when loading a new playlist
+    private var detailLoadingJob: Job? = null
 
     init {
         loadPlaylists()
@@ -67,6 +72,17 @@ class PlaylistsViewModel @JvmOverloads constructor(
             playlistRepository.createPlaylist(name.trim())
         }
     }
+    
+    /**
+     * Creates a new playlist and immediately adds a track to it.
+     */
+    fun createPlaylistAndAddTrack(name: String, trackId: Long) {
+        if (name.isBlank()) return
+        viewModelScope.launch {
+            val playlistId = playlistRepository.createPlaylist(name.trim())
+            playlistRepository.addTrackToPlaylist(playlistId, trackId)
+        }
+    }
 
     fun deletePlaylist(playlistId: Long) {
         viewModelScope.launch {
@@ -75,20 +91,27 @@ class PlaylistsViewModel @JvmOverloads constructor(
     }
 
     fun loadPlaylistDetail(playlistId: Long) {
-        viewModelScope.launch {
+        // Cancel any previous detail loading job to prevent subscription leaks
+        detailLoadingJob?.cancel()
+        
+        detailLoadingJob = viewModelScope.launch {
             _detailState.value = PlaylistDetailUiState.Loading
             
-            playlistRepository.getPlaylistById(playlistId).collect { playlist ->
+            // Use combine instead of nested collects to avoid subscription leaks
+            combine(
+                playlistRepository.getPlaylistById(playlistId),
+                playlistRepository.getPlaylistTracks(playlistId)
+            ) { playlist, tracks ->
                 if (playlist == null) {
-                    _detailState.value = PlaylistDetailUiState.NotFound
+                    PlaylistDetailUiState.NotFound
                 } else {
-                    playlistRepository.getPlaylistTracks(playlistId).collect { tracks ->
-                        _detailState.value = PlaylistDetailUiState.Content(
-                            playlist = playlist,
-                            tracks = tracks
-                        )
-                    }
+                    PlaylistDetailUiState.Content(
+                        playlist = playlist,
+                        tracks = tracks
+                    )
                 }
+            }.collect { state ->
+                _detailState.value = state
             }
         }
     }
@@ -105,4 +128,3 @@ class PlaylistsViewModel @JvmOverloads constructor(
         }
     }
 }
-

@@ -25,6 +25,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anplak.androidmusic.R
+import com.anplak.androidmusic.data.SmartPlaylistType
 import com.anplak.androidmusic.player.TrackInfo
 
 enum class NavigationTab(val icon: ImageVector, val labelResId: Int) {
@@ -37,6 +38,7 @@ sealed class AppScreen {
     data object MainTabs : AppScreen()
     data object NowPlaying : AppScreen()
     data class PlaylistDetail(val playlistId: Long) : AppScreen()
+    data class SmartPlaylistDetail(val type: SmartPlaylistType) : AppScreen()
 }
 
 @Composable
@@ -87,7 +89,8 @@ fun MusicPlayerApp(
                         onToggleFavorite = playbackViewModel::toggleFavorite,
                         onAddToPlaylist = { 
                             uiState.selectedTrack?.let { trackForPlaylistDialog = it }
-                        }
+                        },
+                        onSmartShuffle = playbackViewModel::startSmartShuffle
                     )
                 }
 
@@ -101,6 +104,18 @@ fun MusicPlayerApp(
                             currentScreen = AppScreen.NowPlaying
                         },
                         viewModel = playlistsViewModel
+                    )
+                }
+
+                currentScreen is AppScreen.SmartPlaylistDetail -> {
+                    val type = (currentScreen as AppScreen.SmartPlaylistDetail).type
+                    SmartPlaylistDetailScreen(
+                        type = type,
+                        onBackClick = { currentScreen = AppScreen.MainTabs },
+                        onPlayAll = { tracks, index ->
+                            playbackViewModel.onTrackSelected(tracks, index)
+                            currentScreen = AppScreen.NowPlaying
+                        }
                     )
                 }
 
@@ -118,6 +133,9 @@ fun MusicPlayerApp(
                         onPlaylistSelected = { playlistId ->
                             currentScreen = AppScreen.PlaylistDetail(playlistId)
                         },
+                        onSmartPlaylistSelected = { type ->
+                            currentScreen = AppScreen.SmartPlaylistDetail(type)
+                        },
                         playlistsViewModel = playlistsViewModel
                     )
                 }
@@ -133,10 +151,8 @@ fun MusicPlayerApp(
             onPlaylistSelected = { playlistId, trackId ->
                 playlistsViewModel.addTrackToPlaylist(playlistId, trackId)
             },
-            onCreatePlaylist = { name, _ ->
-                playlistsViewModel.createPlaylist(name)
-                // Note: Adding track to newly created playlist requires waiting for
-                // playlist creation to complete. For simplicity, user can add manually.
+            onCreatePlaylist = { name, trackId ->
+                playlistsViewModel.createPlaylistAndAddTrack(name, trackId)
             },
             viewModel = playlistsViewModel
         )
@@ -150,6 +166,7 @@ private fun MainTabsContent(
     onTrackSelected: (List<TrackInfo>, Int) -> Unit,
     onAddToPlaylist: (TrackInfo) -> Unit,
     onPlaylistSelected: (Long) -> Unit,
+    onSmartPlaylistSelected: (SmartPlaylistType) -> Unit,
     playlistsViewModel: PlaylistsViewModel
 ) {
     Scaffold(
@@ -188,6 +205,7 @@ private fun MainTabsContent(
                 NavigationTab.Playlists -> {
                     PlaylistsScreen(
                         onPlaylistSelected = onPlaylistSelected,
+                        onSmartPlaylistSelected = onSmartPlaylistSelected,
                         viewModel = playlistsViewModel
                     )
                 }

@@ -12,7 +12,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.LibraryAdd
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -35,17 +39,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anplak.androidmusic.R
 import com.anplak.androidmusic.data.Playlist
+import com.anplak.androidmusic.data.SmartPlaylistType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlaylistsScreen(
     onPlaylistSelected: (Long) -> Unit,
+    onSmartPlaylistSelected: (SmartPlaylistType) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: PlaylistsViewModel = viewModel()
 ) {
@@ -85,12 +92,19 @@ fun PlaylistsScreen(
                     LoadingState()
                 }
                 is PlaylistsUiState.Empty -> {
-                    EmptyPlaylistsState()
+                    // Show smart playlists even when no user playlists exist
+                    PlaylistListWithSmartPlaylists(
+                        playlists = emptyList(),
+                        onPlaylistSelected = onPlaylistSelected,
+                        onSmartPlaylistSelected = onSmartPlaylistSelected,
+                        onDeletePlaylist = { }
+                    )
                 }
                 is PlaylistsUiState.Content -> {
-                    PlaylistList(
+                    PlaylistListWithSmartPlaylists(
                         playlists = state.playlists,
                         onPlaylistSelected = onPlaylistSelected,
+                        onSmartPlaylistSelected = onSmartPlaylistSelected,
                         onDeletePlaylist = { viewModel.deletePlaylist(it) }
                     )
                 }
@@ -122,37 +136,10 @@ private fun LoadingState() {
 }
 
 @Composable
-private fun EmptyPlaylistsState() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("playlists_empty_state"),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(32.dp)
-        ) {
-            Text(
-                text = stringResource(R.string.no_playlists),
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.testTag("playlists_empty_state_title")
-            )
-            Text(
-                text = stringResource(R.string.no_playlists_description),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@Composable
-private fun PlaylistList(
+private fun PlaylistListWithSmartPlaylists(
     playlists: List<Playlist>,
     onPlaylistSelected: (Long) -> Unit,
+    onSmartPlaylistSelected: (SmartPlaylistType) -> Unit,
     onDeletePlaylist: (Long) -> Unit
 ) {
     LazyColumn(
@@ -161,19 +148,118 @@ private fun PlaylistList(
             .testTag("playlists_list"),
         contentPadding = PaddingValues(vertical = 8.dp)
     ) {
-        items(
-            items = playlists,
-            key = { it.id }
-        ) { playlist ->
-            val index = playlists.indexOf(playlist)
-            PlaylistItem(
-                playlist = playlist,
-                index = index,
-                onClick = { onPlaylistSelected(playlist.id) },
-                onDelete = { onDeletePlaylist(playlist.id) }
+        // Smart Playlists Section Header
+        item {
+            SectionHeader(
+                title = stringResource(R.string.smart_playlists),
+                modifier = Modifier.testTag("smart_playlists_header")
             )
         }
+        
+        // Smart Playlist Items
+        item {
+            SmartPlaylistItem(
+                title = stringResource(R.string.most_played),
+                description = stringResource(R.string.smart_playlist_description),
+                icon = Icons.AutoMirrored.Filled.TrendingUp,
+                onClick = { onSmartPlaylistSelected(SmartPlaylistType.MOST_PLAYED) },
+                testTag = "smart_playlist_most_played"
+            )
+        }
+        item {
+            SmartPlaylistItem(
+                title = stringResource(R.string.recently_played),
+                description = stringResource(R.string.smart_playlist_description),
+                icon = Icons.Default.History,
+                onClick = { onSmartPlaylistSelected(SmartPlaylistType.RECENTLY_PLAYED) },
+                testTag = "smart_playlist_recently_played"
+            )
+        }
+        item {
+            SmartPlaylistItem(
+                title = stringResource(R.string.recently_added),
+                description = stringResource(R.string.smart_playlist_description),
+                icon = Icons.Default.LibraryAdd,
+                onClick = { onSmartPlaylistSelected(SmartPlaylistType.RECENTLY_ADDED) },
+                testTag = "smart_playlist_recently_added"
+            )
+        }
+        
+        // User Playlists Section Header (only if there are playlists)
+        if (playlists.isNotEmpty()) {
+            item {
+                SectionHeader(
+                    title = stringResource(R.string.your_playlists),
+                    modifier = Modifier
+                        .padding(top = 16.dp)
+                        .testTag("user_playlists_header")
+                )
+            }
+            
+            items(
+                items = playlists,
+                key = { it.id }
+            ) { playlist ->
+                val index = playlists.indexOf(playlist)
+                PlaylistItem(
+                    playlist = playlist,
+                    index = index,
+                    onClick = { onPlaylistSelected(playlist.id) },
+                    onDelete = { onDeletePlaylist(playlist.id) }
+                )
+            }
+        }
     }
+}
+
+@Composable
+private fun SectionHeader(
+    title: String,
+    modifier: Modifier = Modifier
+) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+    )
+}
+
+@Composable
+private fun SmartPlaylistItem(
+    title: String,
+    description: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    testTag: String
+) {
+    ListItem(
+        headlineContent = {
+            Text(
+                text = title,
+                maxLines = 1
+            )
+        },
+        supportingContent = {
+            Text(
+                text = description,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        },
+        leadingContent = {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .testTag(testTag)
+    )
 }
 
 @Composable

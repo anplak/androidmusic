@@ -17,7 +17,8 @@ data class TrackEntity(
     val artist: String,
     val album: String,
     val duration: Long,
-    val path: String
+    val path: String,
+    val firstSeenAt: Long = System.currentTimeMillis()
 )
 
 /**
@@ -79,5 +80,28 @@ data class PlaylistTrackCrossRef(
     val trackId: Long,
     val position: Int,
     val addedAt: Long = System.currentTimeMillis()
+)
+
+/**
+ * Track playback statistics for smart playlists and shuffle.
+ */
+@Entity(
+    tableName = "track_stats",
+    foreignKeys = [
+        ForeignKey(
+            entity = TrackEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["trackId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index("trackId")]
+)
+data class TrackStatsEntity(
+    @PrimaryKey
+    val trackId: Long,
+    val playCount: Int = 0,
+    val lastPlayedAt: Long? = null,
+    val completionCount: Int = 0
 )
 

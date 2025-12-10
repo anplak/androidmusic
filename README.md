@@ -9,13 +9,16 @@ A minimal offline music player for Android that automatically discovers and play
 - **Music library browsing**: Scrollable list of tracks with title, artist, and duration
 - **Favorites**: Mark tracks as favorites with a heart icon, view all favorites in a dedicated tab
 - **Playlists**: Create custom playlists, add/remove tracks, play entire playlists
+- **Smart playlists**: Auto-generated playlists including Most Played, Recently Played, and Recently Added
+- **Smart shuffle**: Weighted shuffle that favors favorites and frequently played tracks
+- **Play statistics**: Tracks play count and completion for smart features
 - **Playback queue**: Selecting a track builds a queue from the library for continuous playback
 - **Queue navigation**: Next/previous controls with queue position indicator
 - **Background playback**: Music continues playing when app is in background or screen is off
 - **Media notification**: Control playback from the notification shade with play/pause, next, previous
 - **Lockscreen and headset controls**: MediaSession integration for system-wide media controls
 - **Bottom navigation**: Three-tab navigation for Library, Favorites, and Playlists
-- **Persistent storage**: Favorites and playlists persist across app restarts using Room database
+- **Persistent storage**: Favorites, playlists, and play statistics persist using Room database
 - **Modern UI**: Built with Jetpack Compose and Material Design 3
 - **Error handling**: Clear feedback when playback issues occur
 - **Scoped storage support**: Compatible with Android 10+ privacy requirements
@@ -62,15 +65,17 @@ The app follows **MVVM architecture** with unidirectional data flow:
 - Stores track cache, favorites, and playlists
 
 **Entities** (`data/db/Entities.kt`)
-- `TrackEntity`: Cached track metadata from MediaStore
+- `TrackEntity`: Cached track metadata from MediaStore with first-seen timestamp
 - `FavoriteEntity`: Track ID reference with timestamp
 - `PlaylistEntity`: Playlist name and creation time
 - `PlaylistTrackCrossRef`: Links tracks to playlists with ordering
+- `TrackStatsEntity`: Play count, last played timestamp, and completion count
 
 **DAOs** (`data/db/`)
-- `TrackDao`: Track cache operations
+- `TrackDao`: Track cache operations and recently added queries
 - `FavoriteDao`: Favorite management
 - `PlaylistDao`: Playlist CRUD and track management
+- `TrackStatsDao`: Play statistics recording and queries
 
 ### Repository Layer
 
@@ -89,6 +94,16 @@ The app follows **MVVM architecture** with unidirectional data flow:
 - Add/remove tracks from playlists
 - Query playlist tracks with ordering
 
+**TrackStatsRepository** (`data/TrackStatsRepository.kt`)
+- Record play and completion events
+- Query play statistics per track
+- Provide stats for smart shuffle weighting
+
+**SmartPlaylistRepository** (`data/SmartPlaylistRepository.kt`)
+- Query most played tracks by play count
+- Query recently played tracks by timestamp
+- Query recently added tracks by first-seen date
+
 ### ViewModel Layer
 
 **LibraryViewModel** (`ui/LibraryViewModel.kt`)
@@ -100,6 +115,8 @@ The app follows **MVVM architecture** with unidirectional data flow:
 - Manages playback UI state and queue operations
 - Exposes favorite status for current track
 - Coordinates between AudioPlayer and UI layer
+- Records play statistics on track changes
+- Provides smart shuffle functionality
 
 **FavoritesViewModel** (`ui/FavoritesViewModel.kt`)
 - Manages favorites list state
@@ -110,14 +127,19 @@ The app follows **MVVM architecture** with unidirectional data flow:
 - Handles create/delete playlist operations
 - Manages add/remove tracks from playlists
 
+**SmartPlaylistsViewModel** (`ui/SmartPlaylistsViewModel.kt`)
+- Manages smart playlist detail state
+- Loads tracks for Most Played, Recently Played, Recently Added
+
 ### UI Layer (Compose)
 
 - `MusicPlayerApp`: Root composable with bottom navigation and screen routing
 - `LibraryScreen`: Scrollable list with favorite toggle and playlist menu
 - `FavoritesScreen`: List of favorited tracks
-- `PlaylistsScreen`: List of playlists with create dialog
+- `PlaylistsScreen`: List of playlists with smart playlists section and create dialog
 - `PlaylistDetailScreen`: Playlist tracks with play and remove options
-- `NowPlayingScreen`: Playback UI with favorite toggle and add-to-playlist
+- `SmartPlaylistDetailScreen`: Read-only smart playlist tracks with play all
+- `NowPlayingScreen`: Playback UI with favorite toggle, add-to-playlist, and smart shuffle
 - `AddToPlaylistDialog`: Modal for adding tracks to playlists
 - `PermissionRationaleScreen`: Permission request UI
 
@@ -153,13 +175,13 @@ The app follows **MVVM architecture** with unidirectional data flow:
 
 The following features are intentionally out of scope for the current iteration:
 
-- Repeat and shuffle modes
+- Repeat mode (basic shuffle available via smart shuffle)
 - Persistent queue across app restarts
 - Drag-and-drop playlist reordering
 - Albums/artists views and filtering
 - Sorting options
-- Listening history
-- Recommendations and discovery
+- Detailed listening history insights
+- Advanced recommendations and discovery
 - Search functionality
 
 These features are planned for future iterations.
@@ -195,55 +217,72 @@ To validate the app:
    - Remove tracks from playlist
    - Delete playlist
 
-6. **Track selection and queue**
+6. **Smart playlists**
+   - Navigate to Playlists tab
+   - Verify smart playlists section appears (Most Played, Recently Played, Recently Added)
+   - Tap "Most Played" - verify tracks ordered by play count
+   - Tap "Recently Played" - verify tracks ordered by last played time
+   - Tap "Recently Added" - verify tracks ordered by when first seen
+   - Tap "Play All" on any smart playlist to start playback
+
+7. **Smart shuffle**
+   - Start playing any track
+   - Open the more menu (three dots) on Now Playing
+   - Tap "Smart Shuffle"
+   - Verify playback continues with shuffled queue
+   - Play several tracks to build play history
+   - Use smart shuffle again - favorites and frequently played should appear more often
+
+8. **Track selection and queue**
    - Tap a track to start playback
    - Verify Now Playing screen shows correct track info
    - Verify queue position indicator shows (e.g., "3 / 10")
 
-7. **Queue navigation**
+9. **Queue navigation**
    - Next button advances to next track
    - Previous button goes to previous track
    - Buttons are disabled at queue boundaries
 
-8. **Playback controls**
-   - Play/pause functionality
-   - Seek bar interaction
-   - Time display accuracy
+10. **Playback controls**
+    - Play/pause functionality
+    - Seek bar interaction
+    - Time display accuracy
 
-9. **Background playback**
-   - Start playback and press home button
-   - Verify music continues playing
-   - Lock screen and verify music continues
+11. **Background playback**
+    - Start playback and press home button
+    - Verify music continues playing
+    - Lock screen and verify music continues
 
-10. **Notification controls**
+12. **Notification controls**
     - Verify media notification appears during playback
     - Test play/pause from notification
     - Test next/previous from notification
     - Tap notification to return to Now Playing
 
-11. **Lockscreen and headset controls**
+13. **Lockscreen and headset controls**
     - Verify lockscreen shows media controls
     - Test play/pause from lockscreen
     - Test headset button controls (if available)
 
-12. **Navigation**
+14. **Navigation**
     - Bottom navigation switches between Library, Favorites, Playlists
     - Back button returns from Now Playing to current tab
     - Playback continues when navigating between screens
 
-13. **Persistence**
+15. **Persistence**
     - Add favorites and create playlists
+    - Play some tracks to generate statistics
     - Force stop the app
-    - Relaunch and verify favorites/playlists persist
+    - Relaunch and verify favorites/playlists/stats persist
 
-14. **Error handling**
+16. **Error handling**
     - If a track fails to play, verify error dialog appears
 
-15. **Configuration changes**
+17. **Configuration changes**
     - Rotate device during playback
     - Verify state persists (ViewModel survives)
 
-16. **App lifecycle**
+18. **App lifecycle**
     - Swipe app away from recents while playing
     - Verify playback stops and notification clears
 
@@ -256,17 +295,21 @@ app/src/main/java/com/anplak/androidmusic/
 │   ├── MusicLibraryRepository.kt     # MediaStore access
 │   ├── FavoritesRepository.kt        # Favorites data access
 │   ├── PlaylistRepository.kt         # Playlists data access
+│   ├── TrackStatsRepository.kt       # Play statistics data access
+│   ├── SmartPlaylistRepository.kt    # Smart playlists queries
 │   └── db/
 │       ├── AppDatabase.kt            # Room database singleton
 │       ├── Entities.kt               # Database entities
 │       ├── TrackDao.kt               # Track cache DAO
 │       ├── FavoriteDao.kt            # Favorites DAO
-│       └── PlaylistDao.kt            # Playlists DAO
+│       ├── PlaylistDao.kt            # Playlists DAO
+│       └── TrackStatsDao.kt          # Play statistics DAO
 ├── player/
 │   ├── AudioPlayer.kt                # MediaController bridge
 │   ├── PlaybackQueue.kt              # Queue model
 │   ├── PlaybackState.kt              # Playback state model
 │   ├── PlayerError.kt                # Error types
+│   ├── SmartShuffleGenerator.kt      # Weighted shuffle algorithm
 │   └── TrackInfo.kt                  # Track metadata model
 ├── service/
 │   └── MusicPlaybackService.kt       # Background playback service
@@ -276,13 +319,15 @@ app/src/main/java/com/anplak/androidmusic/
     ├── LibraryViewModel.kt           # Library state management
     ├── FavoritesScreen.kt            # Favorites list UI
     ├── FavoritesViewModel.kt         # Favorites state management
-    ├── PlaylistsScreen.kt            # Playlists list UI
+    ├── PlaylistsScreen.kt            # Playlists list with smart section
     ├── PlaylistDetailScreen.kt       # Playlist detail UI
     ├── PlaylistsViewModel.kt         # Playlists state management
+    ├── SmartPlaylistDetailScreen.kt  # Smart playlist detail UI
+    ├── SmartPlaylistsViewModel.kt    # Smart playlists state management
     ├── AddToPlaylistDialog.kt        # Add to playlist modal
     ├── PlaybackViewModel.kt          # Playback state management
     ├── PermissionHandler.kt          # Permission management
-    ├── NowPlayingScreen.kt           # Now playing UI
+    ├── NowPlayingScreen.kt           # Now playing UI with smart shuffle
     └── PermissionRationaleScreen.kt  # Permission rationale UI
 ```
 
@@ -290,7 +335,6 @@ app/src/main/java/com/anplak/androidmusic/
 
 Planned features for upcoming stories:
 
-- **Story 5**: Auto-generated playlists and smart shuffle
 - **Story 6**: Listening history and insights
 - **Story 7**: Recommendations and discovery
 - **Story 8**: Advanced playlist curation tools

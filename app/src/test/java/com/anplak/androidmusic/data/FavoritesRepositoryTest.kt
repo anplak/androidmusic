@@ -61,8 +61,8 @@ class FavoritesRepositoryTest {
     @Test
     fun `getAllFavorites converts entities to TrackInfo`() = runTest {
         val entities = listOf(
-            TrackEntity(1, "Track 1", "Artist", "Album", 180000, "path1"),
-            TrackEntity(2, "Track 2", "Artist", "Album", 200000, "path2")
+            TrackEntity(1, "Track 1", "Artist", "Album", 180000, "path1", System.currentTimeMillis()),
+            TrackEntity(2, "Track 2", "Artist", "Album", 200000, "path2", System.currentTimeMillis())
         )
         fakeFavoriteDao.setFavoriteTracks(entities)
         

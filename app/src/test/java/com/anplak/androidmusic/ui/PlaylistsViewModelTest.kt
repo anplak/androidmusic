@@ -129,6 +129,71 @@ class PlaylistsViewModelTest {
         assertEquals(1, fakePlaylistRepository.removeTrackCallCount)
     }
     
+    @Test
+    fun `createPlaylistAndAddTrack creates playlist and adds track`() = runTest {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        
+        viewModel.createPlaylistAndAddTrack("New Playlist", 42L)
+        advanceUntilIdle()
+        
+        // Verify playlist was created
+        assertEquals(1, fakePlaylistRepository.createPlaylistCallCount)
+        assertEquals("New Playlist", fakePlaylistRepository.lastCreatedPlaylistName)
+        
+        // Verify track was added to the newly created playlist
+        assertEquals(1, fakePlaylistRepository.addTrackCallCount)
+        assertEquals(1L, fakePlaylistRepository.lastAddedToPlaylistId) // returned from createPlaylist
+        assertEquals(42L, fakePlaylistRepository.lastAddedTrackId)
+    }
+    
+    @Test
+    fun `createPlaylistAndAddTrack ignores blank name`() = runTest {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        
+        viewModel.createPlaylistAndAddTrack("   ", 42L)
+        advanceUntilIdle()
+        
+        assertEquals(0, fakePlaylistRepository.createPlaylistCallCount)
+        assertEquals(0, fakePlaylistRepository.addTrackCallCount)
+    }
+    
+    @Test
+    fun `loadPlaylistDetail emits Content state with playlist and tracks`() = runTest {
+        val playlist = Playlist(1L, "My Playlist", System.currentTimeMillis(), trackCount = 2)
+        val tracks = listOf(
+            TrackInfo(TrackInfo.uriFromId(1), "Track 1", "Artist", "Album", 180000),
+            TrackInfo(TrackInfo.uriFromId(2), "Track 2", "Artist", "Album", 200000)
+        )
+        fakePlaylistRepository.setPlaylistById(playlist)
+        fakePlaylistRepository.setPlaylistTracks(tracks)
+        
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        
+        viewModel.loadPlaylistDetail(1L)
+        advanceUntilIdle()
+        
+        val detailState = viewModel.detailState.value
+        assertTrue(detailState is PlaylistDetailUiState.Content)
+        assertEquals("My Playlist", (detailState as PlaylistDetailUiState.Content).playlist.name)
+        assertEquals(2, detailState.tracks.size)
+    }
+    
+    @Test
+    fun `loadPlaylistDetail emits NotFound when playlist does not exist`() = runTest {
+        fakePlaylistRepository.setPlaylistById(null)
+        
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        
+        viewModel.loadPlaylistDetail(999L)
+        advanceUntilIdle()
+        
+        assertEquals(PlaylistDetailUiState.NotFound, viewModel.detailState.value)
+    }
+    
     private fun createViewModel(): PlaylistsViewModel {
         return PlaylistsViewModel(application, fakePlaylistRepository)
     }
@@ -137,6 +202,7 @@ class PlaylistsViewModelTest {
 class TestPlaylistRepository : PlaylistRepository {
     private val playlists = MutableStateFlow<List<Playlist>>(emptyList())
     private val playlistTracks = MutableStateFlow<List<TrackInfo>>(emptyList())
+    private val playlistById = MutableStateFlow<Playlist?>(null)
     
     var createPlaylistCallCount = 0
         private set
@@ -157,6 +223,10 @@ class TestPlaylistRepository : PlaylistRepository {
     
     fun setPlaylists(playlistList: List<Playlist>) {
         playlists.value = playlistList
+    }
+    
+    fun setPlaylistById(playlist: Playlist?) {
+        playlistById.value = playlist
     }
     
     fun setPlaylistTracks(tracks: List<TrackInfo>) {
@@ -183,7 +253,7 @@ class TestPlaylistRepository : PlaylistRepository {
     }
     
     override fun getPlaylistById(playlistId: Long): Flow<Playlist?> {
-        return MutableStateFlow(playlists.value.find { it.id == playlistId })
+        return playlistById
     }
     
     override suspend fun addTrackToPlaylist(playlistId: Long, trackId: Long) {

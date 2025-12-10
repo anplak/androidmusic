@@ -7,6 +7,16 @@ import androidx.room.Query
 import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * Data class for playlist with track count from JOIN query.
+ */
+data class PlaylistWithTrackCount(
+    val id: Long,
+    val name: String,
+    val createdAt: Long,
+    val trackCount: Int
+)
+
 @Dao
 interface PlaylistDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -20,6 +30,15 @@ interface PlaylistDao {
 
     @Query("SELECT * FROM playlists ORDER BY createdAt DESC")
     fun getAllPlaylists(): Flow<List<PlaylistEntity>>
+    
+    @Query("""
+        SELECT p.id, p.name, p.createdAt, COUNT(pt.trackId) as trackCount
+        FROM playlists p
+        LEFT JOIN playlist_tracks pt ON p.id = pt.playlistId
+        GROUP BY p.id
+        ORDER BY p.createdAt DESC
+    """)
+    fun getAllPlaylistsWithTrackCount(): Flow<List<PlaylistWithTrackCount>>
 
     @Query("SELECT * FROM playlists WHERE id = :playlistId")
     suspend fun getPlaylistById(playlistId: Long): PlaylistEntity?
