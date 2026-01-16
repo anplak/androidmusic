@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -31,7 +32,8 @@ import com.anplak.androidmusic.player.TrackInfo
 enum class NavigationTab(val icon: ImageVector, val labelResId: Int) {
     Library(Icons.Default.LibraryMusic, R.string.your_library),
     Favorites(Icons.Default.Favorite, R.string.favorites),
-    Playlists(Icons.AutoMirrored.Filled.QueueMusic, R.string.playlists)
+    Playlists(Icons.AutoMirrored.Filled.QueueMusic, R.string.playlists),
+    History(Icons.Default.History, R.string.history)
 }
 
 sealed class AppScreen {
@@ -39,6 +41,7 @@ sealed class AppScreen {
     data object NowPlaying : AppScreen()
     data class PlaylistDetail(val playlistId: Long) : AppScreen()
     data class SmartPlaylistDetail(val type: SmartPlaylistType) : AppScreen()
+    data object Insights : AppScreen()
 }
 
 @Composable
@@ -207,6 +210,11 @@ private fun MainTabsContent(
                         onPlaylistSelected = onPlaylistSelected,
                         onSmartPlaylistSelected = onSmartPlaylistSelected,
                         viewModel = playlistsViewModel
+                    )
+                }
+                NavigationTab.History -> {
+                    HistoryScreen(
+                        onTrackSelected = onTrackSelected
                     )
                 }
             }

@@ -19,6 +19,19 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
+/**
+ * Unit tests for PlaybackViewModel.
+ * 
+ * Note: Play history recording is tested through E2E tests (HistoryE2ETest) because
+ * PlaybackViewModel creates repositories internally from AppDatabase. Full unit testing
+ * of history recording would require refactoring to constructor-inject repositories.
+ * 
+ * History recording behavior:
+ * - Records play history entry when a new track starts
+ * - Updates history entry duration when track completes or changes
+ * - Uses session ID to group plays within a session
+ * - Records completion to TrackStatsRepository when track reaches >90% completion
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class PlaybackViewModelTest {

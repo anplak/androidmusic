@@ -7,10 +7,13 @@ import com.anplak.androidmusic.data.FavoritesRepository
 import com.anplak.androidmusic.data.FavoritesRepositoryImpl
 import com.anplak.androidmusic.data.MusicLibraryRepository
 import com.anplak.androidmusic.data.MusicLibraryRepositoryImpl
+import com.anplak.androidmusic.data.PlayHistoryRepository
+import com.anplak.androidmusic.data.PlayHistoryRepositoryImpl
 import com.anplak.androidmusic.data.PlaylistRepository
 import com.anplak.androidmusic.data.PlaylistRepositoryImpl
 import com.anplak.androidmusic.data.TrackStatsRepository
 import com.anplak.androidmusic.data.TrackStatsRepositoryImpl
+import java.util.UUID
 import com.anplak.androidmusic.data.db.AppDatabase
 import com.anplak.androidmusic.player.AudioPlayer
 import com.anplak.androidmusic.player.PlayerError
@@ -46,6 +49,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     private val favoritesRepository: FavoritesRepository = FavoritesRepositoryImpl(database.favoriteDao())
     private val playlistRepository: PlaylistRepository = PlaylistRepositoryImpl(database.playlistDao())
     private val trackStatsRepository: TrackStatsRepository = TrackStatsRepositoryImpl(database.trackStatsDao())
+    private val playHistoryRepository: PlayHistoryRepository = PlayHistoryRepositoryImpl(database.playHistoryDao())
     private val musicLibraryRepository: MusicLibraryRepository = MusicLibraryRepositoryImpl(
         application.contentResolver,
         application,
@@ -66,6 +70,11 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     private var lastTrackWasPlaying: Boolean = false
     private var lastPosition: Long = 0L
     private var lastDuration: Long = 0L
+    
+    // Play history tracking
+    private var currentSessionId: String = UUID.randomUUID().toString()
+    private var currentHistoryEntryId: Long? = null
+    private var trackStartTime: Long = 0L
     
     init {
         // Connect to the service when ViewModel is created
@@ -118,9 +127,10 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     }
     
     /**
-     * Tracks playback statistics:
+     * Tracks playback statistics and history:
      * - Records play when a new track starts
      * - Records completion when a track finishes naturally (reaches ~end of duration)
+     * - Records play history entries for timeline view
      */
     private fun trackPlaybackStats(state: PlaybackUiState) {
         val currentTrackId = state.selectedTrack?.id
@@ -137,12 +147,19 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                     lastRecordedTrackId?.let { trackStatsRepository.recordCompletion(it) }
                 }
             }
+            
+            // Update play history entry with duration
+            finalizeHistoryEntry()
         }
         
         // Record new track play
         if (currentTrackId != null && currentTrackId != lastRecordedTrackId) {
             viewModelScope.launch {
                 trackStatsRepository.recordPlay(currentTrackId)
+                
+                // Record play history entry
+                currentHistoryEntryId = playHistoryRepository.recordPlay(currentTrackId, currentSessionId)
+                trackStartTime = System.currentTimeMillis()
             }
             lastRecordedTrackId = currentTrackId
         }
@@ -151,6 +168,19 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         lastTrackWasPlaying = state.isPlaying
         lastPosition = state.currentPosition
         lastDuration = state.duration
+    }
+    
+    /**
+     * Finalizes the current play history entry with the actual duration listened.
+     */
+    private fun finalizeHistoryEntry() {
+        val historyId = currentHistoryEntryId ?: return
+        val duration = if (lastPosition > 0) lastPosition else System.currentTimeMillis() - trackStartTime
+        
+        viewModelScope.launch {
+            playHistoryRepository.updateDuration(historyId, duration)
+        }
+        currentHistoryEntryId = null
     }
     
     /**
@@ -239,6 +269,8 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     
     override fun onCleared() {
         super.onCleared()
+        // Finalize any pending history entry before cleanup
+        finalizeHistoryEntry()
         audioPlayer.release()
     }
     
