@@ -155,7 +155,7 @@ fun NowPlayingScreen(
                 )
             )
         },
-        modifier = modifier
+        modifier = modifier.testTag("now_playing_screen")
     ) { paddingValues ->
         Column(
             modifier = Modifier
