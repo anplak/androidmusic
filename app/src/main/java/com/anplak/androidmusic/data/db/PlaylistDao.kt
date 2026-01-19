@@ -49,8 +49,17 @@ interface PlaylistDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun addTrackToPlaylist(crossRef: PlaylistTrackCrossRef)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun addTracksToPlaylist(crossRefs: List<PlaylistTrackCrossRef>)
+
     @Query("DELETE FROM playlist_tracks WHERE playlistId = :playlistId AND trackId = :trackId")
     suspend fun removeTrackFromPlaylist(playlistId: Long, trackId: Long)
+
+    @Query("DELETE FROM playlist_tracks WHERE playlistId = :playlistId AND trackId IN (:trackIds)")
+    suspend fun removeTracksFromPlaylist(playlistId: Long, trackIds: List<Long>)
+
+    @Query("DELETE FROM playlist_tracks WHERE playlistId = :playlistId")
+    suspend fun clearPlaylistTracks(playlistId: Long)
 
     @Query("""
         SELECT t.* FROM tracks t
@@ -59,6 +68,20 @@ interface PlaylistDao {
         ORDER BY pt.position ASC
     """)
     fun getPlaylistTracks(playlistId: Long): Flow<List<TrackEntity>>
+
+    @Query("""
+        SELECT * FROM playlist_tracks
+        WHERE playlistId = :playlistId
+        ORDER BY position ASC
+    """)
+    suspend fun getPlaylistTrackRefs(playlistId: Long): List<PlaylistTrackCrossRef>
+
+    @Query("""
+        SELECT trackId FROM playlist_tracks
+        WHERE playlistId = :playlistId
+        ORDER BY position ASC
+    """)
+    suspend fun getPlaylistTrackIds(playlistId: Long): List<Long>
 
     @Query("SELECT MAX(position) FROM playlist_tracks WHERE playlistId = :playlistId")
     suspend fun getMaxPosition(playlistId: Long): Int?
@@ -79,6 +102,26 @@ interface PlaylistDao {
                 position = maxPosition + 1
             )
         )
+    }
+
+    @Transaction
+    suspend fun replacePlaylistTracks(
+        playlistId: Long,
+        orderedTrackIds: List<Long>
+    ) {
+        val existing = getPlaylistTrackRefs(playlistId).associateBy { it.trackId }
+        clearPlaylistTracks(playlistId)
+        val newRefs = orderedTrackIds.mapIndexed { index, trackId ->
+            PlaylistTrackCrossRef(
+                playlistId = playlistId,
+                trackId = trackId,
+                position = index,
+                addedAt = existing[trackId]?.addedAt ?: System.currentTimeMillis()
+            )
+        }
+        if (newRefs.isNotEmpty()) {
+            addTracksToPlaylist(newRefs)
+        }
     }
 }
 

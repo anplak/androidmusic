@@ -8,7 +8,7 @@ A minimal offline music player for Android that automatically discovers and play
 - **Automatic library scanning**: Discovers all audio files on device via MediaStore
 - **Music library browsing**: Scrollable list of tracks with title, artist, and duration
 - **Favorites**: Mark tracks as favorites with a heart icon, view all favorites in a dedicated tab
-- **Playlists**: Create custom playlists, add/remove tracks, play entire playlists
+- **Playlists**: Create playlists, reorder tracks, bulk remove, duplicate/merge, and auto-mix from seeds
 - **Smart playlists**: Auto-generated playlists including Most Played, Recently Played, and Recently Added
 - **Smart shuffle**: Weighted shuffle that favors favorites and frequently played tracks
 - **Play statistics**: Tracks play count and completion for smart features
@@ -160,7 +160,7 @@ The app follows **MVVM architecture** with unidirectional data flow:
 - `LibraryScreen`: Scrollable list with favorite toggle and playlist menu
 - `FavoritesScreen`: List of favorited tracks
 - `PlaylistsScreen`: List of playlists with smart playlists section and create dialog
-- `PlaylistDetailScreen`: Playlist tracks with play and remove options
+- `PlaylistDetailScreen`: Playlist tracks with reorder, bulk remove, duplicate/merge, and auto-mix
 - `SmartPlaylistDetailScreen`: Read-only smart playlist tracks with play all
 - `NowPlayingScreen`: Playback UI with favorite toggle, add-to-playlist, and smart shuffle
 - `HistoryScreen`: Reverse chronological list of play history with pagination
@@ -244,7 +244,10 @@ To validate the app:
    - Create a new playlist using the FAB
    - Add tracks to playlist from library or Now Playing
    - Open playlist detail and verify tracks appear
-   - Remove tracks from playlist
+   - Reorder tracks with drag handles
+   - Remove tracks (single or multi-select)
+   - Duplicate or merge playlists into a new one
+   - Generate an auto-mix from a seed and save it
    - Delete playlist
 
 6. **Smart playlists**

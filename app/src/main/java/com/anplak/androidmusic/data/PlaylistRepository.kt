@@ -2,6 +2,7 @@ package com.anplak.androidmusic.data
 
 import com.anplak.androidmusic.data.db.PlaylistDao
 import com.anplak.androidmusic.data.db.PlaylistEntity
+import com.anplak.androidmusic.data.db.PlaylistTrackCrossRef
 import com.anplak.androidmusic.data.db.PlaylistWithTrackCount
 import com.anplak.androidmusic.player.TrackInfo
 import kotlinx.coroutines.flow.Flow
@@ -19,12 +20,17 @@ data class Playlist(
 
 interface PlaylistRepository {
     suspend fun createPlaylist(name: String): Long
+    suspend fun createPlaylistWithTracks(name: String, trackIds: List<Long>): Long
     suspend fun deletePlaylist(playlistId: Long)
     suspend fun renamePlaylist(playlistId: Long, name: String)
     fun getPlaylists(): Flow<List<Playlist>>
     fun getPlaylistById(playlistId: Long): Flow<Playlist?>
     suspend fun addTrackToPlaylist(playlistId: Long, trackId: Long)
     suspend fun removeTrackFromPlaylist(playlistId: Long, trackId: Long)
+    suspend fun removeTracksFromPlaylist(playlistId: Long, trackIds: List<Long>)
+    suspend fun reorderPlaylistTracks(playlistId: Long, orderedTrackIds: List<Long>)
+    suspend fun duplicatePlaylist(sourcePlaylistId: Long, name: String): Long
+    suspend fun mergePlaylists(primaryPlaylistId: Long, secondaryPlaylistId: Long, name: String): Long
     fun getPlaylistTracks(playlistId: Long): Flow<List<TrackInfo>>
     suspend fun isTrackInPlaylist(playlistId: Long, trackId: Long): Boolean
 }
@@ -35,6 +41,12 @@ class PlaylistRepositoryImpl(
 
     override suspend fun createPlaylist(name: String): Long {
         return playlistDao.createPlaylist(PlaylistEntity(name = name))
+    }
+
+    override suspend fun createPlaylistWithTracks(name: String, trackIds: List<Long>): Long {
+        val playlistId = playlistDao.createPlaylist(PlaylistEntity(name = name))
+        insertTracksAtPositions(playlistId, trackIds, emptyMap())
+        return playlistId
     }
 
     override suspend fun deletePlaylist(playlistId: Long) {
@@ -67,6 +79,48 @@ class PlaylistRepositoryImpl(
         playlistDao.removeTrackFromPlaylist(playlistId, trackId)
     }
 
+    override suspend fun removeTracksFromPlaylist(playlistId: Long, trackIds: List<Long>) {
+        if (trackIds.isEmpty()) return
+        playlistDao.removeTracksFromPlaylist(playlistId, trackIds)
+    }
+
+    override suspend fun reorderPlaylistTracks(playlistId: Long, orderedTrackIds: List<Long>) {
+        playlistDao.replacePlaylistTracks(playlistId, orderedTrackIds)
+    }
+
+    override suspend fun duplicatePlaylist(sourcePlaylistId: Long, name: String): Long {
+        val refs = playlistDao.getPlaylistTrackRefs(sourcePlaylistId)
+        val playlistId = playlistDao.createPlaylist(PlaylistEntity(name = name))
+        insertTracksAtPositions(
+            playlistId = playlistId,
+            trackIds = refs.map { it.trackId },
+            addedAtByTrackId = refs.associate { it.trackId to it.addedAt }
+        )
+        return playlistId
+    }
+
+    override suspend fun mergePlaylists(
+        primaryPlaylistId: Long,
+        secondaryPlaylistId: Long,
+        name: String
+    ): Long {
+        val primaryRefs = playlistDao.getPlaylistTrackRefs(primaryPlaylistId)
+        val secondaryRefs = playlistDao.getPlaylistTrackRefs(secondaryPlaylistId)
+        val mergedAddedAt = LinkedHashMap<Long, Long>()
+        (primaryRefs + secondaryRefs).forEach { ref ->
+            if (ref.trackId !in mergedAddedAt) {
+                mergedAddedAt[ref.trackId] = ref.addedAt
+            }
+        }
+        val playlistId = playlistDao.createPlaylist(PlaylistEntity(name = name))
+        insertTracksAtPositions(
+            playlistId = playlistId,
+            trackIds = mergedAddedAt.keys.toList(),
+            addedAtByTrackId = mergedAddedAt
+        )
+        return playlistId
+    }
+
     override fun getPlaylistTracks(playlistId: Long): Flow<List<TrackInfo>> {
         return playlistDao.getPlaylistTracks(playlistId).map { entities ->
             entities.map { it.toTrackInfo() }
@@ -75,6 +129,24 @@ class PlaylistRepositoryImpl(
 
     override suspend fun isTrackInPlaylist(playlistId: Long, trackId: Long): Boolean {
         return playlistDao.isTrackInPlaylist(playlistId, trackId)
+    }
+
+    private suspend fun insertTracksAtPositions(
+        playlistId: Long,
+        trackIds: List<Long>,
+        addedAtByTrackId: Map<Long, Long>
+    ) {
+        if (trackIds.isEmpty()) return
+        val now = System.currentTimeMillis()
+        val refs = trackIds.mapIndexed { index, trackId ->
+            PlaylistTrackCrossRef(
+                playlistId = playlistId,
+                trackId = trackId,
+                position = index,
+                addedAt = addedAtByTrackId[trackId] ?: now
+            )
+        }
+        playlistDao.addTracksToPlaylist(refs)
     }
 }
 

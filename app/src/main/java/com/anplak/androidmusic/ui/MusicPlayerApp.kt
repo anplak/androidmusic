@@ -106,6 +106,10 @@ fun MusicPlayerApp(
                             playbackViewModel.onTrackSelected(tracks, index)
                             currentScreen = AppScreen.NowPlaying
                         },
+                        onSmartShufflePlay = { tracks ->
+                            playbackViewModel.startSmartShuffleFromPlaylist(tracks)
+                            currentScreen = AppScreen.NowPlaying
+                        },
                         viewModel = playlistsViewModel
                     )
                 }

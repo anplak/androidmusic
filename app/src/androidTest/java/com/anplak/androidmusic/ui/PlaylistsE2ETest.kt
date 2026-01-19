@@ -4,13 +4,19 @@ import android.Manifest
 import android.os.Build
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onAllNodes
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
 import com.anplak.androidmusic.MainActivity
@@ -300,6 +306,216 @@ class PlaylistsE2ETest {
         composeTestRule
             .onNodeWithText("1 tracks")
             .assertIsDisplayed()
+    }
+
+    @Test
+    fun playlistReorder_updatesFirstItem() {
+        waitForLibraryLoaded()
+        if (!hasAtLeastTracks(2)) return
+
+        val playlistName = "Reorder Test ${System.currentTimeMillis()}"
+        val firstTitle = getTrackTitleOnly("track_item_0")
+        val secondTitle = getTrackTitleOnly("track_item_1")
+
+        createPlaylistWithTrack(playlistName, 0)
+        addTrackToExistingPlaylist(playlistName, 1)
+
+        openPlaylistDetail(playlistName)
+
+        // Open reorder mode
+        composeTestRule.onNodeWithContentDescription("More options").performClick()
+        composeTestRule.onNodeWithText("Reorder tracks").performClick()
+
+        // Drag second item above first
+        composeTestRule.onNodeWithTag("playlist_drag_handle_1").performTouchInput {
+            val center = this.center
+            down(center)
+            moveBy(androidx.compose.ui.geometry.Offset(0f, -300f))
+            up()
+        }
+
+        // Save order
+        composeTestRule.onNodeWithContentDescription("Save order").performClick()
+
+        composeTestRule.waitForIdle()
+
+        composeTestRule
+            .onNodeWithTag("playlist_track_item_0")
+            .assertTextContains(secondTitle)
+        composeTestRule
+            .onNodeWithTag("playlist_track_item_1")
+            .assertTextContains(firstTitle)
+    }
+
+    @Test
+    fun playlistMultiSelect_removesTracks() {
+        waitForLibraryLoaded()
+        if (!hasAtLeastTracks(2)) return
+
+        val playlistName = "MultiSelect Test ${System.currentTimeMillis()}"
+        val firstTitle = getTrackTitleOnly("track_item_0")
+        val secondTitle = getTrackTitleOnly("track_item_1")
+
+        createPlaylistWithTrack(playlistName, 0)
+        addTrackToExistingPlaylist(playlistName, 1)
+
+        openPlaylistDetail(playlistName)
+
+        composeTestRule.onNodeWithContentDescription("More options").performClick()
+        composeTestRule.onNodeWithText("Select tracks").performClick()
+
+        composeTestRule.onNodeWithTag("playlist_track_item_0").performClick()
+        composeTestRule.onNodeWithTag("playlist_track_item_1").performClick()
+
+        composeTestRule.onNodeWithContentDescription("Remove selected").performClick()
+        composeTestRule.onNodeWithText("Remove tracks").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Remove").performClick()
+
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("playlist_empty_state").assertIsDisplayed()
+        composeTestRule.onNodeWithText(firstTitle).assertDoesNotExist()
+        composeTestRule.onNodeWithText(secondTitle).assertDoesNotExist()
+    }
+
+    @Test
+    fun playlistDuplicateAndMerge_createNewPlaylists() {
+        waitForLibraryLoaded()
+        if (!hasAtLeastTracks(2)) return
+
+        val firstPlaylist = "Duplicate Base ${System.currentTimeMillis()}"
+        val secondPlaylist = "Merge Base ${System.currentTimeMillis()}"
+        val duplicateName = "Duplicate Result ${System.currentTimeMillis()}"
+        val mergedName = "Merged Result ${System.currentTimeMillis()}"
+
+        createPlaylistWithTrack(firstPlaylist, 0)
+        createPlaylistWithTrack(secondPlaylist, 1)
+
+        openPlaylistDetail(firstPlaylist)
+
+        composeTestRule.onNodeWithContentDescription("More options").performClick()
+        composeTestRule.onNodeWithText("Duplicate").performClick()
+        composeTestRule.onNodeWithText("Duplicate playlist").assertIsDisplayed()
+        composeTestRule.onAllNodes(hasSetTextAction()).onFirst().performTextInput(duplicateName)
+        composeTestRule.onNodeWithText("Duplicate").performClick()
+
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithContentDescription("More options").performClick()
+        composeTestRule.onNodeWithText("Merge into new").performClick()
+        composeTestRule.onNodeWithText("Merge playlists").assertIsDisplayed()
+        composeTestRule.onNodeWithText(secondPlaylist).performClick()
+        composeTestRule.onAllNodes(hasSetTextAction()).onFirst().performTextInput(mergedName)
+        composeTestRule.onNodeWithText("Merge").performClick()
+
+        composeTestRule.onNodeWithTag("playlist_detail_back_button").performClick()
+        composeTestRule.onNodeWithText(duplicateName).assertIsDisplayed()
+        composeTestRule.onNodeWithText(mergedName).assertIsDisplayed()
+    }
+
+    @Test
+    fun playlistAutoMix_generatesAndSavesMix() {
+        waitForLibraryLoaded()
+        if (!hasAtLeastTracks(1)) return
+
+        // Favorite the first track to seed auto-mix
+        composeTestRule.onNodeWithTag("favorite_button_0").performClick()
+
+        val playlistName = "AutoMix Base ${System.currentTimeMillis()}"
+        val mixName = "AutoMix Result ${System.currentTimeMillis()}"
+        createPlaylistWithTrack(playlistName, 0)
+        openPlaylistDetail(playlistName)
+
+        composeTestRule.onNodeWithContentDescription("More options").performClick()
+        composeTestRule.onNodeWithText("Generate mix").performClick()
+
+        if (composeTestRule.onAllNodes(hasText("About auto-mix")).fetchSemanticsNodes().isNotEmpty()) {
+            composeTestRule.onNodeWithText("Continue").performClick()
+        }
+
+        composeTestRule.onNodeWithText("Favorite tracks").assertIsDisplayed()
+        val seedText = getTrackDisplayText("track_item_0")
+        composeTestRule.onNodeWithText(seedText).performClick()
+
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("Save mix").assertIsDisplayed()
+        composeTestRule.onAllNodes(hasSetTextAction()).onFirst().performTextInput(mixName)
+        composeTestRule.onNodeWithText("Save mix").performClick()
+
+        composeTestRule.onNodeWithTag("playlist_detail_back_button").performClick()
+        composeTestRule.onNodeWithText(mixName).assertIsDisplayed()
+    }
+
+    @Test
+    fun playlistSmartShuffle_startsPlayback() {
+        waitForLibraryLoaded()
+        if (!hasAtLeastTracks(1)) return
+
+        val playlistName = "SmartShuffle Base ${System.currentTimeMillis()}"
+        createPlaylistWithTrack(playlistName, 0)
+        openPlaylistDetail(playlistName)
+
+        composeTestRule.onNodeWithContentDescription("More options").performClick()
+        composeTestRule.onNodeWithText("Smart shuffle play").performClick()
+
+        composeTestRule.onNodeWithTag("now_playing_screen").assertIsDisplayed()
+    }
+
+    private fun waitForLibraryLoaded() {
+        composeTestRule.waitForIdle()
+        composeTestRule.waitUntil(timeoutMillis = 10_000) {
+            val hasContent = composeTestRule
+                .onAllNodes(hasTestTag("track_list"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+            val hasEmpty = composeTestRule
+                .onAllNodes(hasTestTag("empty_state"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+            hasContent || hasEmpty
+        }
+    }
+
+    private fun hasAtLeastTracks(minCount: Int): Boolean {
+        val nodes = composeTestRule.onAllNodes(hasTestTag("track_item_0")).fetchSemanticsNodes()
+        if (minCount <= 1) return nodes.isNotEmpty()
+        return composeTestRule.onAllNodes(hasTestTag("track_item_${minCount - 1}")).fetchSemanticsNodes().isNotEmpty()
+    }
+
+    private fun getTrackTitleOnly(tag: String): String {
+        return getTrackDisplayText(tag).split("•").firstOrNull()?.trim().orEmpty()
+    }
+
+    private fun getTrackDisplayText(tag: String): String {
+        val node = composeTestRule.onNodeWithTag(tag).fetchSemanticsNode()
+        return node.config.getOrNull(SemanticsProperties.Text)?.joinToString(" ") { it.text }.orEmpty()
+    }
+
+    private fun createPlaylistWithTrack(playlistName: String, trackIndex: Int) {
+        composeTestRule.onNodeWithTag("more_button_$trackIndex").performClick()
+        composeTestRule.onNodeWithTag("add_to_playlist_menu_$trackIndex").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag("create_new_playlist_option").performClick()
+        composeTestRule.onNodeWithTag("new_playlist_name_input").performTextInput(playlistName)
+        composeTestRule.onNodeWithTag("create_and_add_button").performClick()
+        composeTestRule.waitForIdle()
+    }
+
+    private fun addTrackToExistingPlaylist(playlistName: String, trackIndex: Int) {
+        composeTestRule.onNodeWithTag("more_button_$trackIndex").performClick()
+        composeTestRule.onNodeWithTag("add_to_playlist_menu_$trackIndex").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText(playlistName).performClick()
+        composeTestRule.waitForIdle()
+    }
+
+    private fun openPlaylistDetail(playlistName: String) {
+        composeTestRule.onNodeWithTag("nav_playlists").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.waitUntil(timeoutMillis = 5_000) {
+            composeTestRule.onAllNodes(hasText(playlistName)).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(playlistName).performClick()
+        composeTestRule.waitForIdle()
     }
 }
 
