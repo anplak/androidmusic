@@ -105,3 +105,31 @@ data class TrackStatsEntity(
     val completionCount: Int = 0
 )
 
+/**
+ * Individual play history entry for listening history timeline.
+ * Each record represents a single play event (track started playing).
+ */
+@Entity(
+    tableName = "play_history",
+    foreignKeys = [
+        ForeignKey(
+            entity = TrackEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["trackId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [
+        Index("trackId"),
+        Index("playedAt")
+    ]
+)
+data class PlayHistoryEntity(
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0,
+    val trackId: Long,
+    val playedAt: Long = System.currentTimeMillis(),
+    val duration: Long = 0,
+    val sessionId: String? = null
+)
+

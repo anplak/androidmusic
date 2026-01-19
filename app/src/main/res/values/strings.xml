@@ -58,5 +58,23 @@
     <string name="smart_shuffle">Smart Shuffle</string>
     <string name="smart_shuffle_description">Weighted shuffle favoring your favorites</string>
     <string name="your_playlists">Your Playlists</string>
+    
+    <!-- History -->
+    <string name="history">History</string>
+    <string name="no_history">No listening history yet</string>
+    <string name="no_history_description">Your listening history will appear here after you play some music.</string>
+    <string name="played_at">Played at %s</string>
+    <string name="listened_for">Listened for %s</string>
+    
+    <!-- Insights -->
+    <string name="insights">Insights</string>
+    <string name="today">Today</string>
+    <string name="this_week">This Week</string>
+    <string name="total_play_time">Total Play Time</string>
+    <string name="top_tracks">Top Tracks</string>
+    <string name="top_artists">Top Artists</string>
+    <string name="no_insights">No listening data available</string>
+    <string name="no_insights_description">Play some music to see your listening insights.</string>
+    <string name="play_count">%d plays</string>
 </resources>
 
