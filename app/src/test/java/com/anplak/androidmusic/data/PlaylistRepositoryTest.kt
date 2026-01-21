@@ -129,6 +129,82 @@ class PlaylistRepositoryTest {
         assertEquals(1L, fakePlaylistDao.lastRemovedFromPlaylistId)
         assertEquals(2L, fakePlaylistDao.lastRemovedTrackId)
     }
+
+    @Test
+    fun `createPlaylistWithTracks inserts tracks in order`() = runTest {
+        fakePlaylistDao.setCreatedPlaylistId(10L)
+        
+        val playlistId = repository.createPlaylistWithTracks("Mix", listOf(4L, 2L, 7L))
+        
+        assertEquals(10L, playlistId)
+        assertTrue(fakePlaylistDao.addTracksCalled)
+        val refs = fakePlaylistDao.getPlaylistTrackRefs(10L)
+        assertEquals(listOf(4L, 2L, 7L), refs.map { it.trackId })
+        assertEquals(listOf(0, 1, 2), refs.map { it.position })
+    }
+
+    @Test
+    fun `removeTracksFromPlaylist calls DAO with ids`() = runTest {
+        repository.removeTracksFromPlaylist(3L, listOf(1L, 2L))
+        
+        assertTrue(fakePlaylistDao.removeTracksCalled)
+        assertEquals(3L, fakePlaylistDao.lastRemovedFromPlaylistId)
+        assertEquals(listOf(1L, 2L), fakePlaylistDao.lastRemovedTrackIds)
+    }
+
+    @Test
+    fun `reorderPlaylistTracks updates positions`() = runTest {
+        fakePlaylistDao.setPlaylistTrackRefs(
+            listOf(
+                PlaylistTrackCrossRef(5L, 1L, 0),
+                PlaylistTrackCrossRef(5L, 2L, 1),
+                PlaylistTrackCrossRef(5L, 3L, 2)
+            )
+        )
+        
+        repository.reorderPlaylistTracks(5L, listOf(3L, 1L, 2L))
+        
+        val reordered = fakePlaylistDao.getPlaylistTrackRefs(5L)
+        assertEquals(listOf(3L, 1L, 2L), reordered.map { it.trackId })
+        assertEquals(listOf(0, 1, 2), reordered.map { it.position })
+    }
+
+    @Test
+    fun `duplicatePlaylist copies tracks into new playlist`() = runTest {
+        fakePlaylistDao.setCreatedPlaylistId(8L)
+        fakePlaylistDao.setPlaylistTrackRefs(
+            listOf(
+                PlaylistTrackCrossRef(2L, 11L, 0, 100L),
+                PlaylistTrackCrossRef(2L, 12L, 1, 200L)
+            )
+        )
+        
+        val newId = repository.duplicatePlaylist(2L, "Copy")
+        
+        assertEquals(8L, newId)
+        val copied = fakePlaylistDao.getPlaylistTrackRefs(8L)
+        assertEquals(listOf(11L, 12L), copied.map { it.trackId })
+    }
+
+    @Test
+    fun `mergePlaylists dedupes tracks and preserves order`() = runTest {
+        fakePlaylistDao.setCreatedPlaylistId(9L)
+        fakePlaylistDao.setPlaylistTrackRefs(
+            listOf(
+                PlaylistTrackCrossRef(1L, 1L, 0, 100L),
+                PlaylistTrackCrossRef(1L, 2L, 1, 200L),
+                PlaylistTrackCrossRef(2L, 2L, 0, 300L),
+                PlaylistTrackCrossRef(2L, 3L, 1, 400L)
+            )
+        )
+        
+        val mergedId = repository.mergePlaylists(1L, 2L, "Merged")
+        
+        assertEquals(9L, mergedId)
+        val merged = fakePlaylistDao.getPlaylistTrackRefs(9L)
+        assertEquals(listOf(1L, 2L, 3L), merged.map { it.trackId })
+        assertEquals(listOf(0, 1, 2), merged.map { it.position })
+    }
     
     @Test
     fun `getPlaylistTracks converts entities to TrackInfo`() = runTest {
@@ -162,6 +238,7 @@ class FakePlaylistDao : PlaylistDao {
     private val playlists = MutableStateFlow<List<PlaylistEntity>>(emptyList())
     private val playlistById = MutableStateFlow<PlaylistEntity?>(null)
     private val playlistTracks = MutableStateFlow<List<TrackEntity>>(emptyList())
+    private val playlistTrackRefs = mutableListOf<PlaylistTrackCrossRef>()
     private var trackInPlaylist = false
     
     var createPlaylistCalled = false
@@ -180,11 +257,17 @@ class FakePlaylistDao : PlaylistDao {
         private set
     var addTrackCalled = false
         private set
+    var addTracksCalled = false
+        private set
     var removeTrackCalled = false
+        private set
+    var removeTracksCalled = false
         private set
     var lastRemovedFromPlaylistId: Long? = null
         private set
     var lastRemovedTrackId: Long? = null
+        private set
+    var lastRemovedTrackIds: List<Long> = emptyList()
         private set
     
     fun setCreatedPlaylistId(id: Long) {
@@ -201,6 +284,11 @@ class FakePlaylistDao : PlaylistDao {
     
     fun setPlaylistTracks(tracks: List<TrackEntity>) {
         playlistTracks.value = tracks
+    }
+
+    fun setPlaylistTrackRefs(refs: List<PlaylistTrackCrossRef>) {
+        playlistTrackRefs.clear()
+        playlistTrackRefs.addAll(refs)
     }
     
     fun setTrackInPlaylist(value: Boolean) {
@@ -243,16 +331,42 @@ class FakePlaylistDao : PlaylistDao {
     
     override suspend fun addTrackToPlaylist(crossRef: PlaylistTrackCrossRef) {
         addTrackCalled = true
+        playlistTrackRefs.add(crossRef)
+    }
+
+    override suspend fun addTracksToPlaylist(crossRefs: List<PlaylistTrackCrossRef>) {
+        addTracksCalled = true
+        playlistTrackRefs.addAll(crossRefs)
     }
     
     override suspend fun removeTrackFromPlaylist(playlistId: Long, trackId: Long) {
         removeTrackCalled = true
         lastRemovedFromPlaylistId = playlistId
         lastRemovedTrackId = trackId
+        playlistTrackRefs.removeAll { it.playlistId == playlistId && it.trackId == trackId }
+    }
+
+    override suspend fun removeTracksFromPlaylist(playlistId: Long, trackIds: List<Long>) {
+        removeTracksCalled = true
+        lastRemovedFromPlaylistId = playlistId
+        lastRemovedTrackIds = trackIds
+        playlistTrackRefs.removeAll { it.playlistId == playlistId && it.trackId in trackIds }
+    }
+
+    override suspend fun clearPlaylistTracks(playlistId: Long) {
+        playlistTrackRefs.removeAll { it.playlistId == playlistId }
     }
     
     override fun getPlaylistTracks(playlistId: Long): Flow<List<TrackEntity>> = playlistTracks
     
+    override suspend fun getPlaylistTrackRefs(playlistId: Long): List<PlaylistTrackCrossRef> {
+        return playlistTrackRefs.filter { it.playlistId == playlistId }.sortedBy { it.position }
+    }
+
+    override suspend fun getPlaylistTrackIds(playlistId: Long): List<Long> {
+        return playlistTrackRefs.filter { it.playlistId == playlistId }.sortedBy { it.position }.map { it.trackId }
+    }
+
     override suspend fun getMaxPosition(playlistId: Long): Int? = 0
     
     override fun getPlaylistTrackCount(playlistId: Long): Flow<Int> = MutableStateFlow(playlistTracks.value.size)

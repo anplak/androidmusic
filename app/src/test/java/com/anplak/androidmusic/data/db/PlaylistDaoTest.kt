@@ -115,6 +115,38 @@ class PlaylistDaoTest {
         
         assertFalse(playlistDao.isTrackInPlaylist(playlistId, 1))
     }
+
+    @Test
+    fun `removeTracksFromPlaylist removes multiple tracks`() = runTest {
+        val playlistId = playlistDao.createPlaylist(PlaylistEntity(name = "My Playlist"))
+        trackDao.insert(createTrackEntity(1))
+        trackDao.insert(createTrackEntity(2))
+        trackDao.insert(createTrackEntity(3))
+        playlistDao.addTrackToPlaylistAtEnd(playlistId, 1)
+        playlistDao.addTrackToPlaylistAtEnd(playlistId, 2)
+        playlistDao.addTrackToPlaylistAtEnd(playlistId, 3)
+        
+        playlistDao.removeTracksFromPlaylist(playlistId, listOf(1L, 3L))
+        
+        val tracks = playlistDao.getPlaylistTracks(playlistId).first()
+        assertEquals(listOf(2L), tracks.map { it.id })
+    }
+
+    @Test
+    fun `replacePlaylistTracks updates order`() = runTest {
+        val playlistId = playlistDao.createPlaylist(PlaylistEntity(name = "My Playlist"))
+        trackDao.insert(createTrackEntity(1))
+        trackDao.insert(createTrackEntity(2))
+        trackDao.insert(createTrackEntity(3))
+        playlistDao.addTrackToPlaylistAtEnd(playlistId, 1)
+        playlistDao.addTrackToPlaylistAtEnd(playlistId, 2)
+        playlistDao.addTrackToPlaylistAtEnd(playlistId, 3)
+        
+        playlistDao.replacePlaylistTracks(playlistId, listOf(3L, 1L, 2L))
+        
+        val tracks = playlistDao.getPlaylistTracks(playlistId).first()
+        assertEquals(listOf(3L, 1L, 2L), tracks.map { it.id })
+    }
     
     @Test
     fun `isTrackInPlaylist returns correct value`() = runTest {

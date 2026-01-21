@@ -266,6 +266,26 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
             }
         }
     }
+
+    /**
+     * Starts smart shuffle mode using a provided track list (e.g., a playlist).
+     */
+    fun startSmartShuffleFromPlaylist(tracks: List<TrackInfo>) {
+        viewModelScope.launch {
+            if (tracks.isEmpty()) return@launch
+            val recentlyPlayedIds = queue.tracks
+                .take(SMART_SHUFFLE_RECENT_EXCLUDE_COUNT)
+                .map { it.id }
+                .toSet()
+            val shuffledTracks = smartShuffleGenerator.generateShuffledQueue(
+                tracks = tracks,
+                recentlyPlayedIds = recentlyPlayedIds
+            )
+            if (shuffledTracks.isNotEmpty()) {
+                onTrackSelected(shuffledTracks, 0)
+            }
+        }
+    }
     
     override fun onCleared() {
         super.onCleared()
