@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
+import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.LibraryMusic
@@ -26,10 +27,12 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anplak.androidmusic.R
+import com.anplak.androidmusic.data.RecommendationRow
 import com.anplak.androidmusic.data.SmartPlaylistType
 import com.anplak.androidmusic.player.TrackInfo
 
 enum class NavigationTab(val icon: ImageVector, val labelResId: Int) {
+    ForYou(Icons.Default.Explore, R.string.for_you),
     Library(Icons.Default.LibraryMusic, R.string.your_library),
     Favorites(Icons.Default.Favorite, R.string.favorites),
     Playlists(Icons.AutoMirrored.Filled.QueueMusic, R.string.playlists),
@@ -41,18 +44,20 @@ sealed class AppScreen {
     data object NowPlaying : AppScreen()
     data class PlaylistDetail(val playlistId: Long) : AppScreen()
     data class SmartPlaylistDetail(val type: SmartPlaylistType) : AppScreen()
+    data class RecommendationDetail(val rowId: String) : AppScreen()
     data object Insights : AppScreen()
 }
 
 @Composable
 fun MusicPlayerApp(
     playbackViewModel: PlaybackViewModel = viewModel(),
-    playlistsViewModel: PlaylistsViewModel = viewModel()
+    playlistsViewModel: PlaylistsViewModel = viewModel(),
+    discoveryViewModel: DiscoveryViewModel = viewModel()
 ) {
     val uiState by playbackViewModel.uiState.collectAsState()
     val permissionState = rememberAudioPermissionState()
     
-    var currentTab by remember { mutableStateOf(NavigationTab.Library) }
+    var currentTab by remember { mutableStateOf(NavigationTab.ForYou) }
     var currentScreen by remember { mutableStateOf<AppScreen>(AppScreen.MainTabs) }
     var trackForPlaylistDialog by remember { mutableStateOf<TrackInfo?>(null) }
 
@@ -126,6 +131,19 @@ fun MusicPlayerApp(
                     )
                 }
 
+                currentScreen is AppScreen.RecommendationDetail -> {
+                    val rowId = (currentScreen as AppScreen.RecommendationDetail).rowId
+                    RecommendationDetailScreen(
+                        rowId = rowId,
+                        onBackClick = { currentScreen = AppScreen.MainTabs },
+                        onPlayAll = { tracks, index ->
+                            playbackViewModel.onTrackSelected(tracks, index)
+                            currentScreen = AppScreen.NowPlaying
+                        },
+                        viewModel = discoveryViewModel
+                    )
+                }
+
                 else -> {
                     MainTabsContent(
                         currentTab = currentTab,
@@ -143,7 +161,15 @@ fun MusicPlayerApp(
                         onSmartPlaylistSelected = { type ->
                             currentScreen = AppScreen.SmartPlaylistDetail(type)
                         },
-                        playlistsViewModel = playlistsViewModel
+                        onRecommendationRowSelected = { row ->
+                            currentScreen = AppScreen.RecommendationDetail(row.id)
+                        },
+                        onPlayRecommendationRow = { row ->
+                            playbackViewModel.startSmartShuffleFromPlaylist(row.tracks)
+                            currentScreen = AppScreen.NowPlaying
+                        },
+                        playlistsViewModel = playlistsViewModel,
+                        discoveryViewModel = discoveryViewModel
                     )
                 }
             }
@@ -174,7 +200,10 @@ private fun MainTabsContent(
     onAddToPlaylist: (TrackInfo) -> Unit,
     onPlaylistSelected: (Long) -> Unit,
     onSmartPlaylistSelected: (SmartPlaylistType) -> Unit,
-    playlistsViewModel: PlaylistsViewModel
+    onRecommendationRowSelected: (RecommendationRow) -> Unit,
+    onPlayRecommendationRow: (RecommendationRow) -> Unit,
+    playlistsViewModel: PlaylistsViewModel,
+    discoveryViewModel: DiscoveryViewModel
 ) {
     Scaffold(
         bottomBar = {
@@ -197,6 +226,14 @@ private fun MainTabsContent(
                 .padding(paddingValues)
         ) {
             when (currentTab) {
+                NavigationTab.ForYou -> {
+                    ForYouScreen(
+                        onRowSelected = onRecommendationRowSelected,
+                        onPlayRow = onPlayRecommendationRow,
+                        onTrackSelected = onTrackSelected,
+                        viewModel = discoveryViewModel
+                    )
+                }
                 NavigationTab.Library -> {
                     LibraryScreen(
                         onTrackSelected = onTrackSelected,

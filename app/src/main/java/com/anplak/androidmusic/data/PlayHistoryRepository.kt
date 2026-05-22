@@ -88,6 +88,16 @@ interface PlayHistoryRepository {
      * Returns the number of entries deleted.
      */
     suspend fun cleanupOldHistory(retentionDays: Int): Int
+
+    /**
+     * Track IDs frequently played in the same session as [seedTrackId].
+     */
+    suspend fun getCoPlayedTrackIds(seedTrackId: Long, limit: Int): List<Long>
+
+    /**
+     * Track IDs from the user's most recent listening session.
+     */
+    suspend fun getLastSessionTrackIds(limit: Int): List<Long>
 }
 
 class PlayHistoryRepositoryImpl(
@@ -150,6 +160,14 @@ class PlayHistoryRepositoryImpl(
     override suspend fun cleanupOldHistory(retentionDays: Int): Int {
         val cutoffTime = System.currentTimeMillis() - (retentionDays * 24 * 60 * 60 * 1000L)
         return playHistoryDao.deleteHistoryOlderThan(cutoffTime)
+    }
+
+    override suspend fun getCoPlayedTrackIds(seedTrackId: Long, limit: Int): List<Long> {
+        return playHistoryDao.getCoPlayedTrackIds(seedTrackId, limit).map { it.trackId }
+    }
+
+    override suspend fun getLastSessionTrackIds(limit: Int): List<Long> {
+        return playHistoryDao.getLastSessionTrackIds(limit)
     }
 }
 

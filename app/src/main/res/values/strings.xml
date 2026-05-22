@@ -15,6 +15,15 @@
     <string name="file_not_found">File not found or cannot be accessed</string>
     <string name="unsupported_format">Unsupported audio format</string>
     <string name="playback_error">Playback error occurred</string>
+    <!-- For You / Discovery -->
+    <string name="for_you">For You</string>
+    <string name="for_you_empty_title">No recommendations yet</string>
+    <string name="for_you_empty_description">Listen to more music to get personalized recommendations.</string>
+    <string name="refresh_recommendations">Refresh recommendations</string>
+    <string name="see_all">See all</string>
+    <string name="play_mix">Play mix</string>
+    <string name="unknown_artist">Unknown Artist</string>
+
     <string name="your_library">Your Library</string>
     <string name="scanning_library">Scanning library…</string>
     <string name="no_music_found">No music found</string>

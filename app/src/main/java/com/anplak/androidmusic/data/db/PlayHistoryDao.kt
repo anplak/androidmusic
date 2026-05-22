@@ -143,4 +143,37 @@ interface PlayHistoryDao {
      */
     @Query("DELETE FROM play_history")
     suspend fun deleteAll()
+
+    /**
+     * Tracks often played in the same session as [seedTrackId] (co-occurrence).
+     */
+    @Query("""
+        SELECT ph2.trackId AS trackId, COUNT(*) AS playCount
+        FROM play_history ph1
+        INNER JOIN play_history ph2
+            ON ph1.sessionId = ph2.sessionId
+            AND ph1.trackId != ph2.trackId
+        WHERE ph1.trackId = :seedTrackId
+          AND ph1.sessionId IS NOT NULL
+        GROUP BY ph2.trackId
+        ORDER BY playCount DESC
+        LIMIT :limit
+    """)
+    suspend fun getCoPlayedTrackIds(seedTrackId: Long, limit: Int): List<TrackPlayCountResult>
+
+    /**
+     * Distinct track IDs from the most recent listening session.
+     */
+    @Query("""
+        SELECT DISTINCT trackId FROM play_history
+        WHERE sessionId = (
+            SELECT sessionId FROM play_history
+            WHERE sessionId IS NOT NULL
+            ORDER BY playedAt DESC
+            LIMIT 1
+        )
+        ORDER BY playedAt DESC
+        LIMIT :limit
+    """)
+    suspend fun getLastSessionTrackIds(limit: Int): List<Long>
 }

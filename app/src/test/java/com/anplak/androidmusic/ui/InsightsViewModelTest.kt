@@ -242,6 +242,10 @@ class TestInsightsPlayHistoryRepository : PlayHistoryRepository {
     override suspend fun getHistoryCount(): Int = 0
 
     override suspend fun cleanupOldHistory(retentionDays: Int): Int = 0
+
+    override suspend fun getCoPlayedTrackIds(seedTrackId: Long, limit: Int): List<Long> = emptyList()
+
+    override suspend fun getLastSessionTrackIds(limit: Int): List<Long> = emptyList()
 }
 
 class TestTrackDao : TrackDao {
