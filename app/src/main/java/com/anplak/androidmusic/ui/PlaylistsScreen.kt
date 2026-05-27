@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.LibraryAdd
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -53,16 +54,29 @@ import com.anplak.androidmusic.data.SmartPlaylistType
 fun PlaylistsScreen(
     onPlaylistSelected: (Long) -> Unit,
     onSmartPlaylistSelected: (SmartPlaylistType) -> Unit = {},
+    onOpenSearch: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: PlaylistsViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val searchQuery by viewModel.playlistSearchQuery.collectAsState()
     var showCreateDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(text = stringResource(R.string.playlists)) },
+                actions = {
+                    IconButton(
+                        onClick = onOpenSearch,
+                        modifier = Modifier.testTag("open_search")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = stringResource(R.string.search)
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -91,22 +105,34 @@ fun PlaylistsScreen(
                 is PlaylistsUiState.Loading -> {
                     LoadingState()
                 }
-                is PlaylistsUiState.Empty -> {
-                    // Show smart playlists even when no user playlists exist
-                    PlaylistListWithSmartPlaylists(
-                        playlists = emptyList(),
-                        onPlaylistSelected = onPlaylistSelected,
-                        onSmartPlaylistSelected = onSmartPlaylistSelected,
-                        onDeletePlaylist = { }
-                    )
-                }
+                is PlaylistsUiState.Empty,
                 is PlaylistsUiState.Content -> {
-                    PlaylistListWithSmartPlaylists(
-                        playlists = state.playlists,
-                        onPlaylistSelected = onPlaylistSelected,
-                        onSmartPlaylistSelected = onSmartPlaylistSelected,
-                        onDeletePlaylist = { viewModel.deletePlaylist(it) }
-                    )
+                    val playlists = when (state) {
+                        is PlaylistsUiState.Content -> state.playlists
+                        else -> emptyList()
+                    }
+                    val filtered = playlists.filter { playlist ->
+                        searchQuery.isBlank() ||
+                            playlist.name.contains(searchQuery, ignoreCase = true)
+                    }
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = viewModel::setPlaylistSearchQuery,
+                            placeholder = { Text(stringResource(R.string.search_playlists_hint)) },
+                            singleLine = true,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                                .testTag("playlists_search_field")
+                        )
+                        PlaylistListWithSmartPlaylists(
+                            playlists = filtered,
+                            onPlaylistSelected = onPlaylistSelected,
+                            onSmartPlaylistSelected = onSmartPlaylistSelected,
+                            onDeletePlaylist = { viewModel.deletePlaylist(it) }
+                        )
+                    }
                 }
             }
         }

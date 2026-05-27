@@ -176,4 +176,17 @@ interface PlayHistoryDao {
         LIMIT :limit
     """)
     suspend fun getLastSessionTrackIds(limit: Int): List<Long>
+
+    @Query("""
+        SELECT ph.id, ph.trackId, ph.playedAt, ph.duration, ph.sessionId,
+               t.title, t.artist, t.album, t.duration AS trackDuration
+        FROM play_history ph
+        INNER JOIN tracks t ON ph.trackId = t.id
+        WHERE t.title LIKE '%' || :query || '%' COLLATE NOCASE
+           OR t.artist LIKE '%' || :query || '%' COLLATE NOCASE
+           OR t.album LIKE '%' || :query || '%' COLLATE NOCASE
+        ORDER BY ph.playedAt DESC
+        LIMIT :limit
+    """)
+    suspend fun searchHistory(query: String, limit: Int): List<PlayHistoryWithTrack>
 }

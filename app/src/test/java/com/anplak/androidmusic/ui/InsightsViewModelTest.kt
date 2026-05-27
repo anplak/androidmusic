@@ -269,6 +269,11 @@ class TestTrackDao : TrackDao {
     override fun getRecentlyAddedTracks(limit: Int): Flow<List<TrackEntity>> =
         MutableStateFlow(tracks.take(limit))
 
+    override suspend fun getTracksAddedSince(sinceMs: Long): List<TrackEntity> =
+        tracks.filter { it.firstSeenAt >= sinceMs }
+
+    override suspend fun searchTracks(query: String, limit: Int): List<TrackEntity> = emptyList()
+
     override suspend fun deleteStaleEntries(validIds: List<Long>) {}
 
     override suspend fun deleteAll() {}

@@ -85,5 +85,28 @@
     <string name="no_insights">No listening data available</string>
     <string name="no_insights_description">Play some music to see your listening insights.</string>
     <string name="play_count">%d plays</string>
+
+    <!-- Search -->
+    <string name="search">Search</string>
+    <string name="search_back">Back</string>
+    <string name="search_hint">Search library, playlists, history…</string>
+    <string name="search_library_hint">Filter your library…</string>
+    <string name="search_playlists_hint">Filter playlists…</string>
+    <string name="search_recent">Recent searches</string>
+    <string name="search_suggestions">Suggestions</string>
+    <string name="no_search_results">No results found</string>
+    <string name="no_search_results_description">Try a different spelling or a shorter query.</string>
+    <string name="filter_favorites">Favorites</string>
+    <string name="filter_recently_added">Recently added</string>
+    <string name="filter_duration_short">Short</string>
+    <string name="filter_duration_medium">Medium</string>
+    <string name="filter_duration_long">Long</string>
+    <string name="library_no_filter_results">No matching tracks</string>
+    <string name="library_no_filter_results_description">Clear filters or broaden your search.</string>
+    <string name="search_section_tracks">Tracks</string>
+    <string name="search_section_artists">Artists</string>
+    <string name="search_section_albums">Albums</string>
+    <string name="search_section_playlists">Playlists</string>
+    <string name="search_section_history">History</string>
 </resources>
 

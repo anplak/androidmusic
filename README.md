@@ -9,6 +9,7 @@ A minimal offline music player for Android that automatically discovers and play
 - **Music library browsing**: Scrollable list of tracks with title, artist, and duration
 - **Favorites**: Mark tracks as favorites with a heart icon, view all favorites in a dedicated tab
 - **For You**: Personalized discovery tab with Daily Mix, Quick Mix, “Because you listen to…”, and Continue Listening rows (fully on-device)
+- **Search & filters**: Global search across library, playlists, and history; library filter chips (favorites, recently added, duration)
 - **Playlists**: Create playlists, reorder tracks, bulk remove, duplicate/merge, and auto-mix from seeds
 - **Smart playlists**: Auto-generated playlists including Most Played, Recently Played, and Recently Added
 - **Smart shuffle**: Weighted shuffle that favors favorites and frequently played tracks
@@ -207,9 +208,8 @@ The following features are intentionally out of scope for the current iteration:
 
 - Repeat mode (basic shuffle available via smart shuffle)
 - Persistent queue across app restarts
-- Albums/artists views and filtering
+- Albums/artists dedicated browse views
 - Sorting options
-- Search functionality
 - Export/sharing of listening stats
 - Complex charts/visualizations
 
@@ -266,7 +266,13 @@ To validate the app:
    - Play several tracks to build play history
    - Use smart shuffle again - favorites and frequently played should appear more often
 
-8. **Listening history**
+8. **Search & filters**
+   - Library tab: use filter chips (Favorites, Recently added, duration) and the library search field
+   - Tap the search icon on Library or Playlists for global search (tracks, playlists, history)
+   - Tap a track or history result to play; tap a playlist to open detail
+   - On-device E2E: `./scripts/run-e2e-search-filter-wifi.sh` (requires adb + Wi-Fi debugging)
+
+9. **Listening history**
    - Navigate to History tab
    - Verify empty state when no history
    - Play a track from the library
@@ -398,10 +404,9 @@ app/src/main/java/com/anplak/androidmusic/
 
 Planned workflow stories (see `.cursor/workflow/` for specs):
 
-- **Story 9**: Search and filter experience
 - **Story 10**: Polish, performance, and release candidate
 
-**Story 7** (recommendations and discovery) and **Story 8** (advanced playlist curation) are **implemented**.
+**Stories 7–9** (recommendations, playlist curation, search & filters) are **implemented**.
 
 Still planned:
 

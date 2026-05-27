@@ -46,13 +46,15 @@ sealed class AppScreen {
     data class SmartPlaylistDetail(val type: SmartPlaylistType) : AppScreen()
     data class RecommendationDetail(val rowId: String) : AppScreen()
     data object Insights : AppScreen()
+    data object Search : AppScreen()
 }
 
 @Composable
 fun MusicPlayerApp(
     playbackViewModel: PlaybackViewModel = viewModel(),
     playlistsViewModel: PlaylistsViewModel = viewModel(),
-    discoveryViewModel: DiscoveryViewModel = viewModel()
+    discoveryViewModel: DiscoveryViewModel = viewModel(),
+    searchViewModel: SearchViewModel = viewModel()
 ) {
     val uiState by playbackViewModel.uiState.collectAsState()
     val permissionState = rememberAudioPermissionState()
@@ -60,6 +62,7 @@ fun MusicPlayerApp(
     var currentTab by remember { mutableStateOf(NavigationTab.ForYou) }
     var currentScreen by remember { mutableStateOf<AppScreen>(AppScreen.MainTabs) }
     var trackForPlaylistDialog by remember { mutableStateOf<TrackInfo?>(null) }
+    var librarySearchHint by remember { mutableStateOf<String?>(null) }
 
     MaterialTheme {
         Surface(
@@ -144,6 +147,25 @@ fun MusicPlayerApp(
                     )
                 }
 
+                currentScreen is AppScreen.Search -> {
+                    SearchScreen(
+                        onBackClick = { currentScreen = AppScreen.MainTabs },
+                        onTrackSelected = { tracks, index ->
+                            playbackViewModel.onTrackSelected(tracks, index)
+                            currentScreen = AppScreen.NowPlaying
+                        },
+                        onPlaylistSelected = { playlistId ->
+                            currentScreen = AppScreen.PlaylistDetail(playlistId)
+                        },
+                        onNavigateToLibrary = { query ->
+                            librarySearchHint = query
+                            currentTab = NavigationTab.Library
+                            currentScreen = AppScreen.MainTabs
+                        },
+                        viewModel = searchViewModel
+                    )
+                }
+
                 else -> {
                     MainTabsContent(
                         currentTab = currentTab,
@@ -168,6 +190,9 @@ fun MusicPlayerApp(
                             playbackViewModel.startSmartShuffleFromPlaylist(row.tracks)
                             currentScreen = AppScreen.NowPlaying
                         },
+                        onOpenSearch = { currentScreen = AppScreen.Search },
+                        librarySearchHint = librarySearchHint,
+                        onConsumeLibraryHint = { librarySearchHint = null },
                         playlistsViewModel = playlistsViewModel,
                         discoveryViewModel = discoveryViewModel
                     )
@@ -202,6 +227,9 @@ private fun MainTabsContent(
     onSmartPlaylistSelected: (SmartPlaylistType) -> Unit,
     onRecommendationRowSelected: (RecommendationRow) -> Unit,
     onPlayRecommendationRow: (RecommendationRow) -> Unit,
+    onOpenSearch: () -> Unit,
+    librarySearchHint: String?,
+    onConsumeLibraryHint: () -> Unit,
     playlistsViewModel: PlaylistsViewModel,
     discoveryViewModel: DiscoveryViewModel
 ) {
@@ -237,7 +265,10 @@ private fun MainTabsContent(
                 NavigationTab.Library -> {
                     LibraryScreen(
                         onTrackSelected = onTrackSelected,
-                        onAddToPlaylist = onAddToPlaylist
+                        onAddToPlaylist = onAddToPlaylist,
+                        onOpenSearch = onOpenSearch,
+                        initialLocalQuery = librarySearchHint,
+                        onConsumeLibraryHint = onConsumeLibraryHint
                     )
                 }
                 NavigationTab.Favorites -> {
@@ -250,6 +281,7 @@ private fun MainTabsContent(
                     PlaylistsScreen(
                         onPlaylistSelected = onPlaylistSelected,
                         onSmartPlaylistSelected = onSmartPlaylistSelected,
+                        onOpenSearch = onOpenSearch,
                         viewModel = playlistsViewModel
                     )
                 }

@@ -376,5 +376,8 @@ class FakePlaylistDao : PlaylistDao {
     override suspend fun addTrackToPlaylistAtEnd(playlistId: Long, trackId: Long) {
         addTrackCalled = true
     }
+
+    override suspend fun searchPlaylists(query: String, limit: Int): List<PlaylistWithTrackCount> =
+        emptyList()
 }
 

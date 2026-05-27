@@ -7,6 +7,8 @@ import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextClearance
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import com.anplak.androidmusic.MainActivity
 
@@ -55,11 +57,66 @@ fun MainActivityComposeRule.navigateToLibrary() {
     waitForLibraryContent()
 }
 
-/** Waits until the Library tab list or empty state is visible. */
+/** Waits until the Library tab has loaded (list, empty, or filter UI). */
 fun MainActivityComposeRule.waitForLibraryContent() {
     waitUntil(timeoutMillis = 15_000) {
-        safeHasNodes(hasTestTag("track_list")) || safeHasNodes(hasTestTag("empty_state"))
+        safeHasNodes(hasTestTag("track_list")) ||
+            safeHasNodes(hasTestTag("empty_state")) ||
+            safeHasNodes(hasTestTag("library_search_field"))
     }
+}
+
+fun MainActivityComposeRule.navigateToPlaylists() {
+    onNodeWithTag("nav_playlists").performClick()
+    waitUntil(timeoutMillis = 15_000) {
+        safeHasNodes(hasTestTag("playlists_list")) ||
+            safeHasNodes(hasTestTag("playlists_search_field"))
+    }
+}
+
+fun MainActivityComposeRule.openSearchFromLibrary() {
+    onNodeWithTag("open_search").performClick()
+    waitForSearchScreen()
+}
+
+fun MainActivityComposeRule.openSearchFromPlaylists() {
+    onNodeWithTag("open_search").performClick()
+    waitForSearchScreen()
+}
+
+/** Global search overlay is visible. */
+fun MainActivityComposeRule.waitForSearchScreen() {
+    waitUntil(timeoutMillis = 10_000) {
+        safeHasNodes(hasTestTag("search_field"))
+    }
+}
+
+/** Search finished: results, no results, or idle suggestions. */
+fun MainActivityComposeRule.waitForSearchSettled() {
+    waitUntil(timeoutMillis = 15_000) {
+        safeHasNodes(hasTestTag("search_results")) ||
+            safeHasNodes(hasTestTag("search_no_results")) ||
+            safeHasNodes(hasTestTag("search_idle")) ||
+            safeHasNodes(hasTestTag("search_error"))
+    }
+}
+
+fun MainActivityComposeRule.typeInSearchField(text: String) {
+    onNodeWithTag("search_field").performClick()
+    onNodeWithTag("search_field").performTextClearance()
+    onNodeWithTag("search_field").performTextInput(text)
+}
+
+fun MainActivityComposeRule.typeInLibrarySearchField(text: String) {
+    onNodeWithTag("library_search_field").performClick()
+    onNodeWithTag("library_search_field").performTextClearance()
+    onNodeWithTag("library_search_field").performTextInput(text)
+}
+
+fun MainActivityComposeRule.typeInPlaylistsSearchField(text: String) {
+    onNodeWithTag("playlists_search_field").performClick()
+    onNodeWithTag("playlists_search_field").performTextClearance()
+    onNodeWithTag("playlists_search_field").performTextInput(text)
 }
 
 fun MainActivityComposeRule.navigateToForYou() {
