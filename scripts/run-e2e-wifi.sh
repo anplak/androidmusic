@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run For You E2E tests on a Wi-Fi paired Android device.
+# Run all on-device E2E tests (com.anplak.androidmusic.ui.*E2ETest) on a Wi-Fi paired Android device.
 #
 # Usage:
 #   ./scripts/run-e2e-wifi.sh                    # auto-pick first "device" from adb
@@ -49,8 +49,12 @@ export ANDROID_SERIAL="$DEVICE"
 echo "Using device: $ANDROID_SERIAL"
 
 adb -s "$ANDROID_SERIAL" wait-for-device
+adb -s "$ANDROID_SERIAL" shell input keyevent KEYCODE_WAKEUP || true
+
+E2E_PACKAGE="com.anplak.androidmusic.ui"
+echo "Running E2E tests in $E2E_PACKAGE ..."
 
 ./gradlew :app:connectedDebugAndroidTest \
-  -Pandroid.testInstrumentationRunnerArguments.class=com.anplak.androidmusic.ui.ForYouE2ETest
+  -Pandroid.testInstrumentationRunnerArguments.package="$E2E_PACKAGE"
 
 echo "E2E finished on $ANDROID_SERIAL"

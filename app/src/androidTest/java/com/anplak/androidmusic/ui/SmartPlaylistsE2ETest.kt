@@ -44,31 +44,7 @@ class SmartPlaylistsE2ETest {
      * Helper function to navigate to the Playlists tab.
      */
     private fun navigateToPlaylistsTab() {
-        // Wait for library to load
-        composeTestRule.waitUntil(timeoutMillis = 10_000) {
-            val hasContent = composeTestRule
-                .onAllNodes(hasTestTag("track_list"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            val hasEmpty = composeTestRule
-                .onAllNodes(hasTestTag("empty_state"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            hasContent || hasEmpty
-        }
-
-        // Navigate to Playlists tab
-        composeTestRule
-            .onNodeWithTag("nav_playlists")
-            .performClick()
-
-        // Wait for playlists screen to load
-        composeTestRule.waitUntil(timeoutMillis = 5_000) {
-            composeTestRule
-                .onAllNodes(hasTestTag("playlists_list"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-        }
+        composeTestRule.preparePlaylistsTab()
     }
 
     /**
@@ -176,40 +152,16 @@ class SmartPlaylistsE2ETest {
      * Returns true if navigation succeeded (device has audio files).
      */
     private fun navigateToNowPlaying(): Boolean {
-        // Wait for library to load
-        composeTestRule.waitUntil(timeoutMillis = 10_000) {
-            val hasContent = composeTestRule
-                .onAllNodes(hasTestTag("track_list"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            val hasEmpty = composeTestRule
-                .onAllNodes(hasTestTag("empty_state"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            hasContent || hasEmpty
-        }
+        composeTestRule.prepareLibraryTab()
 
-        // Check if we have tracks
-        val hasTrackList = composeTestRule
-            .onAllNodes(hasTestTag("track_list"))
-            .fetchSemanticsNodes()
-            .isNotEmpty()
-
-        if (!hasTrackList) {
+        if (!composeTestRule.safeHasNodes(hasTestTag("track_list"))) {
             return false
         }
 
-        // Tap the first track
-        composeTestRule
-            .onNodeWithTag("track_item_0")
-            .performClick()
+        composeTestRule.onNodeWithTag("track_item_0").performClick()
 
-        // Wait for Now Playing screen
         composeTestRule.waitUntil(timeoutMillis = 5_000) {
-            composeTestRule
-                .onAllNodes(hasTestTag("play_pause_button"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
+            composeTestRule.safeHasNodes(hasTestTag("play_pause_button"))
         }
 
         return true

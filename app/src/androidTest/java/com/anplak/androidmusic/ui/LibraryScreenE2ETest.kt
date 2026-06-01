@@ -70,8 +70,9 @@ class LibraryScreenE2ETest {
      */
     @Test
     fun libraryScanning_showsLoadingIndicator() {
-        // The loading state appears immediately on launch
-        // Try to catch it - may not always be visible if loading is fast
+        composeTestRule.waitForAppReady()
+        composeTestRule.navigateToLibrary()
+
         try {
             composeTestRule
                 .onNodeWithTag("loading_indicator")
@@ -101,24 +102,9 @@ class LibraryScreenE2ETest {
      */
     @Test
     fun libraryContent_displaysTrackList() {
-        // Wait for loading to complete
-        composeTestRule.waitUntil(timeoutMillis = 10_000) {
-            val hasContent = composeTestRule
-                .onAllNodes(hasTestTag("track_list"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            val hasEmpty = composeTestRule
-                .onAllNodes(hasTestTag("empty_state"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            hasContent || hasEmpty
-        }
+        composeTestRule.prepareLibraryTab()
 
-        // Check if we have content
-        val hasTrackList = composeTestRule
-            .onAllNodes(hasTestTag("track_list"))
-            .fetchSemanticsNodes()
-            .isNotEmpty()
+        val hasTrackList = composeTestRule.safeHasNodes(hasTestTag("track_list"))
 
         if (hasTrackList) {
             // Verify track list is displayed
@@ -145,24 +131,9 @@ class LibraryScreenE2ETest {
      */
     @Test
     fun emptyLibrary_showsEmptyStateMessage() {
-        // Wait for loading to complete
-        composeTestRule.waitUntil(timeoutMillis = 10_000) {
-            val hasContent = composeTestRule
-                .onAllNodes(hasTestTag("track_list"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            val hasEmpty = composeTestRule
-                .onAllNodes(hasTestTag("empty_state"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            hasContent || hasEmpty
-        }
+        composeTestRule.prepareLibraryTab()
 
-        // Check if empty state is shown
-        val hasEmptyState = composeTestRule
-            .onAllNodes(hasTestTag("empty_state"))
-            .fetchSemanticsNodes()
-            .isNotEmpty()
+        val hasEmptyState = composeTestRule.safeHasNodes(hasTestTag("empty_state"))
 
         if (hasEmptyState) {
             // Verify empty state elements
@@ -186,53 +157,21 @@ class LibraryScreenE2ETest {
      */
     @Test
     fun tapTrack_navigatesToNowPlaying() {
-        // Wait for loading to complete
-        composeTestRule.waitUntil(timeoutMillis = 10_000) {
-            val hasContent = composeTestRule
-                .onAllNodes(hasTestTag("track_list"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            val hasEmpty = composeTestRule
-                .onAllNodes(hasTestTag("empty_state"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            hasContent || hasEmpty
+        composeTestRule.prepareLibraryTab()
+
+        if (!composeTestRule.safeHasNodes(hasTestTag("track_list"))) {
+            return
         }
 
-        // Check if we have tracks to tap
-        val hasTrackList = composeTestRule
-            .onAllNodes(hasTestTag("track_list"))
-            .fetchSemanticsNodes()
-            .isNotEmpty()
+        composeTestRule.onNodeWithTag("track_item_0").performClick()
+        composeTestRule.waitForIdle()
 
-        if (hasTrackList) {
-            // Tap the first track
-            composeTestRule
-                .onNodeWithTag("track_item_0")
-                .performClick()
-
-            // Wait for navigation
-            composeTestRule.waitForIdle()
-
-            // Verify we're on Now Playing screen by checking for its elements
-            composeTestRule.waitUntil(timeoutMillis = 5_000) {
-                composeTestRule
-                    .onAllNodes(hasTestTag("play_pause_button"))
-                    .fetchSemanticsNodes()
-                    .isNotEmpty()
-            }
-
-            composeTestRule
-                .onNodeWithTag("play_pause_button")
-                .assertIsDisplayed()
-            
-            composeTestRule
-                .onNodeWithTag("track_title")
-                .assertIsDisplayed()
-        } else {
-            // No tracks available - can't test navigation
-            // Test passes to allow CI to run on empty devices
+        composeTestRule.waitUntil(timeoutMillis = 5_000) {
+            composeTestRule.safeHasNodes(hasTestTag("play_pause_button"))
         }
+
+        composeTestRule.onNodeWithTag("play_pause_button").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("track_title").assertIsDisplayed()
     }
 }
 

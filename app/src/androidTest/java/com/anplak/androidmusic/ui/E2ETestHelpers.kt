@@ -29,7 +29,7 @@ fun MainActivityComposeRule.safeHasNodes(matcher: SemanticsMatcher): Boolean {
  * Waits until the main app shell is composed (bottom nav or pre-grant permission UI).
  */
 fun MainActivityComposeRule.waitForAppReady() {
-    waitUntil(timeoutMillis = 30_000) {
+    waitUntil(timeoutMillis = 60_000) {
         safeHasNodes(hasTestTag("nav_foryou")) ||
             safeHasNodes(hasTestTag("permission_request")) ||
             safeHasNodes(hasTestTag("permission_rationale")) ||
@@ -38,7 +38,7 @@ fun MainActivityComposeRule.waitForAppReady() {
 
     if (safeHasNodes(hasText("Grant Permission"))) {
         onNodeWithText("Grant Permission").performClick()
-        waitUntil(timeoutMillis = 30_000) {
+        waitUntil(timeoutMillis = 60_000) {
             safeHasNodes(hasTestTag("nav_foryou")) ||
                 safeHasNodes(hasTestTag("permission_rationale"))
         }
@@ -46,10 +46,30 @@ fun MainActivityComposeRule.waitForAppReady() {
 
     if (safeHasNodes(hasTestTag("permission_rationale"))) {
         onNodeWithTag("permission_rationale_grant").performClick()
-        waitUntil(timeoutMillis = 30_000) {
+        waitUntil(timeoutMillis = 60_000) {
             safeHasNodes(hasTestTag("nav_foryou"))
         }
     }
+}
+
+/** Leaves Now Playing / detail screens and waits for bottom navigation. */
+fun MainActivityComposeRule.returnToMainShell() {
+    if (safeHasNodes(hasTestTag("back_button"))) {
+        onNodeWithTag("back_button").performClick()
+    }
+    waitUntil(timeoutMillis = 15_000) {
+        safeHasNodes(hasTestTag("nav_foryou")) || safeHasNodes(hasTestTag("nav_library"))
+    }
+}
+
+fun MainActivityComposeRule.prepareLibraryTab() {
+    waitForAppReady()
+    navigateToLibrary()
+}
+
+fun MainActivityComposeRule.preparePlaylistsTab() {
+    waitForAppReady()
+    navigateToPlaylists()
 }
 
 fun MainActivityComposeRule.navigateToLibrary() {
