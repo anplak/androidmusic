@@ -222,4 +222,8 @@ class TestPlayHistoryRepository : PlayHistoryRepository {
         cleanupCalled = true
         return 0
     }
+
+    override suspend fun getCoPlayedTrackIds(seedTrackId: Long, limit: Int): List<Long> = emptyList()
+
+    override suspend fun getLastSessionTrackIds(limit: Int): List<Long> = emptyList()
 }

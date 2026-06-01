@@ -45,10 +45,7 @@ class HistoryE2ETest {
      */
     @Test
     fun bottomNavigation_displaysHistoryTab() {
-        composeTestRule.waitForIdle()
-
-        // Wait for library to load
-        waitForLibraryToLoad()
+        composeTestRule.waitForAppReady()
 
         // Verify History tab exists
         composeTestRule
@@ -61,10 +58,7 @@ class HistoryE2ETest {
      */
     @Test
     fun historyTab_showsEmptyStateInitially() {
-        composeTestRule.waitForIdle()
-
-        // Wait for library to load
-        waitForLibraryToLoad()
+        composeTestRule.waitForAppReady()
 
         // Navigate to History
         composeTestRule
@@ -96,18 +90,9 @@ class HistoryE2ETest {
      */
     @Test
     fun playingTrack_recordsHistoryEntry() {
-        composeTestRule.waitForIdle()
+        composeTestRule.prepareLibraryTab()
 
-        // Wait for library to load
-        waitForLibraryToLoad()
-
-        // Check if we have tracks - skip test gracefully if no audio files
-        val hasTrackList = composeTestRule
-            .onAllNodes(hasTestTag("track_list"))
-            .fetchSemanticsNodes()
-            .isNotEmpty()
-
-        if (!hasTrackList) {
+        if (!composeTestRule.safeHasNodes(hasTestTag("track_list"))) {
             // No audio files on device - test passes as skipped
             return
         }
@@ -127,17 +112,10 @@ class HistoryE2ETest {
                 .isNotEmpty()
         }
 
-        // Go back to library
-        composeTestRule
-            .onNodeWithTag("back_button")
-            .performClick()
+        // Go back to main shell
+        composeTestRule.returnToMainShell()
 
-        composeTestRule.waitForIdle()
-
-        // Navigate to History
-        composeTestRule
-            .onNodeWithTag("nav_history")
-            .performClick()
+        composeTestRule.onNodeWithTag("nav_history").performClick()
 
         composeTestRule.waitForIdle()
 
@@ -166,18 +144,9 @@ class HistoryE2ETest {
      */
     @Test
     fun tapHistoryEntry_startsPlayback() {
-        composeTestRule.waitForIdle()
+        composeTestRule.prepareLibraryTab()
 
-        // Wait for library to load
-        waitForLibraryToLoad()
-
-        // Check if we have tracks - skip test gracefully if no audio files
-        val hasTrackList = composeTestRule
-            .onAllNodes(hasTestTag("track_list"))
-            .fetchSemanticsNodes()
-            .isNotEmpty()
-
-        if (!hasTrackList) {
+        if (!composeTestRule.safeHasNodes(hasTestTag("track_list"))) {
             // No audio files on device - test passes as skipped
             return
         }
@@ -197,17 +166,10 @@ class HistoryE2ETest {
                 .isNotEmpty()
         }
 
-        // Go back
-        composeTestRule
-            .onNodeWithTag("back_button")
-            .performClick()
+        // Go back to main shell
+        composeTestRule.returnToMainShell()
 
-        composeTestRule.waitForIdle()
-
-        // Navigate to History
-        composeTestRule
-            .onNodeWithTag("nav_history")
-            .performClick()
+        composeTestRule.onNodeWithTag("nav_history").performClick()
 
         composeTestRule.waitForIdle()
 
@@ -255,17 +217,4 @@ class HistoryE2ETest {
             .assertIsDisplayed()
     }
 
-    private fun waitForLibraryToLoad() {
-        composeTestRule.waitUntil(timeoutMillis = 10_000) {
-            val hasContent = composeTestRule
-                .onAllNodes(hasTestTag("track_list"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            val hasEmpty = composeTestRule
-                .onAllNodes(hasTestTag("empty_state"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            hasContent || hasEmpty
-        }
-    }
 }

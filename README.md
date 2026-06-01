@@ -8,6 +8,8 @@ A minimal offline music player for Android that automatically discovers and play
 - **Automatic library scanning**: Discovers all audio files on device via MediaStore
 - **Music library browsing**: Scrollable list of tracks with title, artist, and duration
 - **Favorites**: Mark tracks as favorites with a heart icon, view all favorites in a dedicated tab
+- **For You**: Personalized discovery tab with Daily Mix, Quick Mix, “Because you listen to…”, and Continue Listening rows (fully on-device)
+- **Search & filters**: Global search across library, playlists, and history; library filter chips (favorites, recently added, duration)
 - **Playlists**: Create playlists, reorder tracks, bulk remove, duplicate/merge, and auto-mix from seeds
 - **Smart playlists**: Auto-generated playlists including Most Played, Recently Played, and Recently Added
 - **Smart shuffle**: Weighted shuffle that favors favorites and frequently played tracks
@@ -20,7 +22,7 @@ A minimal offline music player for Android that automatically discovers and play
 - **Background playback**: Music continues playing when app is in background or screen is off
 - **Media notification**: Control playback from the notification shade with play/pause, next, previous
 - **Lockscreen and headset controls**: MediaSession integration for system-wide media controls
-- **Bottom navigation**: Four-tab navigation for Library, Favorites, Playlists, and History
+- **Bottom navigation**: Five-tab navigation for For You, Library, Favorites, Playlists, and History
 - **Persistent storage**: Favorites, playlists, and play statistics persist using Room database
 - **Modern UI**: Built with Jetpack Compose and Material Design 3
 - **Error handling**: Clear feedback when playback issues occur
@@ -206,11 +208,8 @@ The following features are intentionally out of scope for the current iteration:
 
 - Repeat mode (basic shuffle available via smart shuffle)
 - Persistent queue across app restarts
-- Drag-and-drop playlist reordering
-- Albums/artists views and filtering
+- Albums/artists dedicated browse views
 - Sorting options
-- Advanced recommendations and discovery
-- Search functionality
 - Export/sharing of listening stats
 - Complex charts/visualizations
 
@@ -248,6 +247,7 @@ To validate the app:
    - Remove tracks (single or multi-select)
    - Duplicate or merge playlists into a new one
    - Generate an auto-mix from a seed and save it
+   - Use "Smart shuffle play" from the playlist menu to start a weighted shuffle of that playlist
    - Delete playlist
 
 6. **Smart playlists**
@@ -266,7 +266,13 @@ To validate the app:
    - Play several tracks to build play history
    - Use smart shuffle again - favorites and frequently played should appear more often
 
-8. **Listening history**
+8. **Search & filters**
+   - Library tab: use filter chips (Favorites, Recently added, duration) and the library search field
+   - Tap the search icon on Library or Playlists for global search (tracks, playlists, history)
+   - Tap a track or history result to play; tap a playlist to open detail
+   - On-device E2E: `./scripts/run-e2e-search-filter-wifi.sh` (requires adb + Wi-Fi debugging)
+
+9. **Listening history**
    - Navigate to History tab
    - Verify empty state when no history
    - Play a track from the library
@@ -366,6 +372,7 @@ app/src/main/java/com/anplak/androidmusic/
 │   ├── PlaybackQueue.kt              # Queue model
 │   ├── PlaybackState.kt              # Playback state model
 │   ├── PlayerError.kt                # Error types
+│   ├── AutoMixGenerator.kt           # Auto-mix playlist generation
 │   ├── SmartShuffleGenerator.kt      # Weighted shuffle algorithm
 │   └── TrackInfo.kt                  # Track metadata model
 ├── service/
@@ -395,12 +402,13 @@ app/src/main/java/com/anplak/androidmusic/
 
 ## Future Roadmap
 
-Planned features for upcoming stories:
+Planned workflow stories (see `.cursor/workflow/` for specs):
 
-- **Story 7**: Recommendations and discovery
-- **Story 8**: Advanced playlist curation tools
-- **Story 9**: Search and filter experience
 - **Story 10**: Polish, performance, and release candidate
+
+**Stories 7–9** (recommendations, playlist curation, search & filters) are **implemented**.
+
+Still planned:
 
 ## License
 

@@ -49,18 +49,9 @@ class InsightsE2ETest {
      */
     @Test
     fun playingTracks_updatesInsights() {
-        composeTestRule.waitForIdle()
+        composeTestRule.prepareLibraryTab()
 
-        // Wait for library to load
-        waitForLibraryToLoad()
-
-        // Check if we have tracks - skip test gracefully if no audio files
-        val hasTrackList = composeTestRule
-            .onAllNodes(hasTestTag("track_list"))
-            .fetchSemanticsNodes()
-            .isNotEmpty()
-
-        if (!hasTrackList) {
+        if (!composeTestRule.safeHasNodes(hasTestTag("track_list"))) {
             // No audio files on device - test passes as skipped
             return
         }
@@ -83,17 +74,9 @@ class InsightsE2ETest {
         // Let it play briefly to accumulate play time
         Thread.sleep(2000)
 
-        // Go back to library
-        composeTestRule
-            .onNodeWithTag("back_button")
-            .performClick()
+        composeTestRule.returnToMainShell()
 
-        composeTestRule.waitForIdle()
-
-        // Navigate to History tab (which displays insights)
-        composeTestRule
-            .onNodeWithTag("nav_history")
-            .performClick()
+        composeTestRule.onNodeWithTag("nav_history").performClick()
 
         composeTestRule.waitForIdle()
 
@@ -120,18 +103,9 @@ class InsightsE2ETest {
      */
     @Test
     fun playingMultipleTracks_accumulatesStats() {
-        composeTestRule.waitForIdle()
+        composeTestRule.prepareLibraryTab()
 
-        // Wait for library to load
-        waitForLibraryToLoad()
-
-        // Check if we have multiple tracks - skip test gracefully if no audio files
-        val hasTrackList = composeTestRule
-            .onAllNodes(hasTestTag("track_list"))
-            .fetchSemanticsNodes()
-            .isNotEmpty()
-
-        if (!hasTrackList) {
+        if (!composeTestRule.safeHasNodes(hasTestTag("track_list"))) {
             // No audio files on device - test passes as skipped
             return
         }
@@ -154,23 +128,13 @@ class InsightsE2ETest {
         // Wait briefly
         Thread.sleep(1000)
 
-        // Go back
-        composeTestRule
-            .onNodeWithTag("back_button")
-            .performClick()
+        composeTestRule.returnToMainShell()
+        composeTestRule.navigateToLibrary()
 
-        composeTestRule.waitForIdle()
-
-        // Try to play second track if available
-        val hasSecondTrack = composeTestRule
-            .onAllNodes(hasTestTag("track_item_1"))
-            .fetchSemanticsNodes()
-            .isNotEmpty()
-
-        if (hasSecondTrack) {
-            composeTestRule
-                .onNodeWithTag("track_item_1")
-                .performClick()
+        if (!composeTestRule.safeHasNodes(hasTestTag("track_item_1"))) {
+            // Only one track available
+        } else {
+            composeTestRule.onNodeWithTag("track_item_1").performClick()
 
             composeTestRule.waitForIdle()
 
@@ -185,18 +149,12 @@ class InsightsE2ETest {
             // Wait briefly
             Thread.sleep(1000)
 
-            // Go back
-            composeTestRule
-                .onNodeWithTag("back_button")
-                .performClick()
+            composeTestRule.returnToMainShell()
         }
 
-        composeTestRule.waitForIdle()
+        composeTestRule.navigateToLibrary()
 
-        // Navigate to History
-        composeTestRule
-            .onNodeWithTag("nav_history")
-            .performClick()
+        composeTestRule.onNodeWithTag("nav_history").performClick()
 
         composeTestRule.waitForIdle()
 
@@ -223,20 +181,6 @@ class InsightsE2ETest {
             composeTestRule
                 .onNodeWithTag("history_list")
                 .assertIsDisplayed()
-        }
-    }
-
-    private fun waitForLibraryToLoad() {
-        composeTestRule.waitUntil(timeoutMillis = 10_000) {
-            val hasContent = composeTestRule
-                .onAllNodes(hasTestTag("track_list"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            val hasEmpty = composeTestRule
-                .onAllNodes(hasTestTag("empty_state"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            hasContent || hasEmpty
         }
     }
 }

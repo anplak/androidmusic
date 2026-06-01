@@ -3,8 +3,12 @@ package com.anplak.androidmusic.ui
 import android.app.Application
 import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
+import com.anplak.androidmusic.data.DurationBucket
 import com.anplak.androidmusic.data.FavoritesRepository
+import com.anplak.androidmusic.data.LibraryFilter
 import com.anplak.androidmusic.data.MusicLibraryRepository
+import com.anplak.androidmusic.data.db.TrackDao
+import com.anplak.androidmusic.data.db.TrackEntity
 import com.anplak.androidmusic.player.TrackInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -31,6 +35,7 @@ class LibraryViewModelTest {
     private lateinit var application: Application
     private lateinit var fakeRepository: FakeMusicLibraryRepository
     private lateinit var fakeFavoritesRepository: FakeFavoritesRepository
+    private lateinit var fakeTrackDao: FakeTrackDao
     
     @Before
     fun setup() {
@@ -38,6 +43,7 @@ class LibraryViewModelTest {
         application = ApplicationProvider.getApplicationContext()
         fakeRepository = FakeMusicLibraryRepository()
         fakeFavoritesRepository = FakeFavoritesRepository()
+        fakeTrackDao = FakeTrackDao()
     }
     
     @After
@@ -127,6 +133,63 @@ class LibraryViewModelTest {
     }
     
     @Test
+    fun `setFilter favoritesOnly narrows tracks`() = runTest {
+        val tracks = listOf(
+            createTrack(1, "Fav Song", "Artist A"),
+            createTrack(2, "Other Song", "Artist B")
+        )
+        fakeRepository.setTracks(tracks)
+        fakeFavoritesRepository.setFavoriteIds(setOf(1L))
+
+        val viewModel = createViewModel()
+        viewModel.loadLibrary()
+        advanceUntilIdle()
+
+        viewModel.setFilter(LibraryFilter(favoritesOnly = true))
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value as LibraryUiState.Content
+        assertEquals(1, state.tracks.size)
+        assertEquals(1L, state.tracks.first().id)
+    }
+
+    @Test
+    fun `setLocalQuery filters by title`() = runTest {
+        val tracks = listOf(
+            createTrack(1, "Alpha", "Artist"),
+            createTrack(2, "Beta", "Artist")
+        )
+        fakeRepository.setTracks(tracks)
+
+        val viewModel = createViewModel()
+        viewModel.loadLibrary()
+        advanceUntilIdle()
+
+        viewModel.setLocalQuery("alp")
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value as LibraryUiState.Content
+        assertEquals(1, state.tracks.size)
+        assertEquals("Alpha", state.tracks.first().title)
+    }
+
+    @Test
+    fun `empty filter results sets showNoFilterResults`() = runTest {
+        fakeRepository.setTracks(listOf(createTrack(1, "Song", "Artist")))
+
+        val viewModel = createViewModel()
+        viewModel.loadLibrary()
+        advanceUntilIdle()
+
+        viewModel.setFilter(LibraryFilter(durationBucket = DurationBucket.LONG))
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value as LibraryUiState.Content
+        assertTrue(state.showNoFilterResults)
+        assertTrue(state.tracks.isEmpty())
+    }
+
+    @Test
     fun `Content state includes favorite IDs`() = runTest {
         val tracks = listOf(createTrack(1, "Song One", "Artist A"))
         fakeRepository.setTracks(tracks)
@@ -145,7 +208,12 @@ class LibraryViewModelTest {
     }
     
     private fun createViewModel(): LibraryViewModel {
-        return LibraryViewModel(application, fakeRepository, fakeFavoritesRepository)
+        return LibraryViewModel(
+            application,
+            fakeRepository,
+            fakeFavoritesRepository,
+            fakeTrackDao
+        )
     }
     
     private fun createTrack(id: Long, title: String, artist: String): TrackInfo {
@@ -178,6 +246,21 @@ class FakeMusicLibraryRepository : MusicLibraryRepository {
     override suspend fun scanMusicDirectories() {
         scanMusicDirectoriesCallCount++
     }
+}
+
+class FakeTrackDao : TrackDao {
+    override suspend fun insertAll(tracks: List<TrackEntity>) = Unit
+    override suspend fun insert(track: TrackEntity) = Unit
+    override suspend fun getById(trackId: Long): TrackEntity? = null
+    override suspend fun getAll(): List<TrackEntity> = emptyList()
+    override suspend fun getByIds(trackIds: List<Long>): List<TrackEntity> = emptyList()
+    override fun getRecentlyAddedTracks(limit: Int): Flow<List<TrackEntity>> {
+        return MutableStateFlow(emptyList())
+    }
+    override suspend fun getTracksAddedSince(sinceMs: Long): List<TrackEntity> = emptyList()
+    override suspend fun searchTracks(query: String, limit: Int): List<TrackEntity> = emptyList()
+    override suspend fun deleteStaleEntries(validIds: List<Long>) = Unit
+    override suspend fun deleteAll() = Unit
 }
 
 class FakeFavoritesRepository : FavoritesRepository {

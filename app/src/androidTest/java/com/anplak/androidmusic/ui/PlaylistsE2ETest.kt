@@ -50,49 +50,16 @@ class PlaylistsE2ETest {
      */
     @Test
     fun playlistsTab_showsEmptyStateInitially() {
-        composeTestRule.waitForIdle()
-        
-        // Wait for library to load first
-        composeTestRule.waitUntil(timeoutMillis = 10_000) {
-            val hasContent = composeTestRule
-                .onAllNodes(hasTestTag("track_list"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            val hasEmpty = composeTestRule
-                .onAllNodes(hasTestTag("empty_state"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            hasContent || hasEmpty
-        }
-        
-        // Navigate to playlists
-        composeTestRule
-            .onNodeWithTag("nav_playlists")
-            .performClick()
-        
-        // Wait for playlists screen to load
+        composeTestRule.preparePlaylistsTab()
+
         composeTestRule.waitUntil(timeoutMillis = 5_000) {
-            val hasEmptyState = composeTestRule
-                .onAllNodes(hasTestTag("playlists_empty_state"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            val hasListState = composeTestRule
-                .onAllNodes(hasTestTag("playlists_list"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            hasEmptyState || hasListState
+            composeTestRule.safeHasNodes(hasTestTag("playlists_empty_state")) ||
+                composeTestRule.safeHasNodes(hasTestTag("playlists_list"))
         }
-        
-        // Verify empty state or list is shown (fresh database should be empty)
-        val hasEmptyState = composeTestRule
-            .onAllNodes(hasTestTag("playlists_empty_state"))
-            .fetchSemanticsNodes()
-            .isNotEmpty()
-        val hasListState = composeTestRule
-            .onAllNodes(hasTestTag("playlists_list"))
-            .fetchSemanticsNodes()
-            .isNotEmpty()
-        
+
+        val hasEmptyState = composeTestRule.safeHasNodes(hasTestTag("playlists_empty_state"))
+        val hasListState = composeTestRule.safeHasNodes(hasTestTag("playlists_list"))
+
         assert(hasEmptyState || hasListState) {
             "Expected playlists_empty_state or playlists_list to be displayed"
         }
@@ -103,26 +70,7 @@ class PlaylistsE2ETest {
      */
     @Test
     fun createPlaylist_showsInList() {
-        composeTestRule.waitForIdle()
-        
-        // Wait for library to load first
-        composeTestRule.waitUntil(timeoutMillis = 10_000) {
-            val hasContent = composeTestRule
-                .onAllNodes(hasTestTag("track_list"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            val hasEmpty = composeTestRule
-                .onAllNodes(hasTestTag("empty_state"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            hasContent || hasEmpty
-        }
-        
-        // Navigate to playlists
-        composeTestRule
-            .onNodeWithTag("nav_playlists")
-            .performClick()
-        
+        composeTestRule.preparePlaylistsTab()
         composeTestRule.waitForIdle()
         
         // Click create playlist FAB
@@ -163,26 +111,7 @@ class PlaylistsE2ETest {
      */
     @Test
     fun createPlaylistFab_opensDialog() {
-        composeTestRule.waitForIdle()
-        
-        // Wait for library to load first
-        composeTestRule.waitUntil(timeoutMillis = 10_000) {
-            val hasContent = composeTestRule
-                .onAllNodes(hasTestTag("track_list"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            val hasEmpty = composeTestRule
-                .onAllNodes(hasTestTag("empty_state"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            hasContent || hasEmpty
-        }
-        
-        // Navigate to playlists
-        composeTestRule
-            .onNodeWithTag("nav_playlists")
-            .performClick()
-        
+        composeTestRule.preparePlaylistsTab()
         composeTestRule.waitForIdle()
         
         // Click create playlist FAB
@@ -210,28 +139,9 @@ class PlaylistsE2ETest {
      */
     @Test
     fun createPlaylistAndAddTrack_showsCorrectTrackCount() {
-        composeTestRule.waitForIdle()
-        
-        // Wait for library to load first
-        composeTestRule.waitUntil(timeoutMillis = 10_000) {
-            val hasContent = composeTestRule
-                .onAllNodes(hasTestTag("track_list"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            val hasEmpty = composeTestRule
-                .onAllNodes(hasTestTag("empty_state"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            hasContent || hasEmpty
-        }
-        
-        // Check if we have tracks
-        val hasTrackList = composeTestRule
-            .onAllNodes(hasTestTag("track_list"))
-            .fetchSemanticsNodes()
-            .isNotEmpty()
-        
-        if (!hasTrackList) {
+        composeTestRule.prepareLibraryTab()
+
+        if (!composeTestRule.safeHasNodes(hasTestTag("track_list"))) {
             // No tracks on device - skip test
             return
         }
@@ -450,18 +360,7 @@ class PlaylistsE2ETest {
     }
 
     private fun waitForLibraryLoaded() {
-        composeTestRule.waitForIdle()
-        composeTestRule.waitUntil(timeoutMillis = 10_000) {
-            val hasContent = composeTestRule
-                .onAllNodes(hasTestTag("track_list"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            val hasEmpty = composeTestRule
-                .onAllNodes(hasTestTag("empty_state"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            hasContent || hasEmpty
-        }
+        composeTestRule.prepareLibraryTab()
     }
 
     private fun hasAtLeastTracks(minCount: Int): Boolean {

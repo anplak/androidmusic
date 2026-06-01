@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -25,6 +26,7 @@ fun PermissionRationaleScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .testTag("permission_rationale")
             .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -47,7 +49,8 @@ fun PermissionRationaleScreen(
         Spacer(modifier = Modifier.height(32.dp))
         
         Button(
-            onClick = onGrantPermissionClick
+            onClick = onGrantPermissionClick,
+            modifier = Modifier.testTag("permission_rationale_grant")
         ) {
             Text(text = stringResource(R.string.grant_permission))
         }

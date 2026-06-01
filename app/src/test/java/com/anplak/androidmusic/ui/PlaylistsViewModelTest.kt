@@ -238,6 +238,12 @@ class TestPlaylistRepository : PlaylistRepository {
         lastCreatedPlaylistName = name
         return 1L
     }
+
+    override suspend fun createPlaylistWithTracks(name: String, trackIds: List<Long>): Long {
+        createPlaylistCallCount++
+        lastCreatedPlaylistName = name
+        return 1L
+    }
     
     override suspend fun deletePlaylist(playlistId: Long) {
         deletePlaylistCallCount++
@@ -265,6 +271,20 @@ class TestPlaylistRepository : PlaylistRepository {
     override suspend fun removeTrackFromPlaylist(playlistId: Long, trackId: Long) {
         removeTrackCallCount++
     }
+
+    override suspend fun removeTracksFromPlaylist(playlistId: Long, trackIds: List<Long>) {
+        removeTrackCallCount++
+    }
+
+    override suspend fun reorderPlaylistTracks(playlistId: Long, orderedTrackIds: List<Long>) = Unit
+
+    override suspend fun duplicatePlaylist(sourcePlaylistId: Long, name: String): Long = 2L
+
+    override suspend fun mergePlaylists(
+        primaryPlaylistId: Long,
+        secondaryPlaylistId: Long,
+        name: String
+    ): Long = 3L
     
     override fun getPlaylistTracks(playlistId: Long): Flow<List<TrackInfo>> {
         return playlistTracks

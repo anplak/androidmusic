@@ -266,4 +266,12 @@ class FakePlayHistoryDao : PlayHistoryDao {
     override suspend fun deleteAll() {
         history.value = emptyList()
     }
+
+    override suspend fun getCoPlayedTrackIds(seedTrackId: Long, limit: Int): List<TrackPlayCountResult> =
+        emptyList()
+
+    override suspend fun getLastSessionTrackIds(limit: Int): List<Long> = emptyList()
+
+    override suspend fun searchHistory(query: String, limit: Int): List<PlayHistoryWithTrack> =
+        emptyList()
 }

@@ -40,6 +40,20 @@ interface PlaylistDao {
     """)
     fun getAllPlaylistsWithTrackCount(): Flow<List<PlaylistWithTrackCount>>
 
+    @Query("""
+        SELECT DISTINCT p.id, p.name, p.createdAt,
+            (SELECT COUNT(*) FROM playlist_tracks pt WHERE pt.playlistId = p.id) AS trackCount
+        FROM playlists p
+        LEFT JOIN playlist_tracks pt ON p.id = pt.playlistId
+        LEFT JOIN tracks t ON pt.trackId = t.id
+        WHERE p.name LIKE '%' || :query || '%' COLLATE NOCASE
+           OR t.title LIKE '%' || :query || '%' COLLATE NOCASE
+           OR t.artist LIKE '%' || :query || '%' COLLATE NOCASE
+        ORDER BY p.createdAt DESC
+        LIMIT :limit
+    """)
+    suspend fun searchPlaylists(query: String, limit: Int): List<PlaylistWithTrackCount>
+
     @Query("SELECT * FROM playlists WHERE id = :playlistId")
     suspend fun getPlaylistById(playlistId: Long): PlaylistEntity?
 

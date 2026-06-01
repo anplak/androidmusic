@@ -98,6 +98,9 @@ class PlaylistsViewModel @JvmOverloads constructor(
     private val _playlists = MutableStateFlow<List<Playlist>>(emptyList())
     val playlists: StateFlow<List<Playlist>> = _playlists.asStateFlow()
 
+    private val _playlistSearchQuery = MutableStateFlow("")
+    val playlistSearchQuery: StateFlow<String> = _playlistSearchQuery.asStateFlow()
+
     private val _editState = MutableStateFlow(PlaylistDetailEditState())
     val editState: StateFlow<PlaylistDetailEditState> = _editState.asStateFlow()
 
@@ -126,6 +129,10 @@ class PlaylistsViewModel @JvmOverloads constructor(
                 }
             }
         }
+    }
+
+    fun setPlaylistSearchQuery(query: String) {
+        _playlistSearchQuery.value = query
     }
 
     fun createPlaylist(name: String) {

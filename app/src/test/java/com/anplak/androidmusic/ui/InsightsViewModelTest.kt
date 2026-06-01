@@ -242,6 +242,10 @@ class TestInsightsPlayHistoryRepository : PlayHistoryRepository {
     override suspend fun getHistoryCount(): Int = 0
 
     override suspend fun cleanupOldHistory(retentionDays: Int): Int = 0
+
+    override suspend fun getCoPlayedTrackIds(seedTrackId: Long, limit: Int): List<Long> = emptyList()
+
+    override suspend fun getLastSessionTrackIds(limit: Int): List<Long> = emptyList()
 }
 
 class TestTrackDao : TrackDao {
@@ -264,6 +268,11 @@ class TestTrackDao : TrackDao {
 
     override fun getRecentlyAddedTracks(limit: Int): Flow<List<TrackEntity>> =
         MutableStateFlow(tracks.take(limit))
+
+    override suspend fun getTracksAddedSince(sinceMs: Long): List<TrackEntity> =
+        tracks.filter { it.firstSeenAt >= sinceMs }
+
+    override suspend fun searchTracks(query: String, limit: Int): List<TrackEntity> = emptyList()
 
     override suspend fun deleteStaleEntries(validIds: List<Long>) {}
 

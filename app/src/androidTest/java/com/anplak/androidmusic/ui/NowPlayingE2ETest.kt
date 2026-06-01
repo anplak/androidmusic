@@ -51,40 +51,16 @@ class NowPlayingE2ETest {
      * Returns true if navigation succeeded (device has audio files).
      */
     private fun navigateToNowPlaying(): Boolean {
-        // Wait for library to load
-        composeTestRule.waitUntil(timeoutMillis = 10_000) {
-            val hasContent = composeTestRule
-                .onAllNodes(hasTestTag("track_list"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            val hasEmpty = composeTestRule
-                .onAllNodes(hasTestTag("empty_state"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            hasContent || hasEmpty
-        }
+        composeTestRule.prepareLibraryTab()
 
-        // Check if we have tracks
-        val hasTrackList = composeTestRule
-            .onAllNodes(hasTestTag("track_list"))
-            .fetchSemanticsNodes()
-            .isNotEmpty()
-
-        if (!hasTrackList) {
+        if (!composeTestRule.safeHasNodes(hasTestTag("track_list"))) {
             return false
         }
 
-        // Tap the first track
-        composeTestRule
-            .onNodeWithTag("track_item_0")
-            .performClick()
+        composeTestRule.onNodeWithTag("track_item_0").performClick()
 
-        // Wait for Now Playing screen
         composeTestRule.waitUntil(timeoutMillis = 5_000) {
-            composeTestRule
-                .onAllNodes(hasTestTag("play_pause_button"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
+            composeTestRule.safeHasNodes(hasTestTag("play_pause_button"))
         }
 
         return true
@@ -295,38 +271,15 @@ class NowPlayingE2ETest {
             .assertIsDisplayed()
 
         // Click back button
-        composeTestRule
-            .onNodeWithTag("back_button")
-            .performClick()
-
-        // Wait for navigation
+        composeTestRule.onNodeWithTag("back_button").performClick()
         composeTestRule.waitForIdle()
 
-        // Verify we're back on library screen
         composeTestRule.waitUntil(timeoutMillis = 5_000) {
-            composeTestRule
-                .onAllNodes(hasTestTag("track_list"))
-                .fetchSemanticsNodes()
-                .isNotEmpty() ||
-            composeTestRule
-                .onAllNodes(hasTestTag("empty_state"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
+            composeTestRule.safeHasNodes(hasTestTag("nav_foryou"))
         }
 
-        // Verify library content is visible (track_list or empty_state)
-        val hasTrackList = composeTestRule
-            .onAllNodes(hasTestTag("track_list"))
-            .fetchSemanticsNodes()
-            .isNotEmpty()
-        val hasEmptyState = composeTestRule
-            .onAllNodes(hasTestTag("empty_state"))
-            .fetchSemanticsNodes()
-            .isNotEmpty()
-        
-        assert(hasTrackList || hasEmptyState) {
-            "Expected track_list or empty_state to be displayed on Library screen"
-        }
+        composeTestRule.navigateToLibrary()
+        composeTestRule.waitForLibraryContent()
     }
 
     /**
@@ -368,22 +321,13 @@ class NowPlayingE2ETest {
             }
             true
         } catch (e: androidx.compose.ui.test.ComposeTimeoutException) {
-            // On some emulators/devices, rotation may cause navigation back
-            // Check if we ended up on library screen (which is also valid behavior)
-            val onLibrary = composeTestRule
-                .onAllNodes(hasTestTag("track_list"))
-                .fetchSemanticsNodes()
-                .isNotEmpty() ||
-                composeTestRule
-                    .onAllNodes(hasTestTag("empty_state"))
-                    .fetchSemanticsNodes()
-                    .isNotEmpty()
-            
-            if (onLibrary) {
-                // Rotation caused navigation back to library - acceptable
+            val onMainShell = composeTestRule.safeHasNodes(hasTestTag("nav_foryou")) ||
+                composeTestRule.safeHasNodes(hasTestTag("track_list")) ||
+                composeTestRule.safeHasNodes(hasTestTag("empty_state"))
+            if (onMainShell) {
                 return
             }
-            throw e // Re-throw if we're in an unexpected state
+            throw e
         }
 
         if (isNowPlayingVisibleAfterRotation) {
@@ -408,22 +352,13 @@ class NowPlayingE2ETest {
         // Verify state after rotating back - either Now Playing or Library is valid
         try {
             composeTestRule.waitUntil(timeoutMillis = 15_000) {
-                composeTestRule
-                    .onAllNodes(hasTestTag("play_pause_button"))
-                    .fetchSemanticsNodes()
-                    .isNotEmpty() ||
-                composeTestRule
-                    .onAllNodes(hasTestTag("track_list"))
-                    .fetchSemanticsNodes()
-                    .isNotEmpty() ||
-                composeTestRule
-                    .onAllNodes(hasTestTag("empty_state"))
-                    .fetchSemanticsNodes()
-                    .isNotEmpty()
+                composeTestRule.safeHasNodes(hasTestTag("play_pause_button")) ||
+                    composeTestRule.safeHasNodes(hasTestTag("nav_foryou")) ||
+                    composeTestRule.safeHasNodes(hasTestTag("track_list")) ||
+                    composeTestRule.safeHasNodes(hasTestTag("empty_state"))
             }
         } catch (e: androidx.compose.ui.test.ComposeTimeoutException) {
-            // If we timeout here, fail with more context
-            throw AssertionError("After rotation, expected to see Now Playing or Library screen", e)
+            throw AssertionError("After rotation, expected to see Now Playing or main shell", e)
         }
     }
 
