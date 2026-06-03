@@ -9,7 +9,8 @@ data class TrackInfo(
     val title: String,
     val artist: String = "",
     val album: String = "",
-    val duration: Long = 0L
+    val duration: Long = 0L,
+    val path: String = ""
 ) {
     /**
      * Extracts the MediaStore ID from the content URI.

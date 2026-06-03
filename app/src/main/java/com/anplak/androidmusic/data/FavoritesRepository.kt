@@ -57,14 +57,14 @@ fun TrackEntity.toTrackInfo(): TrackInfo {
 /**
  * Extension function to convert TrackInfo to TrackEntity.
  */
-fun TrackInfo.toEntity(): TrackEntity {
+fun TrackInfo.toEntity(filePath: String = path): TrackEntity {
     return TrackEntity(
         id = id,
         title = title,
         artist = artist,
         album = album,
         duration = duration,
-        path = uri.toString()
+        path = filePath.ifBlank { path }
     )
 }
 

@@ -108,5 +108,20 @@
     <string name="search_section_albums">Albums</string>
     <string name="search_section_playlists">Playlists</string>
     <string name="search_section_history">History</string>
+
+    <!-- Library index -->
+    <string name="library_index">Library indexing</string>
+    <string name="max_track_duration">Max track duration</string>
+    <string name="max_track_duration_value">Tracks longer than %d minutes are not indexed</string>
+    <string name="folder_rules">Folder rules</string>
+    <string name="folder_rules_empty">No folder rules. All folders are indexed except tracks over the duration limit.</string>
+    <string name="folder_rule_include">Include (and subfolders)</string>
+    <string name="folder_rule_exclude">Exclude (and subfolders)</string>
+    <string name="add_folder_rule">Add folder rule</string>
+    <string name="add_folder_rule_description">Exclude a folder from indexing. Subfolders are included automatically.</string>
+    <string name="exclude_folder">Exclude: %s</string>
+    <string name="remove_folder_rule">Remove folder rule</string>
+    <string name="scan_summary">Indexed %1$d · Skipped %2$d (long) · %3$d (folder)</string>
+    <string name="queue_position">Track %1$d of %2$d</string>
 </resources>
 

@@ -11,7 +11,9 @@ import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
+import com.anplak.androidmusic.player.TrackInfo
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -24,10 +26,14 @@ import java.util.concurrent.TimeUnit
 /**
  * Integration test that runs on a real device/emulator to verify
  * that music files are properly discovered from Music and Download folders.
- * 
+ *
+ * Assertions respect the default index policy (10-minute duration cap). Files
+ * longer than the cap may appear in MediaStore but must not be returned by
+ * the repository; only indexable files are required to match.
+ *
  * This test logs all discovered files to logcat for debugging.
  * Run with: ./gradlew :app:connectedDebugAndroidTest --tests "*MusicLibraryIntegrationTest*"
- * 
+ *
  * View logcat output with: adb logcat -s MusicLibraryIntegrationTest
  */
 @RunWith(AndroidJUnit4::class)
@@ -373,124 +379,163 @@ class MusicLibraryIntegrationTest {
     @Test
     fun verifyMp3FilesFromMusicFolderAreDiscovered() {
         runBlocking {
-            Log.i(TAG, "========================================")
-            Log.i(TAG, "VERIFICATION: MP3 from Music folder")
-            Log.i(TAG, "========================================")
-
-            // First, list what physical files exist
-            val musicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
-            val physicalMp3Files = mutableListOf<File>()
-            
-            if (musicDir.exists() && musicDir.isDirectory) {
-                musicDir.listFiles()?.filter { 
-                    it.isFile && it.name.endsWith(".mp3", ignoreCase = true) 
-                }?.forEach { file ->
-                    physicalMp3Files.add(file)
-                    Log.i(TAG, "Physical MP3 in Music/: ${file.name}")
-                }
-            }
-
-            Log.i(TAG, "Found ${physicalMp3Files.size} physical MP3 files in Music folder")
-
-            // Trigger media scan for these files
-            if (physicalMp3Files.isNotEmpty()) {
-                triggerMediaScan(physicalMp3Files.map { it.absolutePath })
-            }
-
-            // Now check if they're in MediaStore via repository
-            val tracks = repository.getAllTracks()
-            Log.i(TAG, "Repository returned ${tracks.size} tracks after scan")
-
-            var matchedCount = 0
-            physicalMp3Files.forEach { file ->
-                val fileName = file.name
-                val nameWithoutExtension = fileName.removeSuffix(".mp3").lowercase()
-                val isDiscovered = tracks.any { track ->
-                    track.title.lowercase().contains(nameWithoutExtension) ||
-                    track.uri.toString().contains(fileName, ignoreCase = true)
-                }
-                
-                if (isDiscovered) {
-                    matchedCount++
-                    Log.i(TAG, "FOUND: $fileName is discovered by repository")
-                } else {
-                    Log.w(TAG, "MISSING: $fileName is NOT discovered by repository!")
-                }
-            }
-
-            Log.i(TAG, "========================================")
-            Log.i(TAG, "RESULT: $matchedCount / ${physicalMp3Files.size} MP3 files from Music folder discovered")
-            Log.i(TAG, "========================================")
-
-            if (physicalMp3Files.isNotEmpty()) {
-                assertTrue(
-                    "Expected MP3 files from Music folder to be discovered after media scan. " +
-                    "Found ${physicalMp3Files.size} physical files but only $matchedCount were discovered.",
-                    matchedCount > 0
-                )
-            }
+            verifyMp3FilesInFolder(
+                folder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC),
+                folderLabel = "Music"
+            )
         }
     }
 
     @Test
     fun verifyMp3FilesFromDownloadFolderAreDiscovered() {
         runBlocking {
-            Log.i(TAG, "========================================")
-            Log.i(TAG, "VERIFICATION: MP3 from Download folder")
-            Log.i(TAG, "========================================")
+            verifyMp3FilesInFolder(
+                folder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                folderLabel = "Download"
+            )
+        }
+    }
 
-            // First, list what physical files exist
-            val downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-            val physicalMp3Files = mutableListOf<File>()
-            
-            if (downloadDir.exists() && downloadDir.isDirectory) {
-                downloadDir.listFiles()?.filter { 
-                    it.isFile && it.name.endsWith(".mp3", ignoreCase = true) 
-                }?.forEach { file ->
-                    physicalMp3Files.add(file)
-                    Log.i(TAG, "Physical MP3 in Download/: ${file.name}")
-                }
-            }
+    /**
+     * Verifies repository indexing for MP3s in [folder]. Only files within the
+     * default duration cap must appear in [MusicLibraryRepository.syncLibrary] results;
+     * longer files are expected to be skipped.
+     */
+    private suspend fun verifyMp3FilesInFolder(folder: File, folderLabel: String) {
+        Log.i(TAG, "========================================")
+        Log.i(TAG, "VERIFICATION: MP3 from $folderLabel folder")
+        Log.i(TAG, "========================================")
 
-            Log.i(TAG, "Found ${physicalMp3Files.size} physical MP3 files in Download folder")
+        val physicalMp3Files = listPhysicalMp3Files(folder)
+        Log.i(TAG, "Found ${physicalMp3Files.size} physical MP3 files in $folderLabel folder")
 
-            // Trigger media scan for these files
-            if (physicalMp3Files.isNotEmpty()) {
-                triggerMediaScan(physicalMp3Files.map { it.absolutePath })
-            }
+        if (physicalMp3Files.isEmpty()) return
 
-            // Now check if they're in MediaStore via repository
-            val tracks = repository.getAllTracks()
-            Log.i(TAG, "Repository returned ${tracks.size} tracks after scan")
+        triggerMediaScan(physicalMp3Files.map { it.absolutePath })
 
-            var matchedCount = 0
-            physicalMp3Files.forEach { file ->
-                val fileName = file.name
-                val nameWithoutExtension = fileName.removeSuffix(".mp3").lowercase()
-                val isDiscovered = tracks.any { track ->
-                    track.title.lowercase().contains(nameWithoutExtension) ||
-                    track.uri.toString().contains(fileName, ignoreCase = true)
-                }
-                
-                if (isDiscovered) {
-                    matchedCount++
-                    Log.i(TAG, "FOUND: $fileName is discovered by repository")
-                } else {
-                    Log.w(TAG, "MISSING: $fileName is NOT discovered by repository!")
-                }
-            }
+        val scanResult = repository.syncLibrary()
+        val tracks = scanResult.tracks
+        Log.i(
+            TAG,
+            "Repository indexed ${scanResult.indexedCount} tracks " +
+                "(${scanResult.skippedDurationCount} skipped by duration, " +
+                "${scanResult.skippedFolderCount} skipped by folder rules)"
+        )
 
-            Log.i(TAG, "========================================")
-            Log.i(TAG, "RESULT: $matchedCount / ${physicalMp3Files.size} MP3 files from Download folder discovered")
-            Log.i(TAG, "========================================")
+        val policy = LibraryIndexPolicy()
+        var indexableTotal = 0
+        var indexableDiscovered = 0
+        var skippedByDuration = 0
 
-            if (physicalMp3Files.isNotEmpty()) {
-                assertTrue(
-                    "Expected MP3 files from Download folder to be discovered after media scan. " +
-                    "Found ${physicalMp3Files.size} physical files but only $matchedCount were discovered.",
-                    matchedCount > 0
+        physicalMp3Files.forEach { file ->
+            val durationMs = queryDurationMs(file.absolutePath)
+            val indexable = durationMs != null &&
+                LibraryIndexFilter.shouldIndex(file.absolutePath, durationMs, policy)
+
+            if (!indexable) {
+                skippedByDuration++
+                Log.i(
+                    TAG,
+                    "SKIP (duration cap): ${file.name} duration=${durationMs ?: "unknown"}ms"
                 )
+                assertFalse(
+                    "${file.name} exceeds the index duration cap and must not be indexed",
+                    isDiscovered(tracks, file)
+                )
+                return@forEach
             }
+
+            indexableTotal++
+            if (isDiscovered(tracks, file)) {
+                indexableDiscovered++
+                Log.i(TAG, "FOUND: ${file.name} is indexed")
+            } else {
+                Log.w(TAG, "MISSING: ${file.name} is indexable but not returned by repository")
+            }
+        }
+
+        Log.i(TAG, "========================================")
+        Log.i(
+            TAG,
+            "RESULT: $indexableDiscovered / $indexableTotal indexable, " +
+                "$skippedByDuration skipped by duration cap " +
+                "(${physicalMp3Files.size} physical MP3s in $folderLabel)"
+        )
+        Log.i(TAG, "========================================")
+
+        if (indexableTotal > 0) {
+            assertTrue(
+                "Expected indexable MP3 files from $folderLabel folder to be discovered after media scan. " +
+                    "$indexableDiscovered / $indexableTotal indexable, $skippedByDuration skipped by duration cap.",
+                indexableDiscovered == indexableTotal
+            )
+        } else {
+            Log.i(
+                TAG,
+                "All ${physicalMp3Files.size} MP3 files in $folderLabel exceed the duration cap — " +
+                    "none should be indexed"
+            )
+        }
+    }
+
+    private fun listPhysicalMp3Files(folder: File): List<File> {
+        if (!folder.exists() || !folder.isDirectory) return emptyList()
+        return folder.listFiles()
+            ?.filter { it.isFile && it.name.endsWith(".mp3", ignoreCase = true) }
+            ?.onEach { Log.i(TAG, "Physical MP3 in ${folder.name}/: ${it.name}") }
+            ?: emptyList()
+    }
+
+    private fun queryDurationMs(filePath: String): Long? {
+        val fileName = File(filePath).name
+        val projection = arrayOf(
+            MediaStore.Audio.Media.DURATION,
+            MediaStore.Audio.Media.DATA,
+            MediaStore.Audio.Media.RELATIVE_PATH,
+            MediaStore.Audio.Media.DISPLAY_NAME
+        )
+
+        contentResolver.query(
+            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+            projection,
+            "${MediaStore.Audio.Media.DISPLAY_NAME} = ?",
+            arrayOf(fileName),
+            null
+        )?.use { cursor ->
+            val durationColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
+            val dataColumn = cursor.getColumnIndex(MediaStore.Audio.Media.DATA)
+            val relativePathColumn = cursor.getColumnIndex(MediaStore.Audio.Media.RELATIVE_PATH)
+            val displayNameColumn = cursor.getColumnIndex(MediaStore.Audio.Media.DISPLAY_NAME)
+
+            while (cursor.moveToNext()) {
+                val resolvedPath = MediaStorePathResolver.resolveFilePath(
+                    cursor = cursor,
+                    dataColumn = dataColumn,
+                    relativePathColumn = relativePathColumn,
+                    displayNameColumn = displayNameColumn
+                )
+                if (pathsMatch(resolvedPath, filePath)) {
+                    return cursor.getLong(durationColumn)
+                }
+            }
+        }
+        return null
+    }
+
+    private fun pathsMatch(resolvedPath: String, filePath: String): Boolean {
+        if (resolvedPath.equals(filePath, ignoreCase = true)) return true
+        return LibraryIndexFilter.normalizePath(resolvedPath) ==
+            LibraryIndexFilter.normalizePath(filePath)
+    }
+
+    private fun isDiscovered(tracks: List<TrackInfo>, file: File): Boolean {
+        val filePath = file.absolutePath
+        val fileName = file.name
+        val nameWithoutExtension = fileName.removeSuffix(".mp3").lowercase()
+        return tracks.any { track ->
+            pathsMatch(track.path, filePath) ||
+                track.title.lowercase().contains(nameWithoutExtension) ||
+                track.uri.toString().contains(fileName, ignoreCase = true)
         }
     }
 

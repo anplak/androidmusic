@@ -7,8 +7,9 @@ import com.anplak.androidmusic.data.FavoritesRepository
 import com.anplak.androidmusic.data.FavoritesRepositoryImpl
 import com.anplak.androidmusic.data.LibraryFilter
 import com.anplak.androidmusic.data.LibraryFilterEngine
+import com.anplak.androidmusic.data.LibraryScanResult
 import com.anplak.androidmusic.data.MusicLibraryRepository
-import com.anplak.androidmusic.data.MusicLibraryRepositoryImpl
+import com.anplak.androidmusic.data.MusicLibraryRepositoryFactory
 import com.anplak.androidmusic.data.db.AppDatabase
 import com.anplak.androidmusic.data.db.TrackDao
 import com.anplak.androidmusic.player.TrackInfo
@@ -31,11 +32,7 @@ sealed interface LibraryUiState {
 
 class LibraryViewModel @JvmOverloads constructor(
     application: Application,
-    private val repository: MusicLibraryRepository = MusicLibraryRepositoryImpl(
-        application.contentResolver,
-        application.applicationContext,
-        AppDatabase.getInstance(application).trackDao()
-    ),
+    private val repository: MusicLibraryRepository = MusicLibraryRepositoryFactory.create(application),
     private val favoritesRepository: FavoritesRepository = FavoritesRepositoryImpl(
         AppDatabase.getInstance(application).favoriteDao()
     ),
@@ -44,6 +41,9 @@ class LibraryViewModel @JvmOverloads constructor(
 
     private val _uiState = MutableStateFlow<LibraryUiState>(LibraryUiState.Loading)
     val uiState: StateFlow<LibraryUiState> = _uiState.asStateFlow()
+
+    private val _scanSummary = MutableStateFlow<LibraryScanResult?>(null)
+    val scanSummary: StateFlow<LibraryScanResult?> = _scanSummary.asStateFlow()
 
     private var hasLoaded = false
     private var hasScanned = false
@@ -75,8 +75,9 @@ class LibraryViewModel @JvmOverloads constructor(
                 hasScanned = true
             }
 
-            val tracks = repository.getAllTracks()
-            currentTracks = tracks
+            val result = repository.syncLibrary()
+            currentTracks = result.tracks
+            _scanSummary.value = result
             recentlyAddedIds = loadRecentlyAddedIds()
 
             hasLoaded = true
@@ -109,6 +110,10 @@ class LibraryViewModel @JvmOverloads constructor(
         hasLoaded = false
         hasScanned = false
         loadLibrary()
+    }
+
+    fun clearScanSummary() {
+        _scanSummary.value = null
     }
 
     private suspend fun loadRecentlyAddedIds(): Set<Long> {

@@ -9,7 +9,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
@@ -46,9 +51,11 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.anplak.androidmusic.R
 import com.anplak.androidmusic.player.PlayerError
+import com.anplak.androidmusic.ui.theme.Dimens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -161,21 +168,38 @@ fun NowPlayingScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .verticalScroll(rememberScrollState())
+                .padding(Dimens.screenPadding),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Queue position indicator
             if (queueSize > 1) {
                 Text(
-                    text = "$queuePosition / $queueSize",
+                    text = stringResource(R.string.queue_position, queuePosition, queueSize),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.testTag("queue_position")
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(Dimens.listVerticalPadding))
             }
-            
+
+            Box(
+                modifier = Modifier
+                    .size(Dimens.nowPlayingArtworkSize)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .testTag("artwork_placeholder"),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.MusicNote,
+                    contentDescription = null,
+                    modifier = Modifier.size(96.dp),
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+
+            Spacer(modifier = Modifier.height(Dimens.screenPadding))
+
             Text(
                 text = trackTitle,
                 style = MaterialTheme.typography.headlineMedium,
@@ -198,19 +222,17 @@ fun NowPlayingScreen(
                 )
             }
             
-            Spacer(modifier = Modifier.height(48.dp))
-            
-            // Playback controls with prev/next
+            Spacer(modifier = Modifier.height(Dimens.screenPadding))
+
             Row(
-                horizontalArrangement = Arrangement.spacedBy(24.dp),
+                horizontalArrangement = Arrangement.spacedBy(Dimens.screenPadding),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Previous button
                 IconButton(
                     onClick = onPreviousClick,
                     enabled = hasPrevious,
                     modifier = Modifier
-                        .size(56.dp)
+                        .size(Dimens.nowPlayingControlSize)
                         .testTag("previous_button")
                 ) {
                     Icon(
@@ -225,11 +247,10 @@ fun NowPlayingScreen(
                     )
                 }
                 
-                // Play/Pause button
                 FilledIconButton(
                     onClick = onPlayPauseClick,
                     modifier = Modifier
-                        .size(80.dp)
+                        .size(Dimens.nowPlayingPlayButtonSize)
                         .testTag("play_pause_button"),
                     colors = IconButtonDefaults.filledIconButtonColors(
                         containerColor = MaterialTheme.colorScheme.primary
@@ -246,12 +267,11 @@ fun NowPlayingScreen(
                     )
                 }
                 
-                // Next button
                 IconButton(
                     onClick = onNextClick,
                     enabled = hasNext,
                     modifier = Modifier
-                        .size(56.dp)
+                        .size(Dimens.nowPlayingControlSize)
                         .testTag("next_button")
                 ) {
                     Icon(
@@ -267,9 +287,7 @@ fun NowPlayingScreen(
                 }
             }
             
-            Spacer(modifier = Modifier.height(48.dp))
-            
-            // Seek bar with time display
+            Spacer(modifier = Modifier.height(Dimens.screenPadding))
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
