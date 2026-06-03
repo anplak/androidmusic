@@ -104,6 +104,31 @@ fun MainActivityComposeRule.openSearchFromPlaylists() {
     waitForSearchScreen()
 }
 
+fun MainActivityComposeRule.openLibraryIndexFromLibrary() {
+    onNodeWithTag("open_library_index").performClick()
+    waitForLibraryIndexScreen()
+}
+
+fun MainActivityComposeRule.waitForLibraryIndexScreen() {
+    waitUntil(timeoutMillis = 10_000) {
+        safeHasNodes(hasTestTag("library_index"))
+    }
+}
+
+fun MainActivityComposeRule.returnFromLibraryIndex() {
+    onNodeWithTag("library_index_back").performClick()
+    waitForLibraryContent()
+}
+
+/** Scan summary snackbar or settled library list after re-index. */
+fun MainActivityComposeRule.waitForLibraryReindexSettled() {
+    waitUntil(timeoutMillis = 30_000) {
+        safeHasNodes(hasTestTag("scan_summary")) ||
+            safeHasNodes(hasTestTag("track_list")) ||
+            safeHasNodes(hasTestTag("empty_state"))
+    }
+}
+
 /** Global search overlay is visible. */
 fun MainActivityComposeRule.waitForSearchScreen() {
     waitUntil(timeoutMillis = 10_000) {

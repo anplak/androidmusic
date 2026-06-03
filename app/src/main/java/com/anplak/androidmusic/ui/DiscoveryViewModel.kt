@@ -4,7 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.anplak.androidmusic.data.FavoritesRepositoryImpl
-import com.anplak.androidmusic.data.MusicLibraryRepositoryImpl
+import com.anplak.androidmusic.data.MusicLibraryRepositoryFactory
 import com.anplak.androidmusic.data.PlayHistoryRepositoryImpl
 import com.anplak.androidmusic.data.PlaylistRepositoryImpl
 import com.anplak.androidmusic.data.RecommendationEngine
@@ -38,11 +38,7 @@ class DiscoveryViewModel @JvmOverloads constructor(
     private val repository: RecommendationRepository = recommendationRepository ?: run {
         val favoritesRepository = FavoritesRepositoryImpl(db.favoriteDao())
         RecommendationRepositoryImpl(
-            musicLibraryRepository = MusicLibraryRepositoryImpl(
-                application.contentResolver,
-                application,
-                db.trackDao()
-            ),
+            musicLibraryRepository = MusicLibraryRepositoryFactory.create(application),
             favoritesRepository = favoritesRepository,
             playHistoryRepository = PlayHistoryRepositoryImpl(db.playHistoryDao()),
             playlistRepository = PlaylistRepositoryImpl(db.playlistDao())

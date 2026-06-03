@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.anplak.androidmusic.data.FavoritesRepository
 import com.anplak.androidmusic.data.FavoritesRepositoryImpl
 import com.anplak.androidmusic.data.MusicLibraryRepository
-import com.anplak.androidmusic.data.MusicLibraryRepositoryImpl
+import com.anplak.androidmusic.data.MusicLibraryRepositoryFactory
 import com.anplak.androidmusic.data.PlayHistoryRepository
 import com.anplak.androidmusic.data.PlayHistoryRepositoryImpl
 import com.anplak.androidmusic.data.PlaylistRepository
@@ -50,11 +50,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     private val playlistRepository: PlaylistRepository = PlaylistRepositoryImpl(database.playlistDao())
     private val trackStatsRepository: TrackStatsRepository = TrackStatsRepositoryImpl(database.trackStatsDao())
     private val playHistoryRepository: PlayHistoryRepository = PlayHistoryRepositoryImpl(database.playHistoryDao())
-    private val musicLibraryRepository: MusicLibraryRepository = MusicLibraryRepositoryImpl(
-        application.contentResolver,
-        application,
-        database.trackDao()
-    )
+    private val musicLibraryRepository: MusicLibraryRepository = MusicLibraryRepositoryFactory.create(application)
     private val smartShuffleGenerator = SmartShuffleGenerator(favoritesRepository, trackStatsRepository)
     
     private var queue = PlaybackQueue.EMPTY

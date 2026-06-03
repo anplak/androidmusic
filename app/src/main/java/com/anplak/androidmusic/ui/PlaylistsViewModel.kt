@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.anplak.androidmusic.data.FavoritesRepository
 import com.anplak.androidmusic.data.FavoritesRepositoryImpl
 import com.anplak.androidmusic.data.MusicLibraryRepository
-import com.anplak.androidmusic.data.MusicLibraryRepositoryImpl
+import com.anplak.androidmusic.data.MusicLibraryRepositoryFactory
 import com.anplak.androidmusic.data.Playlist
 import com.anplak.androidmusic.data.PlaylistRepository
 import com.anplak.androidmusic.data.PlaylistRepositoryImpl
@@ -82,11 +82,7 @@ class PlaylistsViewModel @JvmOverloads constructor(
         AppDatabase.getInstance(application).trackDao(),
         AppDatabase.getInstance(application).trackStatsDao()
     ),
-    private val musicLibraryRepository: MusicLibraryRepository = MusicLibraryRepositoryImpl(
-        application.contentResolver,
-        application,
-        AppDatabase.getInstance(application).trackDao()
-    )
+    private val musicLibraryRepository: MusicLibraryRepository = MusicLibraryRepositoryFactory.create(application)
 ) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow<PlaylistsUiState>(PlaylistsUiState.Loading)

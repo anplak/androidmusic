@@ -47,6 +47,7 @@ sealed class AppScreen {
     data class RecommendationDetail(val rowId: String) : AppScreen()
     data object Insights : AppScreen()
     data object Search : AppScreen()
+    data object LibraryIndex : AppScreen()
 }
 
 @Composable
@@ -54,7 +55,9 @@ fun MusicPlayerApp(
     playbackViewModel: PlaybackViewModel = viewModel(),
     playlistsViewModel: PlaylistsViewModel = viewModel(),
     discoveryViewModel: DiscoveryViewModel = viewModel(),
-    searchViewModel: SearchViewModel = viewModel()
+    searchViewModel: SearchViewModel = viewModel(),
+    libraryViewModel: LibraryViewModel = viewModel(),
+    libraryIndexViewModel: LibraryIndexViewModel = viewModel()
 ) {
     val uiState by playbackViewModel.uiState.collectAsState()
     val permissionState = rememberAudioPermissionState()
@@ -166,6 +169,18 @@ fun MusicPlayerApp(
                     )
                 }
 
+                currentScreen is AppScreen.LibraryIndex -> {
+                    LibraryIndexScreen(
+                        onBackClick = {
+                            if (libraryIndexViewModel.consumeRulesChanged()) {
+                                libraryViewModel.refresh()
+                            }
+                            currentScreen = AppScreen.MainTabs
+                        },
+                        viewModel = libraryIndexViewModel
+                    )
+                }
+
                 else -> {
                     MainTabsContent(
                         currentTab = currentTab,
@@ -191,10 +206,12 @@ fun MusicPlayerApp(
                             currentScreen = AppScreen.NowPlaying
                         },
                         onOpenSearch = { currentScreen = AppScreen.Search },
+                        onOpenLibraryIndex = { currentScreen = AppScreen.LibraryIndex },
                         librarySearchHint = librarySearchHint,
                         onConsumeLibraryHint = { librarySearchHint = null },
                         playlistsViewModel = playlistsViewModel,
-                        discoveryViewModel = discoveryViewModel
+                        discoveryViewModel = discoveryViewModel,
+                        libraryViewModel = libraryViewModel
                     )
                 }
             }
@@ -228,10 +245,12 @@ private fun MainTabsContent(
     onRecommendationRowSelected: (RecommendationRow) -> Unit,
     onPlayRecommendationRow: (RecommendationRow) -> Unit,
     onOpenSearch: () -> Unit,
+    onOpenLibraryIndex: () -> Unit,
     librarySearchHint: String?,
     onConsumeLibraryHint: () -> Unit,
     playlistsViewModel: PlaylistsViewModel,
-    discoveryViewModel: DiscoveryViewModel
+    discoveryViewModel: DiscoveryViewModel,
+    libraryViewModel: LibraryViewModel
 ) {
     Scaffold(
         bottomBar = {
@@ -267,8 +286,10 @@ private fun MainTabsContent(
                         onTrackSelected = onTrackSelected,
                         onAddToPlaylist = onAddToPlaylist,
                         onOpenSearch = onOpenSearch,
+                        onOpenLibraryIndex = onOpenLibraryIndex,
                         initialLocalQuery = librarySearchHint,
-                        onConsumeLibraryHint = onConsumeLibraryHint
+                        onConsumeLibraryHint = onConsumeLibraryHint,
+                        viewModel = libraryViewModel
                     )
                 }
                 NavigationTab.Favorites -> {

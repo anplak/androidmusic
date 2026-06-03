@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.anplak.androidmusic.data.DurationBucket
 import com.anplak.androidmusic.data.FavoritesRepository
 import com.anplak.androidmusic.data.LibraryFilter
+import com.anplak.androidmusic.data.LibraryScanResult
 import com.anplak.androidmusic.data.MusicLibraryRepository
 import com.anplak.androidmusic.data.db.TrackDao
 import com.anplak.androidmusic.data.db.TrackEntity
@@ -102,7 +103,7 @@ class LibraryViewModelTest {
         advanceUntilIdle()
         
         // Repository should only be called once
-        assertEquals(1, fakeRepository.getAllTracksCallCount)
+        assertEquals(1, fakeRepository.syncLibraryCallCount)
     }
     
     @Test
@@ -118,7 +119,7 @@ class LibraryViewModelTest {
         viewModel.refresh()
         advanceUntilIdle()
         
-        assertEquals(2, fakeRepository.getAllTracksCallCount)
+        assertEquals(2, fakeRepository.syncLibraryCallCount)
     }
     
     @Test
@@ -207,6 +208,18 @@ class LibraryViewModelTest {
         assertTrue((state as LibraryUiState.Content).favoriteIds.contains(1L))
     }
     
+    @Test
+    fun `scan summary exposed when sync completes`() = runTest {
+        fakeRepository.setTracks(listOf(createTrack(1, "Song One", "Artist A")))
+
+        val viewModel = createViewModel()
+        viewModel.loadLibrary()
+        advanceUntilIdle()
+
+        val summary = viewModel.scanSummary.value
+        assertEquals(1, summary?.indexedCount)
+    }
+
     private fun createViewModel(): LibraryViewModel {
         return LibraryViewModel(
             application,
@@ -229,20 +242,29 @@ class LibraryViewModelTest {
 
 class FakeMusicLibraryRepository : MusicLibraryRepository {
     private var tracks: List<TrackInfo> = emptyList()
-    var getAllTracksCallCount = 0
+    var syncLibraryCallCount = 0
         private set
     var scanMusicDirectoriesCallCount = 0
         private set
-    
+    private var lastScanResult: LibraryScanResult = LibraryScanResult(emptyList(), 0, 0, 0)
+
     fun setTracks(tracks: List<TrackInfo>) {
         this.tracks = tracks
+        lastScanResult = LibraryScanResult(
+            tracks = tracks,
+            indexedCount = tracks.size,
+            skippedDurationCount = 0,
+            skippedFolderCount = 0
+        )
     }
-    
-    override suspend fun getAllTracks(): List<TrackInfo> {
-        getAllTracksCallCount++
-        return tracks
+
+    override suspend fun syncLibrary(): LibraryScanResult {
+        syncLibraryCallCount++
+        return lastScanResult
     }
-    
+
+    override suspend fun getAllTracks(): List<TrackInfo> = syncLibrary().tracks
+
     override suspend fun scanMusicDirectories() {
         scanMusicDirectoriesCallCount++
     }

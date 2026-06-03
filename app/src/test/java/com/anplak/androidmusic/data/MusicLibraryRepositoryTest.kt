@@ -17,6 +17,8 @@ import org.mockito.ArgumentCaptor
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.mock
+import com.anplak.androidmusic.data.db.TrackDao
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.RobolectricTestRunner
@@ -32,8 +34,13 @@ class MusicLibraryRepositoryTest {
         MediaStore.Audio.Media.TITLE,
         MediaStore.Audio.Media.ARTIST,
         MediaStore.Audio.Media.ALBUM,
-        MediaStore.Audio.Media.DURATION
+        MediaStore.Audio.Media.DURATION,
+        MediaStore.Audio.Media.DATA,
+        MediaStore.Audio.Media.DISPLAY_NAME,
+        MediaStore.Audio.Media.RELATIVE_PATH
     )
+
+    private val defaultPath = "/storage/emulated/0/Music/track.mp3"
     
     @Before
     fun setup() {
@@ -361,6 +368,89 @@ class MusicLibraryRepositoryTest {
         assertEquals("Unknown Album", tracks[0].album)
     }
     
+    @Test
+    fun `syncLibrary skips tracks over max duration`() = runTest {
+        val cursor = createCursorWithTracks(
+            listOf(
+                TrackData(1L, "Short Song", "Artist", "Album", 180_000L, defaultPath),
+                TrackData(2L, "Long Song", "Artist", "Album", 15 * 60 * 1000L, defaultPath)
+            )
+        )
+        whenever(contentResolver.query(any(), any(), anyOrNull(), anyOrNull(), anyOrNull()))
+            .thenReturn(cursor)
+
+        val result = repository.syncLibrary()
+
+        assertEquals(1, result.tracks.size)
+        assertEquals("Short Song", result.tracks.first().title)
+        assertEquals(1, result.skippedDurationCount)
+    }
+
+    @Test
+    fun `syncLibrary skips tracks under excluded folder`() = runTest {
+        val policyRepository = mock<LibraryIndexPolicyRepository>()
+        whenever(policyRepository.loadPolicy()).thenReturn(
+            LibraryIndexPolicy(
+                folderRules = listOf(
+                    FolderRule("/storage/emulated/0/Music/Podcasts", FolderRuleMode.EXCLUDE)
+                )
+            )
+        )
+        repository = MusicLibraryRepositoryImpl(
+            contentResolver,
+            policyRepository = policyRepository
+        )
+
+        val cursor = createCursorWithTracks(
+            listOf(
+                TrackData(
+                    1L,
+                    "Podcast",
+                    "Artist",
+                    "Album",
+                    180_000L,
+                    "/storage/emulated/0/Music/Podcasts/ep.mp3"
+                ),
+                TrackData(
+                    2L,
+                    "Song",
+                    "Artist",
+                    "Album",
+                    180_000L,
+                    "/storage/emulated/0/Music/song.mp3"
+                )
+            )
+        )
+        whenever(contentResolver.query(any(), any(), anyOrNull(), anyOrNull(), anyOrNull()))
+            .thenReturn(cursor)
+
+        val result = repository.syncLibrary()
+
+        assertEquals(1, result.tracks.size)
+        assertEquals("Song", result.tracks.first().title)
+        assertEquals(1, result.skippedFolderCount)
+    }
+
+    @Test
+    fun `syncLibrary deletes stale entries after sync`() = runTest {
+        val trackDao = mock<TrackDao>()
+        repository = MusicLibraryRepositoryImpl(
+            contentResolver,
+            trackDao = trackDao
+        )
+        val cursor = createCursorWithTracks(
+            listOf(TrackData(1L, "Song", "Artist", "Album", 180_000L, defaultPath))
+        )
+        whenever(contentResolver.query(any(), any(), anyOrNull(), anyOrNull(), anyOrNull()))
+            .thenReturn(cursor)
+
+        repository.syncLibrary()
+
+        verify(trackDao).insertAll(any())
+        verify(trackDao).deleteStaleEntries(listOf(1L))
+        verify(trackDao, never()).deleteAll()
+    }
+
     private fun createEmptyCursor(): Cursor {
         return MatrixCursor(projection)
     }
@@ -368,22 +458,28 @@ class MusicLibraryRepositoryTest {
     private fun createCursorWithTracks(tracks: List<TrackData>): Cursor {
         val cursor = MatrixCursor(projection)
         tracks.forEach { track ->
-            cursor.addRow(arrayOf(
-                track.id,
-                track.title,
-                track.artist,
-                track.album,
-                track.duration
-            ))
+            cursor.addRow(
+                arrayOf(
+                    track.id,
+                    track.title,
+                    track.artist,
+                    track.album,
+                    track.duration,
+                    track.path,
+                    track.title,
+                    null
+                )
+            )
         }
         return cursor
     }
-    
+
     private data class TrackData(
         val id: Long,
         val title: String?,
         val artist: String?,
         val album: String?,
-        val duration: Long
+        val duration: Long,
+        val path: String = "/storage/emulated/0/Music/track.mp3"
     )
 }

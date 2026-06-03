@@ -5,7 +5,8 @@ A minimal offline music player for Android that automatically discovers and play
 ## Features
 
 - **Offline-first**: No network or account required
-- **Automatic library scanning**: Discovers all audio files on device via MediaStore
+- **Automatic library scanning**: Discovers audio files on device via MediaStore
+- **Library indexing rules**: By default skips tracks longer than 10 minutes; exclude (or include-only) folders and subfolders from the index
 - **Music library browsing**: Scrollable list of tracks with title, artist, and duration
 - **Favorites**: Mark tracks as favorites with a heart icon, view all favorites in a dedicated tab
 - **For You**: Personalized discovery tab with Daily Mix, Quick Mix, “Because you listen to…”, and Continue Listening rows (fully on-device)
@@ -88,8 +89,13 @@ The app follows **MVVM architecture** with unidirectional data flow:
 
 **MusicLibraryRepository** (`data/MusicLibraryRepository.kt`)
 - Queries MediaStore for device audio files
-- Caches tracks in Room for stable ID mapping
+- Applies index policy (max duration, folder include/exclude rules) during sync
+- Caches indexed tracks in Room for stable ID mapping
 - Executes queries off main thread using coroutines
+
+**LibraryIndexPolicyRepository** (`data/LibraryIndexPolicyRepository.kt`)
+- Loads max-duration setting and folder rules from SharedPreferences and Room
+- Persists folder include/exclude rules for re-scan on change
 
 **FavoritesRepository** (`data/FavoritesRepository.kt`)
 - Toggle favorite status for tracks
