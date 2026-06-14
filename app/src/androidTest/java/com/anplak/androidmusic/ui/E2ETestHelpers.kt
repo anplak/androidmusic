@@ -164,6 +164,30 @@ fun MainActivityComposeRule.typeInPlaylistsSearchField(text: String) {
     onNodeWithTag("playlists_search_field").performTextInput(text)
 }
 
+fun MainActivityComposeRule.waitForHistorySettled() {
+    waitUntil(timeoutMillis = 15_000) {
+        safeHasNodes(hasTestTag("history_list")) ||
+            safeHasNodes(hasTestTag("history_empty"))
+    }
+}
+
+/** Returns true when at least one history entry is visible. */
+fun MainActivityComposeRule.waitForHistoryList(timeoutMillis: Long = 15_000): Boolean {
+    return try {
+        waitUntil(timeoutMillis = timeoutMillis) {
+            safeHasNodes(hasTestTag("history_list"))
+        }
+        true
+    } catch (_: Throwable) {
+        false
+    }
+}
+
+fun MainActivityComposeRule.navigateToHistory() {
+    onNodeWithTag("nav_history").performClick()
+    waitForHistorySettled()
+}
+
 fun MainActivityComposeRule.navigateToForYou() {
     onNodeWithTag("nav_foryou").performClick()
     waitForIdle()

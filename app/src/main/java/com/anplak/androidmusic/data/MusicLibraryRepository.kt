@@ -13,14 +13,19 @@ import com.anplak.androidmusic.data.db.TrackEntity
 import com.anplak.androidmusic.data.db.TrackDao
 import com.anplak.androidmusic.player.TrackInfo
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
 
 interface MusicLibraryRepository {
+    suspend fun getCachedTracks(): List<TrackInfo>
+    fun observeCachedTracks(): Flow<List<TrackInfo>>
     suspend fun syncLibrary(): LibraryScanResult
-    suspend fun getAllTracks(): List<TrackInfo>
     suspend fun scanMusicDirectories()
+    suspend fun getAllTracks(): List<TrackInfo> = getCachedTracks()
 }
 
 class MusicLibraryRepositoryImpl(
@@ -30,7 +35,12 @@ class MusicLibraryRepositoryImpl(
     private val policyRepository: LibraryIndexPolicyRepository? = null
 ) : MusicLibraryRepository {
 
-    override suspend fun getAllTracks(): List<TrackInfo> = syncLibrary().tracks
+    override suspend fun getCachedTracks(): List<TrackInfo> =
+        trackDao?.getAll().orEmpty().map { it.toTrackInfo() }
+
+    override fun observeCachedTracks(): Flow<List<TrackInfo>> =
+        (trackDao?.observeAll() ?: flowOf(emptyList()))
+            .map { entities -> entities.map { it.toTrackInfo() } }
 
     /**
      * Scans common music directories (Music, Download) to ensure MediaStore is up-to-date.

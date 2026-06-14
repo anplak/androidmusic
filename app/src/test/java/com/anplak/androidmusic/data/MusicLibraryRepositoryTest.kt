@@ -54,7 +54,7 @@ class MusicLibraryRepositoryTest {
         whenever(contentResolver.query(any(), any(), anyOrNull(), anyOrNull(), anyOrNull()))
             .thenReturn(emptyCursor)
         
-        val tracks = repository.getAllTracks()
+        val tracks = repository.syncLibrary().tracks
         
         assertTrue(tracks.isEmpty())
     }
@@ -70,7 +70,7 @@ class MusicLibraryRepositoryTest {
         whenever(contentResolver.query(any(), any(), anyOrNull(), anyOrNull(), anyOrNull()))
             .thenReturn(cursor)
         
-        val tracks = repository.getAllTracks()
+        val tracks = repository.syncLibrary().tracks
         
         assertEquals(2, tracks.size)
         assertEquals("Song One", tracks[0].title)
@@ -86,7 +86,7 @@ class MusicLibraryRepositoryTest {
         whenever(contentResolver.query(any(), any(), anyOrNull(), anyOrNull(), anyOrNull()))
             .thenThrow(RuntimeException("Database error"))
         
-        val tracks = repository.getAllTracks()
+        val tracks = repository.syncLibrary().tracks
         
         assertTrue(tracks.isEmpty())
     }
@@ -96,7 +96,7 @@ class MusicLibraryRepositoryTest {
         whenever(contentResolver.query(any(), any(), anyOrNull(), anyOrNull(), anyOrNull()))
             .thenReturn(null)
         
-        val tracks = repository.getAllTracks()
+        val tracks = repository.syncLibrary().tracks
         
         assertTrue(tracks.isEmpty())
     }
@@ -113,7 +113,7 @@ class MusicLibraryRepositoryTest {
         whenever(contentResolver.query(any(), any(), anyOrNull(), anyOrNull(), anyOrNull()))
             .thenReturn(cursor)
         
-        repository.getAllTracks()
+        repository.syncLibrary()
         
         // Capture the selection argument
         val selectionCaptor = ArgumentCaptor.forClass(String::class.java)
@@ -143,7 +143,7 @@ class MusicLibraryRepositoryTest {
         whenever(contentResolver.query(any(), any(), anyOrNull(), anyOrNull(), anyOrNull()))
             .thenReturn(cursor)
         
-        repository.getAllTracks()
+        repository.syncLibrary()
         
         // Capture the selection argument
         val selectionCaptor = ArgumentCaptor.forClass(String::class.java)
@@ -173,7 +173,7 @@ class MusicLibraryRepositoryTest {
         whenever(contentResolver.query(any(), any(), anyOrNull(), anyOrNull(), anyOrNull()))
             .thenReturn(cursor)
         
-        repository.getAllTracks()
+        repository.syncLibrary()
         
         // Capture the selection argument
         val selectionCaptor = ArgumentCaptor.forClass(String::class.java)
@@ -211,7 +211,7 @@ class MusicLibraryRepositoryTest {
         whenever(contentResolver.query(any(), any(), anyOrNull(), anyOrNull(), anyOrNull()))
             .thenReturn(cursor)
         
-        val tracks = repository.getAllTracks()
+        val tracks = repository.syncLibrary().tracks
         
         assertEquals(2, tracks.size)
         assertEquals("Music Folder Song", tracks[0].title)
@@ -230,7 +230,7 @@ class MusicLibraryRepositoryTest {
         whenever(contentResolver.query(any(), any(), anyOrNull(), anyOrNull(), anyOrNull()))
             .thenReturn(cursor)
         
-        val tracks = repository.getAllTracks()
+        val tracks = repository.syncLibrary().tracks
         
         assertEquals(2, tracks.size)
         assertEquals("Downloaded Song", tracks[0].title)
@@ -249,7 +249,7 @@ class MusicLibraryRepositoryTest {
         whenever(contentResolver.query(any(), any(), anyOrNull(), anyOrNull(), anyOrNull()))
             .thenReturn(cursor)
         
-        val tracks = repository.getAllTracks()
+        val tracks = repository.syncLibrary().tracks
         
         assertEquals(2, tracks.size)
         // Should use default values for missing metadata
@@ -274,7 +274,7 @@ class MusicLibraryRepositoryTest {
         whenever(contentResolver.query(any(), any(), anyOrNull(), anyOrNull(), anyOrNull()))
             .thenReturn(cursor)
         
-        val tracks = repository.getAllTracks()
+        val tracks = repository.syncLibrary().tracks
         
         assertEquals(3, tracks.size)
         assertEquals(5000L, tracks[0].duration)
@@ -297,7 +297,7 @@ class MusicLibraryRepositoryTest {
         whenever(contentResolver.query(any(), any(), anyOrNull(), anyOrNull(), anyOrNull()))
             .thenReturn(cursor)
         
-        val tracks = repository.getAllTracks()
+        val tracks = repository.syncLibrary().tracks
         
         assertEquals(5, tracks.size)
     }
@@ -309,7 +309,7 @@ class MusicLibraryRepositoryTest {
         whenever(contentResolver.query(any(), any(), anyOrNull(), anyOrNull(), anyOrNull()))
             .thenReturn(cursor)
         
-        repository.getAllTracks()
+        repository.syncLibrary()
         
         val uriCaptor = ArgumentCaptor.forClass(Uri::class.java)
         verify(contentResolver).query(
@@ -339,7 +339,7 @@ class MusicLibraryRepositoryTest {
         whenever(contentResolver.query(any(), any(), anyOrNull(), anyOrNull(), anyOrNull()))
             .thenReturn(cursor)
         
-        val tracks = repository.getAllTracks()
+        val tracks = repository.syncLibrary().tracks
         
         assertEquals(3, tracks.size)
         assertEquals("Song with 'Quotes'", tracks[0].title)
@@ -359,7 +359,7 @@ class MusicLibraryRepositoryTest {
         whenever(contentResolver.query(any(), any(), anyOrNull(), anyOrNull(), anyOrNull()))
             .thenReturn(cursor)
         
-        val tracks = repository.getAllTracks()
+        val tracks = repository.syncLibrary().tracks
         
         assertEquals(1, tracks.size)
         // Should convert "<unknown>" to default values

@@ -152,7 +152,7 @@ class MusicLibraryIntegrationTest {
         
         // Step 5: Verify via repository
         runBlocking {
-            val tracks = repository.getAllTracks()
+            val tracks = repository.syncLibrary().tracks
             Log.i(TAG, "Repository found ${tracks.size} tracks after scan")
             
             tracks.forEach { track ->
@@ -299,10 +299,10 @@ class MusicLibraryIntegrationTest {
     fun verifyRepositoryFindsAudioFiles() {
         runBlocking {
             Log.i(TAG, "========================================")
-            Log.i(TAG, "TESTING REPOSITORY getAllTracks()")
+            Log.i(TAG, "TESTING REPOSITORY syncLibrary()")
             Log.i(TAG, "========================================")
 
-            val tracks = repository.getAllTracks()
+            val tracks = repository.syncLibrary().tracks
 
             Log.i(TAG, "Repository returned ${tracks.size} tracks")
             

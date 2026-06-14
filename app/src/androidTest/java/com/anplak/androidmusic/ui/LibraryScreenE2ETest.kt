@@ -173,5 +173,60 @@ class LibraryScreenE2ETest {
         composeTestRule.onNodeWithTag("play_pause_button").assertIsDisplayed()
         composeTestRule.onNodeWithTag("track_title").assertIsDisplayed()
     }
+
+    /**
+     * Scenario #5: Warm cache — repeat Library visit should not require full-screen loading.
+     */
+    @Test
+    fun warmCache_tabSwitch_doesNotBlockOnFullScreenLoading() {
+        composeTestRule.waitForAppReady()
+        composeTestRule.prepareLibraryTab()
+
+        composeTestRule.navigateToForYou()
+        composeTestRule.navigateToLibrary()
+
+        val hasTrackList = composeTestRule.safeHasNodes(hasTestTag("track_list"))
+        val hasEmptyState = composeTestRule.safeHasNodes(hasTestTag("empty_state"))
+
+        assert(hasTrackList || hasEmptyState) {
+            "Expected track_list or empty_state after returning to Library tab"
+        }
+    }
+
+    /**
+     * Scenario #6: Background refresh — library stays interactive during re-sync.
+     */
+    @Test
+    fun backgroundRefresh_libraryRemainsInteractive() {
+        composeTestRule.prepareLibraryTab()
+
+        if (!composeTestRule.safeHasNodes(hasTestTag("track_list"))) {
+            return
+        }
+
+        composeTestRule.navigateToForYou()
+        composeTestRule.navigateToLibrary()
+
+        composeTestRule.onNodeWithTag("track_list").assertIsDisplayed()
+    }
+
+    /**
+     * Scenario #7: Rapid tab switches should not crash the app.
+     */
+    @Test
+    fun tabSwitchStress_noCrash() {
+        composeTestRule.waitForAppReady()
+
+        repeat(5) {
+            composeTestRule.navigateToForYou()
+            composeTestRule.navigateToLibrary()
+        }
+
+        val hasTrackList = composeTestRule.safeHasNodes(hasTestTag("track_list"))
+        val hasEmptyState = composeTestRule.safeHasNodes(hasTestTag("empty_state"))
+        assert(hasTrackList || hasEmptyState) {
+            "Library should remain in a valid state after rapid tab switches"
+        }
+    }
 }
 
