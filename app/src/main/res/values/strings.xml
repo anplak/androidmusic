@@ -26,6 +26,8 @@
 
     <string name="your_library">Your Library</string>
     <string name="scanning_library">Scanning library…</string>
+    <string name="updating_library">Updating library…</string>
+    <string name="library_sync_retry">Couldn\'t update library. Tap to retry.</string>
     <string name="no_music_found">No music found</string>
     <string name="no_music_found_description">Add some music files to your device to see them here.</string>
     

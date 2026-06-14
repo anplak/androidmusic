@@ -263,6 +263,8 @@ class TestTrackDao : TrackDao {
 
     override suspend fun getAll(): List<TrackEntity> = tracks
 
+    override fun observeAll(): Flow<List<TrackEntity>> = kotlinx.coroutines.flow.flowOf(tracks)
+
     override suspend fun getByIds(trackIds: List<Long>): List<TrackEntity> =
         tracks.filter { it.id in trackIds }
 

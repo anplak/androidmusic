@@ -8,6 +8,9 @@ import com.anplak.androidmusic.data.FavoritesRepositoryImpl
 import com.anplak.androidmusic.data.LibraryFilter
 import com.anplak.androidmusic.data.LibraryFilterEngine
 import com.anplak.androidmusic.data.LibraryScanResult
+import com.anplak.androidmusic.data.LibrarySyncCoordinator
+import com.anplak.androidmusic.data.LibrarySyncCoordinatorFactory
+import com.anplak.androidmusic.data.LibrarySyncState
 import com.anplak.androidmusic.data.MusicLibraryRepository
 import com.anplak.androidmusic.data.MusicLibraryRepositoryFactory
 import com.anplak.androidmusic.data.db.AppDatabase
@@ -22,6 +25,8 @@ sealed interface LibraryUiState {
     data object Loading : LibraryUiState
     data class Content(
         val tracks: List<TrackInfo>,
+        val isRefreshing: Boolean = false,
+        val syncFailed: Boolean = false,
         val favoriteIds: Set<Long> = emptySet(),
         val filter: LibraryFilter = LibraryFilter(),
         val localQuery: String = "",
@@ -36,7 +41,8 @@ class LibraryViewModel @JvmOverloads constructor(
     private val favoritesRepository: FavoritesRepository = FavoritesRepositoryImpl(
         AppDatabase.getInstance(application).favoriteDao()
     ),
-    private val trackDao: TrackDao = AppDatabase.getInstance(application).trackDao()
+    private val trackDao: TrackDao = AppDatabase.getInstance(application).trackDao(),
+    private val syncCoordinator: LibrarySyncCoordinator = LibrarySyncCoordinatorFactory.get(application)
 ) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow<LibraryUiState>(LibraryUiState.Loading)
@@ -45,44 +51,61 @@ class LibraryViewModel @JvmOverloads constructor(
     private val _scanSummary = MutableStateFlow<LibraryScanResult?>(null)
     val scanSummary: StateFlow<LibraryScanResult?> = _scanSummary.asStateFlow()
 
-    private var hasLoaded = false
-    private var hasScanned = false
     private var currentTracks: List<TrackInfo> = emptyList()
     private var favoriteIds: Set<Long> = emptySet()
     private var recentlyAddedIds: Set<Long> = emptySet()
     private var filter: LibraryFilter = LibraryFilter()
     private var localQuery: String = ""
+    private var isRefreshing: Boolean = false
+    private var syncFailed: Boolean = false
 
     init {
         viewModelScope.launch {
             favoritesRepository.getAllFavoriteIds().collect { ids ->
                 favoriteIds = ids
-                if (hasLoaded) {
+                if (shouldApplyFilters()) {
                     applyFilters()
                 }
             }
         }
-    }
-
-    fun loadLibrary() {
-        if (hasLoaded) return
 
         viewModelScope.launch {
-            _uiState.value = LibraryUiState.Loading
-
-            if (!hasScanned) {
-                repository.scanMusicDirectories()
-                hasScanned = true
+            repository.observeCachedTracks().collect { cached ->
+                currentTracks = cached
+                recentlyAddedIds = loadRecentlyAddedIds()
+                if (shouldApplyFilters()) {
+                    applyFilters()
+                }
             }
-
-            val result = repository.syncLibrary()
-            currentTracks = result.tracks
-            _scanSummary.value = result
-            recentlyAddedIds = loadRecentlyAddedIds()
-
-            hasLoaded = true
-            applyFilters()
         }
+
+        viewModelScope.launch {
+            syncCoordinator.syncState.collect { state ->
+                when (state) {
+                    LibrarySyncState.Idle -> Unit
+                    LibrarySyncState.Running -> updateSyncFlags(isRefreshing = true, syncFailed = false)
+                    is LibrarySyncState.Success -> {
+                        updateSyncFlags(isRefreshing = false, syncFailed = false)
+                        _scanSummary.value = state.result
+                    }
+                    is LibrarySyncState.Failed -> updateSyncFlags(isRefreshing = false, syncFailed = true)
+                }
+            }
+        }
+
+        viewModelScope.launch {
+            if (repository.getCachedTracks().isEmpty()) {
+                _uiState.value = LibraryUiState.Loading
+                syncCoordinator.syncNow()
+            } else {
+                applyFilters()
+                syncCoordinator.scheduleSync()
+            }
+        }
+    }
+
+    fun onLibraryVisible() {
+        syncCoordinator.scheduleSync()
     }
 
     fun setFilter(newFilter: LibraryFilter) {
@@ -107,9 +130,15 @@ class LibraryViewModel @JvmOverloads constructor(
     }
 
     fun refresh() {
-        hasLoaded = false
-        hasScanned = false
-        loadLibrary()
+        viewModelScope.launch {
+            syncFailed = false
+            if (currentTracks.isEmpty()) {
+                _uiState.value = LibraryUiState.Loading
+            } else {
+                updateSyncFlags(isRefreshing = true, syncFailed = false)
+            }
+            syncCoordinator.syncNow()
+        }
     }
 
     fun clearScanSummary() {
@@ -121,8 +150,33 @@ class LibraryViewModel @JvmOverloads constructor(
         return trackDao.getTracksAddedSince(sinceMs).map { it.id }.toSet()
     }
 
+    private fun shouldApplyFilters(): Boolean {
+        if (_uiState.value !is LibraryUiState.Loading) return true
+        if (currentTracks.isNotEmpty()) return true
+        return syncCoordinator.syncState.value !is LibrarySyncState.Running
+    }
+
+    private fun updateSyncFlags(isRefreshing: Boolean, syncFailed: Boolean) {
+        this.isRefreshing = isRefreshing
+        this.syncFailed = syncFailed
+        val state = _uiState.value
+        if (state is LibraryUiState.Content) {
+            _uiState.value = state.copy(
+                isRefreshing = isRefreshing,
+                syncFailed = syncFailed
+            )
+        } else if (shouldApplyFilters()) {
+            applyFilters()
+        }
+    }
+
     private fun applyFilters() {
-        if (!hasLoaded) return
+        if (_uiState.value is LibraryUiState.Loading &&
+            currentTracks.isEmpty() &&
+            syncCoordinator.syncState.value is LibrarySyncState.Running
+        ) {
+            return
+        }
 
         if (currentTracks.isEmpty()) {
             _uiState.value = LibraryUiState.Empty
@@ -138,6 +192,8 @@ class LibraryViewModel @JvmOverloads constructor(
 
         _uiState.value = LibraryUiState.Content(
             tracks = filtered,
+            isRefreshing = isRefreshing,
+            syncFailed = syncFailed,
             favoriteIds = favoriteIds,
             filter = filter,
             localQuery = localQuery,

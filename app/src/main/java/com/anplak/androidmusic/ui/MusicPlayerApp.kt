@@ -260,7 +260,12 @@ private fun MainTabsContent(
                         icon = { Icon(tab.icon, contentDescription = stringResource(tab.labelResId)) },
                         label = { Text(stringResource(tab.labelResId)) },
                         selected = currentTab == tab,
-                        onClick = { onTabSelected(tab) },
+                        onClick = {
+                            onTabSelected(tab)
+                            if (tab == NavigationTab.Library) {
+                                libraryViewModel.onLibraryVisible()
+                            }
+                        },
                         modifier = Modifier.testTag("nav_${tab.name.lowercase()}")
                     )
                 }

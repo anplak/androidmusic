@@ -16,6 +16,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -66,7 +68,7 @@ fun LibraryScreen(
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
-        viewModel.loadLibrary()
+        viewModel.onLibraryVisible()
     }
 
     LaunchedEffect(initialLocalQuery) {
@@ -137,6 +139,21 @@ fun LibraryScreen(
                 is LibraryUiState.Empty -> EmptyLibraryState()
                 is LibraryUiState.Content -> {
                     Column(modifier = Modifier.fillMaxSize()) {
+                        if (state.isRefreshing) {
+                            LinearProgressIndicator(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("library_refresh_indicator")
+                            )
+                        }
+                        if (state.syncFailed) {
+                            TextButton(
+                                onClick = { viewModel.refresh() },
+                                modifier = Modifier.testTag("library_sync_retry")
+                            ) {
+                                Text(stringResource(R.string.library_sync_retry))
+                            }
+                        }
                         LibraryFilterBar(
                             filter = state.filter,
                             localQuery = state.localQuery,

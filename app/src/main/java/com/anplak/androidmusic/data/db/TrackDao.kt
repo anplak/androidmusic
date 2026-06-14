@@ -19,6 +19,9 @@ interface TrackDao {
 
     @Query("SELECT * FROM tracks ORDER BY title ASC")
     suspend fun getAll(): List<TrackEntity>
+
+    @Query("SELECT * FROM tracks ORDER BY title ASC")
+    fun observeAll(): Flow<List<TrackEntity>>
     
     @Query("SELECT * FROM tracks WHERE id IN (:trackIds)")
     suspend fun getByIds(trackIds: List<Long>): List<TrackEntity>
