@@ -1,17 +1,20 @@
 package com.anplak.androidmusic.data.db
 
 import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TrackDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    /**
+     * Upserts track metadata without deleting the row on conflict.
+     * Using REPLACE here would CASCADE-delete favorites, playlist entries, etc.
+     */
+    @Upsert
     suspend fun insertAll(tracks: List<TrackEntity>)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun insert(track: TrackEntity)
 
     @Query("SELECT * FROM tracks WHERE id = :trackId")

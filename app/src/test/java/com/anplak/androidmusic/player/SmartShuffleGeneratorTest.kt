@@ -187,6 +187,7 @@ private class FakeFavoritesRepo : FavoritesRepository {
         favoriteIds.value = ids
     }
     
+    override suspend fun toggleFavorite(track: TrackInfo) {}
     override suspend fun toggleFavorite(trackId: Long) {}
     
     override fun isFavorite(trackId: Long): Flow<Boolean> = 

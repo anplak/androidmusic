@@ -24,6 +24,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import com.anplak.androidmusic.R
 import com.anplak.androidmusic.player.TrackInfo
@@ -40,6 +42,11 @@ fun TrackListItem(
     testTagPrefix: String = "track"
 ) {
     var showMenu by remember { mutableStateOf(false) }
+    val favoriteContentDescription = if (isFavorite) {
+        stringResource(R.string.remove_from_favorites)
+    } else {
+        stringResource(R.string.add_to_favorites)
+    }
 
     ListItem(
         headlineContent = {
@@ -66,15 +73,15 @@ fun TrackListItem(
                 )
                 IconButton(
                     onClick = onToggleFavorite,
-                    modifier = Modifier.testTag("favorite_button_$index")
+                    modifier = Modifier
+                        .testTag("favorite_button_$index")
+                        .semantics {
+                            contentDescription = favoriteContentDescription
+                        }
                 ) {
                     Icon(
                         imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                        contentDescription = if (isFavorite) {
-                            stringResource(R.string.remove_from_favorites)
-                        } else {
-                            stringResource(R.string.add_to_favorites)
-                        },
+                        contentDescription = null,
                         tint = if (isFavorite) {
                             MaterialTheme.colorScheme.primary
                         } else {

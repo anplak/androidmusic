@@ -19,6 +19,7 @@ import com.anplak.androidmusic.player.TrackInfo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 sealed interface LibraryUiState {
@@ -39,7 +40,8 @@ class LibraryViewModel @JvmOverloads constructor(
     application: Application,
     private val repository: MusicLibraryRepository = MusicLibraryRepositoryFactory.create(application),
     private val favoritesRepository: FavoritesRepository = FavoritesRepositoryImpl(
-        AppDatabase.getInstance(application).favoriteDao()
+        AppDatabase.getInstance(application).favoriteDao(),
+        AppDatabase.getInstance(application).trackDao()
     ),
     private val trackDao: TrackDao = AppDatabase.getInstance(application).trackDao(),
     private val syncCoordinator: LibrarySyncCoordinator = LibrarySyncCoordinatorFactory.get(application)
@@ -106,6 +108,10 @@ class LibraryViewModel @JvmOverloads constructor(
 
     fun onLibraryVisible() {
         syncCoordinator.scheduleSync()
+        viewModelScope.launch {
+            favoriteIds = favoritesRepository.getAllFavoriteIds().first()
+            refreshFavoriteUiState()
+        }
     }
 
     fun setFilter(newFilter: LibraryFilter) {
@@ -124,8 +130,15 @@ class LibraryViewModel @JvmOverloads constructor(
     }
 
     fun toggleFavorite(trackId: Long) {
+        val track = currentTracks.find { it.id == trackId } ?: return
+        favoriteIds = if (trackId in favoriteIds) {
+            favoriteIds - trackId
+        } else {
+            favoriteIds + trackId
+        }
+        applyFilters()
         viewModelScope.launch {
-            favoritesRepository.toggleFavorite(trackId)
+            favoritesRepository.toggleFavorite(track)
         }
     }
 
@@ -159,13 +172,12 @@ class LibraryViewModel @JvmOverloads constructor(
     private fun updateSyncFlags(isRefreshing: Boolean, syncFailed: Boolean) {
         this.isRefreshing = isRefreshing
         this.syncFailed = syncFailed
-        val state = _uiState.value
-        if (state is LibraryUiState.Content) {
-            _uiState.value = state.copy(
-                isRefreshing = isRefreshing,
-                syncFailed = syncFailed
-            )
-        } else if (shouldApplyFilters()) {
+        refreshFavoriteUiState()
+    }
+
+    /** Rebuild list UI so favoriteIds and sync flags stay in sync (avoids stale partial copies). */
+    private fun refreshFavoriteUiState() {
+        if (shouldApplyFilters()) {
             applyFilters()
         }
     }

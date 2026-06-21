@@ -116,6 +116,40 @@ esac
 
 CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
 
+# Kotlin 1.9 / Android Gradle Plugin require JDK 17–21 to run Gradle itself.
+# Newer JDKs (e.g. 26) fail during Kotlin DSL compilation with a cryptic version error.
+if [ "$darwin" = true ] && command -v /usr/libexec/java_home >/dev/null 2>&1; then
+    _gradle_java_home=
+    if [ -n "$JAVA_HOME" ] && [ -x "$JAVA_HOME/bin/java" ]; then
+        _gradle_java_home=$JAVA_HOME
+    elif command -v java >/dev/null 2>&1; then
+        _gradle_java_home=$(dirname "$(dirname "$(command -v java)")")
+    fi
+    _use_supported_jdk=false
+    if [ -z "$_gradle_java_home" ]; then
+        _use_supported_jdk=true
+    else
+        _java_version=$("$_gradle_java_home/bin/java" -version 2>&1 | head -n 1)
+        case "$_java_version" in
+            *\"1.8.*|*\"8.*|*\"11.*|*\"17.*|*\"21.*) ;;
+            *) _use_supported_jdk=true ;;
+        esac
+    fi
+    if [ "$_use_supported_jdk" = true ]; then
+        for _jdk_version in 21 17; do
+            _candidate=$(/usr/libexec/java_home -v "$_jdk_version" 2>/dev/null || true)
+            if [ -n "$_candidate" ] && [ -x "$_candidate/bin/java" ]; then
+                if [ -n "$JAVA_HOME" ] && [ "$JAVA_HOME" != "$_candidate" ]; then
+                    warn "Gradle requires JDK 17–21; using $_candidate instead of $JAVA_HOME"
+                fi
+                JAVA_HOME=$_candidate
+                export JAVA_HOME
+                break
+            fi
+        done
+    fi
+    unset _gradle_java_home _use_supported_jdk _java_version _jdk_version _candidate
+fi
 
 # Determine the Java command to use to start the JVM.
 if [ -n "$JAVA_HOME" ] ; then

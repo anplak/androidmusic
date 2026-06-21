@@ -73,7 +73,8 @@ class PlaylistsViewModel @JvmOverloads constructor(
         AppDatabase.getInstance(application).playlistDao()
     ),
     private val favoritesRepository: FavoritesRepository = FavoritesRepositoryImpl(
-        AppDatabase.getInstance(application).favoriteDao()
+        AppDatabase.getInstance(application).favoriteDao(),
+        AppDatabase.getInstance(application).trackDao()
     ),
     private val trackStatsRepository: TrackStatsRepository = TrackStatsRepositoryImpl(
         AppDatabase.getInstance(application).trackStatsDao()

@@ -107,6 +107,26 @@ class FavoriteDaoTest {
         
         assertFalse(favoriteDao.isFavoriteSync(1))
     }
+
+    @Test
+    fun `track upsert during sync preserves favorites added before sync completes`() = runTest {
+        trackDao.insert(createTrackEntity(1))
+        favoriteDao.addFavorite(FavoriteEntity(trackId = 1))
+
+        trackDao.insertAll(
+            listOf(
+                createTrackEntity(1).copy(
+                    title = "Synced Title",
+                    path = "/storage/emulated/0/Music/synced.mp3"
+                )
+            )
+        )
+
+        assertTrue(favoriteDao.isFavoriteSync(1))
+        val favorites = favoriteDao.getAllFavorites().first()
+        assertEquals(1, favorites.size)
+        assertEquals("Synced Title", favorites.first().title)
+    }
     
     private fun createTrackEntity(id: Long) = TrackEntity(
         id = id,

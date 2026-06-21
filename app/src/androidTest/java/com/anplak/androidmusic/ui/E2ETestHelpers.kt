@@ -1,12 +1,15 @@
 package com.anplak.androidmusic.ui
 
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.rules.ActivityScenarioRule
@@ -186,6 +189,71 @@ fun MainActivityComposeRule.waitForHistoryList(timeoutMillis: Long = 15_000): Bo
 fun MainActivityComposeRule.navigateToHistory() {
     onNodeWithTag("nav_history").performClick()
     waitForHistorySettled()
+}
+
+fun MainActivityComposeRule.navigateToFavorites() {
+    onNodeWithTag("nav_favorites").performClick()
+    waitForFavoritesSettled()
+}
+
+fun MainActivityComposeRule.waitForFavoritesSettled() {
+    waitUntil(timeoutMillis = 15_000) {
+        safeHasNodes(hasTestTag("favorites_track_list")) ||
+            safeHasNodes(hasTestTag("favorites_empty_state"))
+    }
+}
+
+fun MainActivityComposeRule.waitForFavoriteTrackList(timeoutMillis: Long = 15_000): Boolean {
+    return try {
+        waitUntil(timeoutMillis = timeoutMillis) {
+            safeHasNodes(hasTestTag("favorites_track_list"))
+        }
+        true
+    } catch (_: Throwable) {
+        false
+    }
+}
+
+private fun favoriteButtonMatcher(index: Int, favorited: Boolean): SemanticsMatcher {
+    val description = if (favorited) "Remove from favorites" else "Add to favorites"
+    return hasTestTag("favorite_button_$index").and(hasContentDescription(description))
+}
+
+/** Scrolls to the track row and taps its favorite button. */
+fun MainActivityComposeRule.clickLibraryFavoriteAtIndex(index: Int) {
+    onNodeWithTag("track_item_$index").performScrollTo()
+    onNodeWithTag("favorite_button_$index").performClick()
+    waitForIdle()
+}
+
+/** Toggles until the track at [index] matches [favorited] (handles persisted DB state). */
+fun MainActivityComposeRule.setLibraryFavoriteAtIndex(index: Int, favorited: Boolean) {
+    onNodeWithTag("track_item_$index").performScrollTo()
+    waitUntil(timeoutMillis = 15_000) {
+        safeHasNodes(hasTestTag("favorite_button_$index"))
+    }
+    val isFavorited = safeHasNodes(favoriteButtonMatcher(index, favorited = true))
+    if (isFavorited != favorited) {
+        clickLibraryFavoriteAtIndex(index)
+    }
+    waitForLibraryFavoriteAtIndex(index, favorited)
+}
+
+/** Waits until the library favorite button at [index] shows the expected state. */
+fun MainActivityComposeRule.waitForLibraryFavoriteAtIndex(
+    index: Int,
+    favorited: Boolean,
+    timeoutMillis: Long = 15_000
+) {
+    onNodeWithTag("track_item_$index").performScrollTo()
+    waitUntil(timeoutMillis = timeoutMillis) {
+        safeHasNodes(favoriteButtonMatcher(index, favorited))
+    }
+}
+
+fun MainActivityComposeRule.assertLibraryFavoriteAtIndex(index: Int, favorited: Boolean) {
+    onNodeWithTag("track_item_$index").performScrollTo()
+    onNode(favoriteButtonMatcher(index, favorited)).assertIsDisplayed()
 }
 
 fun MainActivityComposeRule.navigateToForYou() {

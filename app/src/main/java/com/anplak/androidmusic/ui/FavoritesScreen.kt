@@ -83,8 +83,8 @@ fun FavoritesScreen(
                             val index = state.tracks.indexOf(track)
                             onTrackSelected(state.tracks, index)
                         },
-                        onToggleFavorite = { trackId ->
-                            viewModel.toggleFavorite(trackId)
+                        onToggleFavorite = { track ->
+                            viewModel.toggleFavorite(track)
                         },
                         onAddToPlaylist = onAddToPlaylist
                     )
@@ -138,7 +138,7 @@ private fun EmptyFavoritesState() {
 private fun FavoriteTrackList(
     tracks: List<TrackInfo>,
     onTrackSelected: (TrackInfo) -> Unit,
-    onToggleFavorite: (Long) -> Unit,
+    onToggleFavorite: (TrackInfo) -> Unit,
     onAddToPlaylist: (TrackInfo) -> Unit
 ) {
     LazyColumn(
@@ -156,7 +156,7 @@ private fun FavoriteTrackList(
                 track = track,
                 index = index,
                 onClick = { onTrackSelected(track) },
-                onToggleFavorite = { onToggleFavorite(track.id) },
+                onToggleFavorite = { onToggleFavorite(track) },
                 onAddToPlaylist = { onAddToPlaylist(track) }
             )
         }

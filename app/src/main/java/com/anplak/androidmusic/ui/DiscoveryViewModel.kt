@@ -36,7 +36,7 @@ class DiscoveryViewModel @JvmOverloads constructor(
 
     private val db = AppDatabase.getInstance(application)
     private val repository: RecommendationRepository = recommendationRepository ?: run {
-        val favoritesRepository = FavoritesRepositoryImpl(db.favoriteDao())
+        val favoritesRepository = FavoritesRepositoryImpl(db.favoriteDao(), db.trackDao())
         RecommendationRepositoryImpl(
             musicLibraryRepository = MusicLibraryRepositoryFactory.create(application),
             favoritesRepository = favoritesRepository,
@@ -46,7 +46,7 @@ class DiscoveryViewModel @JvmOverloads constructor(
     }
     private val engine: RecommendationEngine = recommendationEngine ?: RecommendationEngine(
         AutoMixGenerator(SmartShuffleGenerator(
-            FavoritesRepositoryImpl(db.favoriteDao()),
+            FavoritesRepositoryImpl(db.favoriteDao(), db.trackDao()),
             TrackStatsRepositoryImpl(db.trackStatsDao())
         ))
     )
