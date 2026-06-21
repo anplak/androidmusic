@@ -15,10 +15,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * E2E tests for Favorites functionality:
- * - Toggle favorite from library
- * - Navigate to favorites tab
- * - Verify track appears in favorites
+ * E2E tests for favorites sync between Library and Favorites tabs.
  */
 @RunWith(AndroidJUnit4::class)
 class FavoritesE2ETest {
@@ -50,9 +47,7 @@ class FavoritesE2ETest {
     @Test
     fun favoritesTab_showsEmptyStateInitially() {
         composeTestRule.waitForAppReady()
-
-        composeTestRule.onNodeWithTag("nav_favorites").performClick()
-        composeTestRule.waitForIdle()
+        composeTestRule.navigateToFavorites()
 
         composeTestRule.waitUntil(timeoutMillis = 5_000) {
             composeTestRule.safeHasNodes(hasTestTag("favorites_empty_state")) ||
@@ -66,17 +61,86 @@ class FavoritesE2ETest {
 
         if (!composeTestRule.safeHasNodes(hasTestTag("track_list"))) return
 
-        composeTestRule.onNodeWithTag("favorite_button_0").performClick()
-        composeTestRule.waitForIdle()
+        composeTestRule.setLibraryFavoriteAtIndex(index = 0, favorited = true)
 
-        composeTestRule.onNodeWithTag("nav_favorites").performClick()
-        composeTestRule.waitForIdle()
-
-        composeTestRule.waitUntil(timeoutMillis = 5_000) {
-            composeTestRule.safeHasNodes(hasTestTag("favorites_track_list")) ||
-                composeTestRule.safeHasNodes(hasTestTag("favorites_empty_state"))
-        }
+        composeTestRule.navigateToFavorites()
 
         composeTestRule.onNodeWithTag("favorites_track_list").assertIsDisplayed()
+    }
+
+    @Test
+    fun favoriteFromLibrary_appearsOnFavoritesTab_afterTabSwitch() {
+        composeTestRule.prepareLibraryTab()
+        if (!composeTestRule.safeHasNodes(hasTestTag("track_list"))) return
+
+        composeTestRule.setLibraryFavoriteAtIndex(index = 0, favorited = true)
+
+        composeTestRule.navigateToFavorites()
+        assert(composeTestRule.waitForFavoriteTrackList()) {
+            "Favorited track should appear on Favorites tab"
+        }
+        composeTestRule.onNodeWithTag("favorites_track_item_0").assertIsDisplayed()
+    }
+
+    @Test
+    fun favoriteFromLibrary_showsFilledHeart_whenReturningToLibrary() {
+        composeTestRule.prepareLibraryTab()
+        if (!composeTestRule.safeHasNodes(hasTestTag("track_list"))) return
+
+        composeTestRule.setLibraryFavoriteAtIndex(index = 0, favorited = true)
+
+        composeTestRule.navigateToFavorites()
+        if (!composeTestRule.waitForFavoriteTrackList()) return
+
+        composeTestRule.navigateToLibrary()
+        composeTestRule.waitForLibraryContent()
+        composeTestRule.assertLibraryFavoriteAtIndex(index = 0, favorited = true)
+    }
+
+    @Test
+    fun favoriteDuringLibraryRefresh_persistsOnFavoritesTab() {
+        composeTestRule.prepareLibraryTab()
+        if (!composeTestRule.safeHasNodes(hasTestTag("track_list"))) return
+
+        // Return to Library to trigger a background re-index while cached tracks stay visible.
+        composeTestRule.navigateToForYou()
+        composeTestRule.navigateToLibrary()
+        composeTestRule.waitForLibraryContent()
+
+        composeTestRule.setLibraryFavoriteAtIndex(index = 0, favorited = true)
+        composeTestRule.waitForLibraryReindexSettled()
+
+        composeTestRule.navigateToFavorites()
+        assert(composeTestRule.waitForFavoriteTrackList()) {
+            "Favorite added during library refresh should survive sync completion"
+        }
+        composeTestRule.onNodeWithTag("favorites_track_item_0").assertIsDisplayed()
+    }
+
+    @Test
+    fun favoriteFromLibrary_roundTrip_unfavoriteRemovesFromBothTabs() {
+        composeTestRule.prepareLibraryTab()
+        if (!composeTestRule.safeHasNodes(hasTestTag("track_list"))) return
+
+        composeTestRule.setLibraryFavoriteAtIndex(index = 0, favorited = true)
+
+        composeTestRule.navigateToFavorites()
+        if (!composeTestRule.waitForFavoriteTrackList()) return
+
+        composeTestRule.onNodeWithTag("favorites_remove_button_0").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.waitUntil(timeoutMillis = 15_000) {
+            !composeTestRule.safeHasNodes(hasTestTag("favorites_track_item_0"))
+        }
+
+        composeTestRule.navigateToLibrary()
+        composeTestRule.waitForLibraryContent()
+        composeTestRule.assertLibraryFavoriteAtIndex(index = 0, favorited = false)
+
+        composeTestRule.navigateToFavorites()
+        composeTestRule.waitUntil(timeoutMillis = 10_000) {
+            composeTestRule.safeHasNodes(hasTestTag("favorites_empty_state")) ||
+                composeTestRule.safeHasNodes(hasTestTag("favorites_track_list"))
+        }
     }
 }

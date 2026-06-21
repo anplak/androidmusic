@@ -185,13 +185,29 @@ class LibraryViewModelTest {
 
     @Test
     fun `toggleFavorite calls repository`() = runTest {
+        fakeRepository.setSyncTracks(listOf(createTrack(1, "Song One", "Artist A")))
+
         val viewModel = createViewModel()
+        advanceUntilIdle()
 
         viewModel.toggleFavorite(1L)
         advanceUntilIdle()
 
         assertEquals(1, fakeFavoritesRepository.toggleFavoriteCallCount)
         assertEquals(1L, fakeFavoritesRepository.lastToggledTrackId)
+    }
+
+    @Test
+    fun `toggleFavorite updates favoriteIds optimistically`() = runTest {
+        fakeRepository.setSyncTracks(listOf(createTrack(1, "Song One", "Artist A")))
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.toggleFavorite(1L)
+
+        val state = viewModel.uiState.value as LibraryUiState.Content
+        assertTrue(state.favoriteIds.contains(1L))
     }
 
     @Test
@@ -292,6 +308,25 @@ class LibraryViewModelTest {
         assertTrue((viewModel.uiState.value as LibraryUiState.Content).isRefreshing)
     }
 
+    @Test
+    fun `sync completion keeps favorite IDs in Content state`() = runTest {
+        val tracks = listOf(createTrack(1, "Song One", "Artist A"))
+        fakeRepository.setCachedTracks(tracks)
+        fakeRepository.setSyncTracks(tracks)
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        fakeFavoritesRepository.setFavoriteIds(setOf(1L))
+        advanceUntilIdle()
+
+        viewModel.refresh()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value as LibraryUiState.Content
+        assertTrue(state.favoriteIds.contains(1L))
+    }
+
     private fun createViewModel(): LibraryViewModel {
         return LibraryViewModel(
             application = application,
@@ -390,6 +425,8 @@ class FakeFavoritesRepository : FavoritesRepository {
         private set
     var lastToggledTrackId: Long? = null
         private set
+    var lastToggledTrack: TrackInfo? = null
+        private set
 
     fun setFavoriteIds(ids: Set<Long>) {
         favoriteIds.value = ids
@@ -397,6 +434,12 @@ class FakeFavoritesRepository : FavoritesRepository {
 
     fun setFavorites(tracks: List<TrackInfo>) {
         favorites.value = tracks
+    }
+
+    override suspend fun toggleFavorite(track: TrackInfo) {
+        toggleFavoriteCallCount++
+        lastToggledTrackId = track.id
+        lastToggledTrack = track
     }
 
     override suspend fun toggleFavorite(trackId: Long) {

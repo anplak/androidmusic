@@ -129,6 +129,7 @@ class RecommendationEngineTest {
     )
 
     private class FakeFavoritesRepo : com.anplak.androidmusic.data.FavoritesRepository {
+        override suspend fun toggleFavorite(track: TrackInfo) {}
         override suspend fun toggleFavorite(trackId: Long) {}
         override fun isFavorite(trackId: Long) = kotlinx.coroutines.flow.flowOf(false)
         override fun getAllFavorites() = kotlinx.coroutines.flow.flowOf(emptyList<TrackInfo>())

@@ -46,7 +46,10 @@ data class PlaybackUiState(
 class PlaybackViewModel(application: Application) : AndroidViewModel(application) {
     private val audioPlayer = AudioPlayer(application, viewModelScope)
     private val database = AppDatabase.getInstance(application)
-    private val favoritesRepository: FavoritesRepository = FavoritesRepositoryImpl(database.favoriteDao())
+    private val favoritesRepository: FavoritesRepository = FavoritesRepositoryImpl(
+        database.favoriteDao(),
+        database.trackDao()
+    )
     private val playlistRepository: PlaylistRepository = PlaylistRepositoryImpl(database.playlistDao())
     private val trackStatsRepository: TrackStatsRepository = TrackStatsRepositoryImpl(database.trackStatsDao())
     private val playHistoryRepository: PlayHistoryRepository = PlayHistoryRepositoryImpl(database.playHistoryDao())
@@ -226,7 +229,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     fun toggleFavorite() {
         val track = _uiState.value.selectedTrack ?: return
         viewModelScope.launch {
-            favoritesRepository.toggleFavorite(track.id)
+            favoritesRepository.toggleFavorite(track)
         }
     }
     

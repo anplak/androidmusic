@@ -2,12 +2,14 @@ package com.anplak.androidmusic.data
 
 import com.anplak.androidmusic.data.db.FavoriteDao
 import com.anplak.androidmusic.data.db.FavoriteEntity
+import com.anplak.androidmusic.data.db.TrackDao
 import com.anplak.androidmusic.data.db.TrackEntity
 import com.anplak.androidmusic.player.TrackInfo
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 interface FavoritesRepository {
+    suspend fun toggleFavorite(track: TrackInfo)
     suspend fun toggleFavorite(trackId: Long)
     fun isFavorite(trackId: Long): Flow<Boolean>
     fun getAllFavorites(): Flow<List<TrackInfo>>
@@ -15,10 +17,27 @@ interface FavoritesRepository {
 }
 
 class FavoritesRepositoryImpl(
-    private val favoriteDao: FavoriteDao
+    private val favoriteDao: FavoriteDao,
+    private val trackDao: TrackDao
 ) : FavoritesRepository {
 
+    override suspend fun toggleFavorite(track: TrackInfo) {
+        trackDao.insert(track.toEntity())
+        toggleFavoriteInternal(track.id)
+    }
+
     override suspend fun toggleFavorite(trackId: Long) {
+        val cached = trackDao.getById(trackId)?.toTrackInfo()
+        if (cached != null) {
+            toggleFavorite(cached)
+            return
+        }
+        if (favoriteDao.isFavoriteSync(trackId)) {
+            favoriteDao.removeFavorite(trackId)
+        }
+    }
+
+    private suspend fun toggleFavoriteInternal(trackId: Long) {
         if (favoriteDao.isFavoriteSync(trackId)) {
             favoriteDao.removeFavorite(trackId)
         } else {

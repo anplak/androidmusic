@@ -74,7 +74,7 @@ class FavoritesViewModelTest {
         val viewModel = createViewModel()
         advanceUntilIdle()
         
-        viewModel.toggleFavorite(1L)
+        viewModel.toggleFavorite(createTrack(1, "Favorite", "Artist"))
         advanceUntilIdle()
         
         assertEquals(1, fakeFavoritesRepository.toggleFavoriteCallCount)
@@ -126,6 +126,10 @@ class TestFavoritesRepository : FavoritesRepository {
         favoriteIds.value = tracks.map { it.id }.toSet()
     }
     
+    override suspend fun toggleFavorite(track: TrackInfo) {
+        toggleFavorite(track.id)
+    }
+
     override suspend fun toggleFavorite(trackId: Long) {
         toggleFavoriteCallCount++
         lastToggledTrackId = trackId

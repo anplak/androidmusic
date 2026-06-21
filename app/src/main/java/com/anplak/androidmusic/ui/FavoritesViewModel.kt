@@ -21,7 +21,8 @@ sealed interface FavoritesUiState {
 class FavoritesViewModel @JvmOverloads constructor(
     application: Application,
     private val favoritesRepository: FavoritesRepository = FavoritesRepositoryImpl(
-        AppDatabase.getInstance(application).favoriteDao()
+        AppDatabase.getInstance(application).favoriteDao(),
+        AppDatabase.getInstance(application).trackDao()
     )
 ) : AndroidViewModel(application) {
 
@@ -44,9 +45,9 @@ class FavoritesViewModel @JvmOverloads constructor(
         }
     }
 
-    fun toggleFavorite(trackId: Long) {
+    fun toggleFavorite(track: TrackInfo) {
         viewModelScope.launch {
-            favoritesRepository.toggleFavorite(trackId)
+            favoritesRepository.toggleFavorite(track)
         }
     }
 }
