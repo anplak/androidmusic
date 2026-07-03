@@ -4,21 +4,29 @@ import android.app.Application
 import android.os.Environment
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.anplak.androidmusic.data.ArtistRule
 import com.anplak.androidmusic.data.FolderRule
 import com.anplak.androidmusic.data.FolderRuleMode
 import com.anplak.androidmusic.data.LibraryIndexPolicy
 import com.anplak.androidmusic.data.LibraryIndexPolicyRepository
+import com.anplak.androidmusic.data.LibraryIndexSuggestions
 import com.anplak.androidmusic.data.SharedPreferencesLibraryIndexPreferences
 import com.anplak.androidmusic.data.db.AppDatabase
+import com.anplak.androidmusic.data.db.TrackDao
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.File
 
 data class LibraryIndexUiState(
     val maxDurationMinutes: Int = (LibraryIndexPolicy.DEFAULT_MAX_INDEX_DURATION_MS / 60_000).toInt(),
-    val folderRules: List<FolderRule> = emptyList(),
+    val includeFolderRules: List<FolderRule> = emptyList(),
+    val excludedFolders: List<FolderRule> = emptyList(),
+    val excludedArtists: List<ArtistRule> = emptyList(),
+    val knownArtists: List<String> = emptyList(),
+    val knownFolders: List<String> = emptyList(),
     val presetFolders: List<String> = emptyList(),
     val rulesChanged: Boolean = false
 )
@@ -27,8 +35,10 @@ class LibraryIndexViewModel @JvmOverloads constructor(
     application: Application,
     private val policyRepository: LibraryIndexPolicyRepository = LibraryIndexPolicyRepository(
         SharedPreferencesLibraryIndexPreferences(application),
-        AppDatabase.getInstance(application).indexFolderRuleDao()
-    )
+        AppDatabase.getInstance(application).indexFolderRuleDao(),
+        AppDatabase.getInstance(application).indexArtistRuleDao()
+    ),
+    private val trackDao: TrackDao = AppDatabase.getInstance(application).trackDao()
 ) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(LibraryIndexUiState())
@@ -54,6 +64,20 @@ class LibraryIndexViewModel @JvmOverloads constructor(
         }
     }
 
+    fun addArtistRule(name: String) {
+        viewModelScope.launch {
+            policyRepository.addArtistRule(name)
+            refreshRules(markChanged = true)
+        }
+    }
+
+    fun removeArtistRule(name: String) {
+        viewModelScope.launch {
+            policyRepository.removeArtistRule(name)
+            refreshRules(markChanged = true)
+        }
+    }
+
     fun consumeRulesChanged(): Boolean {
         val changed = _uiState.value.rulesChanged
         if (changed) {
@@ -63,29 +87,56 @@ class LibraryIndexViewModel @JvmOverloads constructor(
     }
 
     private suspend fun loadState() {
-        val rules = policyRepository.getFolderRules()
-        _uiState.value = LibraryIndexUiState(
-            maxDurationMinutes = (policyRepository.getMaxDurationMs() / 60_000).toInt(),
-            folderRules = rules,
-            presetFolders = loadPresetFolders()
-        )
+        refreshRules(markChanged = false)
+        _uiState.update {
+            it.copy(
+                maxDurationMinutes = (policyRepository.getMaxDurationMs() / 60_000).toInt(),
+                presetFolders = loadPresetRoots()
+            )
+        }
     }
 
     private suspend fun refreshRules(markChanged: Boolean) {
-        val rules = policyRepository.getFolderRules()
+        val folderRules = policyRepository.getFolderRules()
+        val existingPaths = folderRules.map { it.path }.toSet()
+        val presetRoots = loadPresetRoots()
+        val knownFolders = LibraryIndexSuggestions.mergeFolderSuggestions(
+            fromTracks = LibraryIndexSuggestions.discoverFoldersFromTracks(
+                trackPaths = trackDao.getTrackPaths(),
+                existingRulePaths = existingPaths
+            ),
+            subfolders = LibraryIndexSuggestions.discoverSubfolders(
+                presetRoots.map { File(it) }
+            ),
+            presetRoots = presetRoots,
+            existingRulePaths = existingPaths
+        )
+        val knownArtists = buildKnownArtists(trackDao.getDistinctArtists())
+
         _uiState.update {
             it.copy(
-                folderRules = rules,
+                includeFolderRules = folderRules.filter { rule -> rule.mode == FolderRuleMode.INCLUDE },
+                excludedFolders = folderRules.filter { rule -> rule.mode == FolderRuleMode.EXCLUDE },
+                excludedArtists = policyRepository.getArtistRules(),
+                knownArtists = knownArtists,
+                knownFolders = knownFolders,
                 rulesChanged = it.rulesChanged || markChanged
             )
         }
     }
 
-    private fun loadPresetFolders(): List<String> {
+    private fun buildKnownArtists(indexedArtists: List<String>): List<String> {
+        val unknown = LibraryIndexSuggestions.UNKNOWN_ARTIST_LABEL
+        return listOf(unknown) + indexedArtists.filter { !it.equals(unknown, ignoreCase = true) }
+    }
+
+    private fun loadPresetRoots(): List<String> {
         return listOf(
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC),
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS),
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PODCASTS),
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_AUDIOBOOKS)
         )
             .filter { it.exists() && it.isDirectory }
             .map { it.absolutePath }

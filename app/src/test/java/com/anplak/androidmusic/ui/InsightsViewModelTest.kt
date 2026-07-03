@@ -279,4 +279,10 @@ class TestTrackDao : TrackDao {
     override suspend fun deleteStaleEntries(validIds: List<Long>) {}
 
     override suspend fun deleteAll() {}
+
+    override suspend fun getDistinctArtists(): List<String> =
+        tracks.map { it.artist }.distinct().sorted()
+
+    override suspend fun getTrackPaths(): List<String> =
+        tracks.mapNotNull { it.path.takeIf { path -> path.isNotBlank() } }
 }

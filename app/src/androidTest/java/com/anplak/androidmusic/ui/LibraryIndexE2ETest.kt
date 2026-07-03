@@ -10,6 +10,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
 import com.anplak.androidmusic.MainActivity
@@ -19,7 +20,7 @@ import org.junit.runner.RunWith
 import java.io.File
 
 /**
- * E2E tests for library indexing (duration cap and folder exclude rules).
+ * E2E tests for library indexing (duration cap, folder exclude, and artist blocklist rules).
  *
  * Fixture setup (optional, for duration/folder scenarios):
  * ```
@@ -57,6 +58,8 @@ class LibraryIndexE2ETest {
         composeTestRule.onNodeWithText("Tracks longer than 10 minutes are not indexed", substring = true)
             .assertIsDisplayed()
         composeTestRule.onNodeWithText("Folder rules").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("excluded_folders_section").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("excluded_artists_section").assertIsDisplayed()
     }
 
     @Test
@@ -65,18 +68,73 @@ class LibraryIndexE2ETest {
         composeTestRule.openLibraryIndexFromLibrary()
 
         if (!composeTestRule.safeHasNodes(hasTestTag("add_exclude_folder"))) {
-            // No preset folders on device (e.g. Music dir missing) — skip flow
             composeTestRule.onNodeWithTag("library_index_back").performClick()
             return
         }
 
         composeTestRule.onNodeWithTag("add_folder_rule").performClick()
-        composeTestRule.onNodeWithTag("add_exclude_folder").performClick()
+        composeTestRule.clickFirstWithTag("add_exclude_folder")
 
         composeTestRule.waitUntil(timeoutMillis = 5_000) {
-            composeTestRule.safeHasNodes(hasText("Exclude (and subfolders)"))
+            composeTestRule.safeHasNodes(hasText("Excluded"))
         }
 
+        composeTestRule.returnFromLibraryIndex()
+        composeTestRule.waitForLibraryReindexSettled()
+    }
+
+    @Test
+    fun excludedArtistsSection_showsNoExclusionsWhenEmpty() {
+        composeTestRule.prepareLibraryTab()
+        composeTestRule.openLibraryIndexFromLibrary()
+
+        composeTestRule.onNodeWithTag("excluded_artists_section").assertIsDisplayed()
+        if (composeTestRule.safeHasNodes(hasTestTag("no_exclusions"))) {
+            composeTestRule.onNodeWithTag("no_exclusions").assertIsDisplayed()
+        }
+
+        composeTestRule.onNodeWithTag("library_index_back").performClick()
+    }
+
+    @Test
+    fun addArtistExclusion_returnsToLibraryAndReindexes() {
+        composeTestRule.prepareLibraryTab()
+        if (!composeTestRule.safeHasNodes(hasTestTag("track_list"))) return
+
+        val artistName = E2E_ARTIST_EXCLUDE_NAME
+        composeTestRule.openLibraryIndexFromLibrary()
+        composeTestRule.onNodeWithTag("add_artist_rule").performClick()
+        composeTestRule.waitUntil(timeoutMillis = 5_000) {
+            composeTestRule.safeHasNodes(hasTestTag("add_artist_rule_dialog"))
+        }
+
+        composeTestRule.onNodeWithTag("artist_rule_input").performTextInput(artistName)
+        composeTestRule.onNodeWithTag("confirm_add_artist_rule").performClick()
+
+        composeTestRule.waitUntil(timeoutMillis = 5_000) {
+            composeTestRule.safeHasNodes(hasText(artistName, substring = true, ignoreCase = true))
+        }
+
+        composeTestRule.returnFromLibraryIndex()
+        composeTestRule.waitForLibraryReindexSettled()
+    }
+
+    @Test
+    fun removeArtistExclusion_restoresLibraryAfterReindex() {
+        composeTestRule.prepareLibraryTab()
+        if (!composeTestRule.safeHasNodes(hasTestTag("track_list"))) return
+
+        val artistName = E2E_ARTIST_EXCLUDE_NAME
+        composeTestRule.openLibraryIndexFromLibrary()
+        composeTestRule.onNodeWithTag("add_artist_rule").performClick()
+        composeTestRule.onNodeWithTag("artist_rule_input").performTextInput(artistName)
+        composeTestRule.onNodeWithTag("confirm_add_artist_rule").performClick()
+
+        composeTestRule.waitUntil(timeoutMillis = 5_000) {
+            composeTestRule.safeHasNodes(hasTestTag("artist_rule_item_${artistName.lowercase().hashCode()}"))
+        }
+
+        composeTestRule.onNodeWithTag("remove_artist_rule_${artistName.lowercase().hashCode()}").performClick()
         composeTestRule.returnFromLibraryIndex()
         composeTestRule.waitForLibraryReindexSettled()
     }
@@ -116,7 +174,7 @@ class LibraryIndexE2ETest {
         }
 
         composeTestRule.onNodeWithTag("add_folder_rule").performClick()
-        composeTestRule.onNodeWithTag("add_exclude_folder").performClick()
+        composeTestRule.clickFirstWithTag("add_exclude_folder")
         composeTestRule.returnFromLibraryIndex()
         composeTestRule.waitForLibraryReindexSettled()
 
@@ -133,6 +191,9 @@ class LibraryIndexE2ETest {
 
     private companion object {
         private val MUSIC_ROOT = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
+
+        /** Artist name unlikely to match real library content; used to verify add/remove flow only. */
+        const val E2E_ARTIST_EXCLUDE_NAME = "e2e_test_exclude_artist"
 
         const val FIXTURE_SHORT_TITLE = "e2e_index_short"
         const val FIXTURE_LONG_TITLE = "e2e_index_long"

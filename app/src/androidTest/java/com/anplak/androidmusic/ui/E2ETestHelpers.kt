@@ -8,6 +8,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
@@ -26,6 +27,11 @@ fun MainActivityComposeRule.safeHasNodes(matcher: SemanticsMatcher): Boolean {
     } catch (_: IllegalStateException) {
         false
     }
+}
+
+/** Clicks the first node matching [tag] when multiple rows share the same test tag. */
+fun MainActivityComposeRule.clickFirstWithTag(tag: String) {
+    onAllNodes(hasTestTag(tag)).onFirst().performClick()
 }
 
 /**

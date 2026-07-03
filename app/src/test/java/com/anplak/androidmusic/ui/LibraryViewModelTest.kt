@@ -415,6 +415,11 @@ class FakeTrackDao : TrackDao {
     override suspend fun searchTracks(query: String, limit: Int): List<TrackEntity> = emptyList()
     override suspend fun deleteStaleEntries(validIds: List<Long>) = Unit
     override suspend fun deleteAll() = Unit
+    override suspend fun getDistinctArtists(): List<String> =
+        tracksFlow.value.map { it.artist }.distinct().sorted()
+
+    override suspend fun getTrackPaths(): List<String> =
+        tracksFlow.value.mapNotNull { it.path.takeIf { path -> path.isNotBlank() } }
 }
 
 class FakeFavoritesRepository : FavoritesRepository {

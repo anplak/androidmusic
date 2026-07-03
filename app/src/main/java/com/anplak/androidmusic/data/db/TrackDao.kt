@@ -55,5 +55,15 @@ interface TrackDao {
 
     @Query("DELETE FROM tracks")
     suspend fun deleteAll()
+
+    @Query("""
+        SELECT DISTINCT artist FROM tracks
+        WHERE artist != '' AND artist != 'Unknown Artist'
+        ORDER BY artist COLLATE NOCASE ASC
+    """)
+    suspend fun getDistinctArtists(): List<String>
+
+    @Query("SELECT path FROM tracks WHERE path != ''")
+    suspend fun getTrackPaths(): List<String>
 }
 

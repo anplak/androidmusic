@@ -162,9 +162,7 @@ class HistoryE2ETest {
         }
 
         // Tap history entry
-        composeTestRule
-            .onNodeWithTag("history_entry")
-            .performClick()
+        composeTestRule.clickFirstWithTag("history_entry")
 
         composeTestRule.waitForIdle()
 

@@ -115,6 +115,7 @@ class MusicLibraryRepositoryImpl(
         var errorCount = 0
         var skippedDuration = 0
         var skippedFolder = 0
+        var skippedArtist = 0
 
         val policy = policyRepository?.loadPolicy() ?: LibraryIndexPolicy()
 
@@ -168,12 +169,20 @@ class MusicLibraryRepositoryImpl(
                             displayNameColumn = displayNameColumn
                         )
 
-                        if (!LibraryIndexFilter.shouldIndex(filePath, duration, policy)) {
-                            when {
-                                duration <= 0 || duration > policy.maxDurationMs -> skippedDuration++
-                                else -> skippedFolder++
+                        when (LibraryIndexFilter.skipReason(filePath, duration, artist, policy)) {
+                            IndexSkipReason.DURATION -> {
+                                skippedDuration++
+                                continue
                             }
-                            continue
+                            IndexSkipReason.FOLDER -> {
+                                skippedFolder++
+                                continue
+                            }
+                            IndexSkipReason.ARTIST -> {
+                                skippedArtist++
+                                continue
+                            }
+                            null -> Unit
                         }
 
                         val contentUri = ContentUris.withAppendedId(
@@ -213,7 +222,8 @@ class MusicLibraryRepositoryImpl(
         Log.d(
             TAG,
             "Sync complete: ${tracks.size} indexed, $skippedDuration skipped (duration), " +
-                "$skippedFolder skipped (folder), $scannedCount scanned, $errorCount errors"
+                "$skippedFolder skipped (folder), $skippedArtist skipped (artist), " +
+                "$scannedCount scanned, $errorCount errors"
         )
 
         trackDao?.let { dao ->
@@ -231,7 +241,8 @@ class MusicLibraryRepositoryImpl(
             tracks = tracks,
             indexedCount = tracks.size,
             skippedDurationCount = skippedDuration,
-            skippedFolderCount = skippedFolder
+            skippedFolderCount = skippedFolder,
+            skippedArtistCount = skippedArtist
         )
     }
 

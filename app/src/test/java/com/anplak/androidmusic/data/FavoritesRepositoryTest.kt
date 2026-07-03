@@ -213,4 +213,10 @@ class FakeTrackDao : TrackDao {
     override suspend fun deleteStaleEntries(validIds: List<Long>) = Unit
 
     override suspend fun deleteAll() = Unit
+
+    override suspend fun getDistinctArtists(): List<String> =
+        tracks.values.map { it.artist }.distinct().sorted()
+
+    override suspend fun getTrackPaths(): List<String> =
+        tracks.values.mapNotNull { it.path.takeIf { path -> path.isNotBlank() } }
 }

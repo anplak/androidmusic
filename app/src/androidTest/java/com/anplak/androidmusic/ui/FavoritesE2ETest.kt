@@ -122,6 +122,9 @@ class FavoritesE2ETest {
         composeTestRule.prepareLibraryTab()
         if (!composeTestRule.safeHasNodes(hasTestTag("track_list"))) return
 
+        // Reset index 0 so leftover favorites from other tests do not shift list indices.
+        composeTestRule.setLibraryFavoriteAtIndex(index = 0, favorited = false)
+
         composeTestRule.setLibraryFavoriteAtIndex(index = 0, favorited = true)
 
         composeTestRule.navigateToFavorites()
@@ -129,13 +132,10 @@ class FavoritesE2ETest {
 
         composeTestRule.onNodeWithTag("favorites_remove_button_0").performClick()
         composeTestRule.waitForIdle()
-        composeTestRule.waitUntil(timeoutMillis = 15_000) {
-            !composeTestRule.safeHasNodes(hasTestTag("favorites_track_item_0"))
-        }
 
         composeTestRule.navigateToLibrary()
         composeTestRule.waitForLibraryContent()
-        composeTestRule.assertLibraryFavoriteAtIndex(index = 0, favorited = false)
+        composeTestRule.waitForLibraryFavoriteAtIndex(index = 0, favorited = false)
 
         composeTestRule.navigateToFavorites()
         composeTestRule.waitUntil(timeoutMillis = 10_000) {
