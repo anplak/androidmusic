@@ -15,9 +15,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         PlaylistTrackCrossRef::class,
         TrackStatsEntity::class,
         PlayHistoryEntity::class,
-        IndexFolderRuleEntity::class
+        IndexFolderRuleEntity::class,
+        IndexArtistRuleEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -27,6 +28,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun trackStatsDao(): TrackStatsDao
     abstract fun playHistoryDao(): PlayHistoryDao
     abstract fun indexFolderRuleDao(): IndexFolderRuleDao
+    abstract fun indexArtistRuleDao(): IndexArtistRuleDao
 
     companion object {
         private const val DATABASE_NAME = "music_database"
@@ -94,6 +96,16 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS index_artist_rules (
+                        name TEXT NOT NULL PRIMARY KEY
+                    )
+                """)
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: buildDatabase(context).also { INSTANCE = it }
@@ -106,7 +118,7 @@ abstract class AppDatabase : RoomDatabase() {
                 AppDatabase::class.java,
                 DATABASE_NAME
             )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                 .build()
         }
     }

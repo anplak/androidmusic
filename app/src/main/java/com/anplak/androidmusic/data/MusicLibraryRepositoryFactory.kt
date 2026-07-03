@@ -10,7 +10,8 @@ object MusicLibraryRepositoryFactory {
         val database = AppDatabase.getInstance(appContext)
         val policyRepository = LibraryIndexPolicyRepository(
             preferences = SharedPreferencesLibraryIndexPreferences(appContext),
-            folderRuleDao = database.indexFolderRuleDao()
+            folderRuleDao = database.indexFolderRuleDao(),
+            artistRuleDao = database.indexArtistRuleDao()
         )
         return MusicLibraryRepositoryImpl(
             contentResolver = appContext.contentResolver,

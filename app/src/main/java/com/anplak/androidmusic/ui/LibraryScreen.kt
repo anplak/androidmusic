@@ -84,7 +84,8 @@ fun LibraryScreen(
                 R.string.scan_summary,
                 result.indexedCount,
                 result.skippedDurationCount,
-                result.skippedFolderCount
+                result.skippedFolderCount,
+                result.skippedArtistCount
             )
             snackbarHostState.showSnackbar(message)
             viewModel.clearScanSummary()

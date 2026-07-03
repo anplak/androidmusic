@@ -1,21 +1,29 @@
 package com.anplak.androidmusic.data
 
+import com.anplak.androidmusic.data.db.IndexArtistRuleDao
+import com.anplak.androidmusic.data.db.IndexArtistRuleEntity
 import com.anplak.androidmusic.data.db.IndexFolderRuleDao
 import com.anplak.androidmusic.data.db.IndexFolderRuleEntity
 
 class LibraryIndexPolicyRepository(
     private val preferences: LibraryIndexPreferences,
-    private val folderRuleDao: IndexFolderRuleDao
+    private val folderRuleDao: IndexFolderRuleDao,
+    private val artistRuleDao: IndexArtistRuleDao
 ) {
     suspend fun loadPolicy(): LibraryIndexPolicy {
         return LibraryIndexPolicy(
             maxDurationMs = preferences.getMaxDurationMs(),
-            folderRules = folderRuleDao.getAll().map { it.toFolderRule() }
+            folderRules = folderRuleDao.getAll().map { it.toFolderRule() },
+            artistRules = artistRuleDao.getAll().map { ArtistRule(it.name) }
         )
     }
 
     suspend fun getFolderRules(): List<FolderRule> {
         return folderRuleDao.getAll().map { it.toFolderRule() }
+    }
+
+    suspend fun getArtistRules(): List<ArtistRule> {
+        return artistRuleDao.getAll().map { ArtistRule(it.name) }
     }
 
     suspend fun addFolderRule(path: String, mode: FolderRuleMode) {
@@ -31,6 +39,16 @@ class LibraryIndexPolicyRepository(
 
     suspend fun removeFolderRule(path: String) {
         folderRuleDao.deleteByPath(path.trim().trimEnd('/'))
+    }
+
+    suspend fun addArtistRule(name: String) {
+        val normalized = LibraryIndexFilter.normalizeArtist(name)
+        if (normalized.isEmpty()) return
+        artistRuleDao.insert(IndexArtistRuleEntity(name = normalized))
+    }
+
+    suspend fun removeArtistRule(name: String) {
+        artistRuleDao.deleteByName(LibraryIndexFilter.normalizeArtist(name))
     }
 
     fun getMaxDurationMs(): Long = preferences.getMaxDurationMs()

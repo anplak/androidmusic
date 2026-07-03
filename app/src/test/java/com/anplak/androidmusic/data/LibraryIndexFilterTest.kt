@@ -1,12 +1,15 @@
 package com.anplak.androidmusic.data
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class LibraryIndexFilterTest {
 
     private val defaultPolicy = LibraryIndexPolicy()
+    private val defaultArtist = "Some Artist"
 
     @Test
     fun `indexes track within duration under allowed path`() {
@@ -14,6 +17,7 @@ class LibraryIndexFilterTest {
             LibraryIndexFilter.shouldIndex(
                 "/storage/emulated/0/Music/song.mp3",
                 5 * 60 * 1000L,
+                defaultArtist,
                 defaultPolicy
             )
         )
@@ -25,6 +29,7 @@ class LibraryIndexFilterTest {
             LibraryIndexFilter.shouldIndex(
                 "/storage/emulated/0/Music/podcast.mp3",
                 15 * 60 * 1000L,
+                defaultArtist,
                 defaultPolicy
             )
         )
@@ -41,6 +46,7 @@ class LibraryIndexFilterTest {
             LibraryIndexFilter.shouldIndex(
                 "/storage/emulated/0/Music/Podcasts/show/episode.mp3",
                 180_000L,
+                defaultArtist,
                 policy
             )
         )
@@ -57,6 +63,7 @@ class LibraryIndexFilterTest {
             LibraryIndexFilter.shouldIndex(
                 "/storage/emulated/0/Music/album/track.mp3",
                 180_000L,
+                defaultArtist,
                 policy
             )
         )
@@ -64,6 +71,7 @@ class LibraryIndexFilterTest {
             LibraryIndexFilter.shouldIndex(
                 "/storage/emulated/0/Download/track.mp3",
                 180_000L,
+                defaultArtist,
                 policy
             )
         )
@@ -80,6 +88,7 @@ class LibraryIndexFilterTest {
             LibraryIndexFilter.shouldIndex(
                 "/storage/emulated/0/music/song.mp3",
                 180_000L,
+                defaultArtist,
                 policy
             )
         )
@@ -88,7 +97,7 @@ class LibraryIndexFilterTest {
     @Test
     fun `allows track without path when no include rules`() {
         assertTrue(
-            LibraryIndexFilter.shouldIndex("", 180_000L, defaultPolicy)
+            LibraryIndexFilter.shouldIndex("", 180_000L, defaultArtist, defaultPolicy)
         )
     }
 
@@ -100,7 +109,78 @@ class LibraryIndexFilterTest {
             )
         )
         assertFalse(
-            LibraryIndexFilter.shouldIndex("", 180_000L, policy)
+            LibraryIndexFilter.shouldIndex("", 180_000L, defaultArtist, policy)
+        )
+    }
+
+    @Test
+    fun `rejects track by excluded artist case insensitively`() {
+        val policy = LibraryIndexPolicy(
+            artistRules = listOf(ArtistRule("podcast host"))
+        )
+        assertEquals(
+            IndexSkipReason.ARTIST,
+            LibraryIndexFilter.skipReason(
+                "/storage/emulated/0/Music/ep.mp3",
+                180_000L,
+                "Podcast Host",
+                policy
+            )
+        )
+        assertFalse(
+            LibraryIndexFilter.shouldIndex(
+                "/storage/emulated/0/Music/ep.mp3",
+                180_000L,
+                "PODCAST HOST",
+                policy
+            )
+        )
+    }
+
+    @Test
+    fun `folder rule wins over artist rule when path blocked`() {
+        val policy = LibraryIndexPolicy(
+            folderRules = listOf(
+                FolderRule("/storage/emulated/0/Music", FolderRuleMode.INCLUDE)
+            ),
+            artistRules = listOf(ArtistRule("blocked artist"))
+        )
+        assertEquals(
+            IndexSkipReason.FOLDER,
+            LibraryIndexFilter.skipReason(
+                "/storage/emulated/0/Download/track.mp3",
+                180_000L,
+                "Blocked Artist",
+                policy
+            )
+        )
+    }
+
+    @Test
+    fun `duration skip wins when artist also blocklisted`() {
+        val policy = LibraryIndexPolicy(
+            artistRules = listOf(ArtistRule("podcast host"))
+        )
+        assertEquals(
+            IndexSkipReason.DURATION,
+            LibraryIndexFilter.skipReason(
+                "/storage/emulated/0/Music/ep.mp3",
+                15 * 60 * 1000L,
+                "Podcast Host",
+                policy
+            )
+        )
+    }
+
+    @Test
+    fun `returns null skip reason for allowed track`() {
+        assertNull(
+            LibraryIndexFilter.skipReason(
+                "/storage/emulated/0/Music/song.mp3",
+                180_000L,
+                "Artist",
+                defaultPolicy
+            )
         )
     }
 }

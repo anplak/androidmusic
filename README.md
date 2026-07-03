@@ -8,7 +8,7 @@ A minimal offline music player for Android. It discovers local audio via MediaSt
 - **Offline-first** — no network or account required
 - **Your Library** — browse tracks with title, artist, album, and duration
 - **Cached library** — last-known tracks show immediately; MediaStore sync runs in the background when you open Library or change index rules
-- **Library index rules** — skip tracks over a duration limit; include or exclude folders (Music, Downloads, Documents presets; custom paths)
+- **Library index rules** — skip tracks over a duration limit; include or exclude folders; blocklist artists; review and revert exclusions from Library Index
 - **Playback queue** — tap a track to play from that point in the list; next/previous with queue position
 - **Background playback** — continues with screen off or app in background
 - **System media controls** — notification, lock screen, and headset buttons via MediaSession
@@ -82,7 +82,7 @@ Requires a connected device (`adb devices`). Optional: pass a serial or set `AND
 - No repeat-one / repeat-all modes (smart shuffle only)
 - Queue is not restored after force-stop
 - No dedicated Artists or Albums browse views yet
-- No artist blocklist or unified exclusions UI yet (folder rules only)
+- No exclude-from-library entry point on artist detail screen yet (Library Index only)
 - No cloud sync, lyrics, or equalizer
 - Insights are simple aggregates, not exportable reports
 
@@ -91,7 +91,7 @@ Requires a connected device (`adb devices`). Optional: pass a serial or set `AND
 Rough backlog (see `.cursor/workflow/` for story specs):
 
 - Artists / albums tabs in Library
-- Artist exclusions and revertable exclusion list
+- Artist detail screen with “Exclude artist from library” action
 - Smarter favorite/shuffle ranking (explicit plays, skips, recency)
 - Richer auto-generated mixes (decade, add date, playlists, metadata)
 

@@ -120,10 +120,21 @@
     <string name="folder_rule_include">Include (and subfolders)</string>
     <string name="folder_rule_exclude">Exclude (and subfolders)</string>
     <string name="add_folder_rule">Add folder rule</string>
-    <string name="add_folder_rule_description">Exclude a folder from indexing. Subfolders are included automatically.</string>
+    <string name="add_folder_rule_description">Exclude a folder and its subfolders from indexing. Pick a suggestion or enter a path.</string>
+    <string name="add_folder_rule_hint">Folder path</string>
     <string name="exclude_folder">Exclude: %s</string>
     <string name="remove_folder_rule">Remove folder rule</string>
-    <string name="scan_summary">Indexed %1$d · Skipped %2$d (long) · %3$d (folder)</string>
+    <string name="excluded_folders">Excluded folders</string>
+    <string name="excluded_artists">Excluded artists</string>
+    <string name="excluded_label">Excluded</string>
+    <string name="no_exclusions">No exclusions</string>
+    <string name="add_artist_rule">Exclude artist</string>
+    <string name="add_artist_rule_description">Exclude all tracks by an artist. Use the shortcut below for tracks with missing artist metadata.</string>
+    <string name="add_artist_rule_hint">Artist name</string>
+    <string name="exclude_unknown_artist">Exclude Unknown Artist</string>
+    <string name="remove_artist_rule">Remove artist exclusion</string>
+    <string name="exclude_artist_from_library">Exclude artist from library</string>
+    <string name="scan_summary">Indexed %1$d · Skipped %2$d (long) · %3$d (folder) · %4$d (artist)</string>
     <string name="queue_position">Track %1$d of %2$d</string>
 </resources>
 

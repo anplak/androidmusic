@@ -77,7 +77,7 @@ class ForYouE2ETest {
         if (!composeTestRule.safeHasNodes(hasTestTag("for_you_list"))) return
         if (!composeTestRule.safeHasNodes(hasTestTag("for_you_see_all"))) return
 
-        composeTestRule.onNodeWithTag("for_you_see_all").performClick()
+        composeTestRule.clickFirstWithTag("for_you_see_all")
         composeTestRule.waitForIdle()
 
         composeTestRule.waitUntil(timeoutMillis = 10_000) {

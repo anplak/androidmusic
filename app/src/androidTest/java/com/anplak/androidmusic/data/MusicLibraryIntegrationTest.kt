@@ -419,7 +419,8 @@ class MusicLibraryIntegrationTest {
             TAG,
             "Repository indexed ${scanResult.indexedCount} tracks " +
                 "(${scanResult.skippedDurationCount} skipped by duration, " +
-                "${scanResult.skippedFolderCount} skipped by folder rules)"
+                "${scanResult.skippedFolderCount} skipped by folder rules, " +
+                "${scanResult.skippedArtistCount} skipped by artist rules)"
         )
 
         val policy = LibraryIndexPolicy()
@@ -430,7 +431,7 @@ class MusicLibraryIntegrationTest {
         physicalMp3Files.forEach { file ->
             val durationMs = queryDurationMs(file.absolutePath)
             val indexable = durationMs != null &&
-                LibraryIndexFilter.shouldIndex(file.absolutePath, durationMs, policy)
+                LibraryIndexFilter.shouldIndex(file.absolutePath, durationMs, "", policy)
 
             if (!indexable) {
                 skippedByDuration++

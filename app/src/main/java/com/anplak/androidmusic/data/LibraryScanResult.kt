@@ -6,5 +6,6 @@ data class LibraryScanResult(
     val tracks: List<TrackInfo>,
     val indexedCount: Int,
     val skippedDurationCount: Int,
-    val skippedFolderCount: Int
+    val skippedFolderCount: Int,
+    val skippedArtistCount: Int = 0
 )

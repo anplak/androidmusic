@@ -432,6 +432,49 @@ class MusicLibraryRepositoryTest {
     }
 
     @Test
+    fun `syncLibrary skips tracks by excluded artist`() = runTest {
+        val policyRepository = mock<LibraryIndexPolicyRepository>()
+        whenever(policyRepository.loadPolicy()).thenReturn(
+            LibraryIndexPolicy(
+                artistRules = listOf(ArtistRule("podcast host"))
+            )
+        )
+        repository = MusicLibraryRepositoryImpl(
+            contentResolver,
+            policyRepository = policyRepository
+        )
+
+        val cursor = createCursorWithTracks(
+            listOf(
+                TrackData(
+                    1L,
+                    "Episode",
+                    "Podcast Host",
+                    "Album",
+                    180_000L,
+                    "/storage/emulated/0/Music/ep.mp3"
+                ),
+                TrackData(
+                    2L,
+                    "Song",
+                    "Other Artist",
+                    "Album",
+                    180_000L,
+                    "/storage/emulated/0/Music/song.mp3"
+                )
+            )
+        )
+        whenever(contentResolver.query(any(), any(), anyOrNull(), anyOrNull(), anyOrNull()))
+            .thenReturn(cursor)
+
+        val result = repository.syncLibrary()
+
+        assertEquals(1, result.tracks.size)
+        assertEquals("Song", result.tracks.first().title)
+        assertEquals(1, result.skippedArtistCount)
+    }
+
+    @Test
     fun `syncLibrary deletes stale entries after sync`() = runTest {
         val trackDao = mock<TrackDao>()
         repository = MusicLibraryRepositoryImpl(
