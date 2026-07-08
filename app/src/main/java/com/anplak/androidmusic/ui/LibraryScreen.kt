@@ -9,42 +9,49 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anplak.androidmusic.R
+import com.anplak.androidmusic.data.AlbumSummary
+import com.anplak.androidmusic.data.ArtistSummary
 import com.anplak.androidmusic.data.DurationBucket
 import com.anplak.androidmusic.data.LibraryFilter
 import com.anplak.androidmusic.player.TrackInfo
@@ -55,6 +62,8 @@ import com.anplak.androidmusic.ui.theme.Dimens
 fun LibraryScreen(
     onTrackSelected: (List<TrackInfo>, Int) -> Unit,
     onAddToPlaylist: (TrackInfo) -> Unit,
+    onArtistClick: (ArtistSummary) -> Unit = {},
+    onAlbumClick: (AlbumSummary) -> Unit = {},
     onOpenSearch: () -> Unit = {},
     onOpenLibraryIndex: () -> Unit = {},
     initialLocalQuery: String? = null,
@@ -140,6 +149,10 @@ fun LibraryScreen(
                 is LibraryUiState.Empty -> EmptyLibraryState()
                 is LibraryUiState.Content -> {
                     Column(modifier = Modifier.fillMaxSize()) {
+                        LibraryBrowseTabs(
+                            selected = state.browseTab,
+                            onTabSelected = viewModel::setBrowseTab
+                        )
                         if (state.isRefreshing) {
                             LinearProgressIndicator(
                                 modifier = Modifier
@@ -155,30 +168,82 @@ fun LibraryScreen(
                                 Text(stringResource(R.string.library_sync_retry))
                             }
                         }
-                        LibraryFilterBar(
-                            filter = state.filter,
-                            localQuery = state.localQuery,
-                            onFilterChange = viewModel::setFilter,
-                            onLocalQueryChange = viewModel::setLocalQuery
-                        )
-                        if (state.showNoFilterResults) {
-                            NoFilterResultsState()
-                        } else {
-                            TrackList(
-                                tracks = state.tracks,
-                                favoriteIds = state.favoriteIds,
-                                onTrackSelected = { track ->
-                                    val index = state.tracks.indexOf(track)
-                                    onTrackSelected(state.tracks, index)
-                                },
-                                onToggleFavorite = viewModel::toggleFavorite,
-                                onAddToPlaylist = onAddToPlaylist
-                            )
+                        when (state.browseTab) {
+                            LibraryBrowseTab.Tracks -> {
+                                LibraryTracksContent(
+                                    state = state,
+                                    onTrackSelected = onTrackSelected,
+                                    onAddToPlaylist = onAddToPlaylist,
+                                    onFilterChange = viewModel::setFilter,
+                                    onLocalQueryChange = viewModel::setLocalQuery,
+                                    onToggleFavorite = viewModel::toggleFavorite
+                                )
+                            }
+                            LibraryBrowseTab.Artists -> {
+                                ArtistList(
+                                    artists = state.artists,
+                                    onArtistClick = onArtistClick
+                                )
+                            }
+                            LibraryBrowseTab.Albums -> {
+                                AlbumList(
+                                    albums = state.albums,
+                                    onAlbumClick = onAlbumClick
+                                )
+                            }
                         }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun LibraryBrowseTabs(
+    selected: LibraryBrowseTab,
+    onTabSelected: (LibraryBrowseTab) -> Unit
+) {
+    TabRow(selectedTabIndex = selected.ordinal) {
+        LibraryBrowseTab.entries.forEach { tab ->
+            Tab(
+                selected = tab == selected,
+                onClick = { onTabSelected(tab) },
+                text = { Text(stringResource(tab.labelResId)) },
+                modifier = Modifier.testTag("library_tab_${tab.name.lowercase()}")
+            )
+        }
+    }
+}
+
+@Composable
+private fun LibraryTracksContent(
+    state: LibraryUiState.Content,
+    onTrackSelected: (List<TrackInfo>, Int) -> Unit,
+    onAddToPlaylist: (TrackInfo) -> Unit,
+    onFilterChange: (LibraryFilter) -> Unit,
+    onLocalQueryChange: (String) -> Unit,
+    onToggleFavorite: (Long) -> Unit
+) {
+    LibraryFilterBar(
+        filter = state.filter,
+        localQuery = state.localQuery,
+        onFilterChange = onFilterChange,
+        onLocalQueryChange = onLocalQueryChange
+    )
+    if (state.showNoFilterResults) {
+        NoFilterResultsState()
+    } else {
+        TrackList(
+            tracks = state.tracks,
+            favoriteIds = state.favoriteIds,
+            onTrackSelected = { track ->
+                val index = state.tracks.indexOf(track)
+                onTrackSelected(state.tracks, index)
+            },
+            onToggleFavorite = onToggleFavorite,
+            onAddToPlaylist = onAddToPlaylist
+        )
     }
 }
 
@@ -271,6 +336,112 @@ private fun LibraryFilterBar(
                     modifier = Modifier.testTag("library_filter_duration_long")
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun ArtistList(
+    artists: List<ArtistSummary>,
+    onArtistClick: (ArtistSummary) -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .testTag("artist_list"),
+        contentPadding = PaddingValues(vertical = Dimens.listVerticalPadding)
+    ) {
+        items(
+            items = artists,
+            key = { "artist_${it.normalizedKey}" }
+        ) { artist ->
+            ListItem(
+                headlineContent = {
+                    Text(
+                        text = artist.displayName,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                supportingContent = {
+                    Text(
+                        text = stringResource(R.string.tracks_count, artist.trackCount),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                },
+                leadingContent = {
+                    InitialsAvatar(label = artist.displayName)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onArtistClick(artist) }
+                    .testTag("artist_item_${artist.normalizedKey}")
+            )
+        }
+    }
+}
+
+@Composable
+private fun AlbumList(
+    albums: List<AlbumSummary>,
+    onAlbumClick: (AlbumSummary) -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .testTag("album_list"),
+        contentPadding = PaddingValues(vertical = Dimens.listVerticalPadding)
+    ) {
+        items(
+            items = albums,
+            key = { album ->
+                "album_${album.normalizedTitle}_${album.normalizedArtist}"
+            }
+        ) { album ->
+            ListItem(
+                headlineContent = {
+                    Text(
+                        text = album.displayTitle,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                supportingContent = {
+                    Text(
+                        text = album.displayArtist,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                },
+                leadingContent = {
+                    InitialsAvatar(label = album.displayTitle)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onAlbumClick(album) }
+                    .testTag(
+                        "album_item_${album.normalizedTitle}_${album.normalizedArtist}"
+                    )
+            )
+        }
+    }
+}
+
+@Composable
+private fun InitialsAvatar(label: String) {
+    val initial = label.firstOrNull()?.uppercaseChar()?.toString() ?: "?"
+    Surface(
+        modifier = Modifier.size(40.dp),
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.secondaryContainer
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(
+                text = initial,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer
+            )
         }
     }
 }

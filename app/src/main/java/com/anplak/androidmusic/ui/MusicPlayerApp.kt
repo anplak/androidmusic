@@ -27,6 +27,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anplak.androidmusic.R
+import com.anplak.androidmusic.data.AlbumSummary
+import com.anplak.androidmusic.data.ArtistSummary
 import com.anplak.androidmusic.data.RecommendationRow
 import com.anplak.androidmusic.data.SmartPlaylistType
 import com.anplak.androidmusic.player.TrackInfo
@@ -48,6 +50,11 @@ sealed class AppScreen {
     data object Insights : AppScreen()
     data object Search : AppScreen()
     data object LibraryIndex : AppScreen()
+    data class LibraryArtistDetail(
+        val artistKey: String,
+        val displayName: String
+    ) : AppScreen()
+    data class LibraryAlbumDetail(val album: AlbumSummary) : AppScreen()
 }
 
 @Composable
@@ -181,6 +188,44 @@ fun MusicPlayerApp(
                     )
                 }
 
+                currentScreen is AppScreen.LibraryArtistDetail -> {
+                    val args = currentScreen as AppScreen.LibraryArtistDetail
+                    LibraryArtistDetailScreen(
+                        artistKey = args.artistKey,
+                        displayName = args.displayName,
+                        onBackClick = { currentScreen = AppScreen.MainTabs },
+                        onPlayAll = { tracks, index ->
+                            playbackViewModel.onTrackSelected(tracks, index)
+                            currentScreen = AppScreen.NowPlaying
+                        },
+                        onAddToPlaylist = { track ->
+                            trackForPlaylistDialog = track
+                        },
+                        onExcludeArtist = { artistName ->
+                            libraryIndexViewModel.addArtistRule(artistName)
+                            libraryViewModel.refresh()
+                            currentScreen = AppScreen.MainTabs
+                        },
+                        viewModel = libraryViewModel
+                    )
+                }
+
+                currentScreen is AppScreen.LibraryAlbumDetail -> {
+                    val args = currentScreen as AppScreen.LibraryAlbumDetail
+                    LibraryAlbumDetailScreen(
+                        album = args.album,
+                        onBackClick = { currentScreen = AppScreen.MainTabs },
+                        onPlayAll = { tracks, index ->
+                            playbackViewModel.onTrackSelected(tracks, index)
+                            currentScreen = AppScreen.NowPlaying
+                        },
+                        onAddToPlaylist = { track ->
+                            trackForPlaylistDialog = track
+                        },
+                        viewModel = libraryViewModel
+                    )
+                }
+
                 else -> {
                     MainTabsContent(
                         currentTab = currentTab,
@@ -207,6 +252,15 @@ fun MusicPlayerApp(
                         },
                         onOpenSearch = { currentScreen = AppScreen.Search },
                         onOpenLibraryIndex = { currentScreen = AppScreen.LibraryIndex },
+                        onArtistClick = { artist ->
+                            currentScreen = AppScreen.LibraryArtistDetail(
+                                artistKey = artist.normalizedKey,
+                                displayName = artist.displayName
+                            )
+                        },
+                        onAlbumClick = { album ->
+                            currentScreen = AppScreen.LibraryAlbumDetail(album)
+                        },
                         librarySearchHint = librarySearchHint,
                         onConsumeLibraryHint = { librarySearchHint = null },
                         playlistsViewModel = playlistsViewModel,
@@ -246,6 +300,8 @@ private fun MainTabsContent(
     onPlayRecommendationRow: (RecommendationRow) -> Unit,
     onOpenSearch: () -> Unit,
     onOpenLibraryIndex: () -> Unit,
+    onArtistClick: (ArtistSummary) -> Unit,
+    onAlbumClick: (AlbumSummary) -> Unit,
     librarySearchHint: String?,
     onConsumeLibraryHint: () -> Unit,
     playlistsViewModel: PlaylistsViewModel,
@@ -290,6 +346,8 @@ private fun MainTabsContent(
                     LibraryScreen(
                         onTrackSelected = onTrackSelected,
                         onAddToPlaylist = onAddToPlaylist,
+                        onArtistClick = onArtistClick,
+                        onAlbumClick = onAlbumClick,
                         onOpenSearch = onOpenSearch,
                         onOpenLibraryIndex = onOpenLibraryIndex,
                         initialLocalQuery = librarySearchHint,

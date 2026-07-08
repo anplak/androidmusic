@@ -105,6 +105,9 @@
     <string name="filter_duration_long">Long</string>
     <string name="library_no_filter_results">No matching tracks</string>
     <string name="library_no_filter_results_description">Clear filters or broaden your search.</string>
+    <string name="library_tab_tracks">Tracks</string>
+    <string name="library_tab_artists">Artists</string>
+    <string name="library_tab_albums">Albums</string>
     <string name="search_section_tracks">Tracks</string>
     <string name="search_section_artists">Artists</string>
     <string name="search_section_albums">Albums</string>
