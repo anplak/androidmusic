@@ -2,6 +2,7 @@ package com.anplak.androidmusic.ui
 
 import android.app.Application
 import android.net.Uri
+import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
 import com.anplak.androidmusic.data.DurationBucket
 import com.anplak.androidmusic.data.FavoritesRepository
@@ -327,9 +328,109 @@ class LibraryViewModelTest {
         assertTrue(state.favoriteIds.contains(1L))
     }
 
-    private fun createViewModel(): LibraryViewModel {
+    @Test
+    fun `setBrowseTab does not trigger sync`() = runTest {
+        val tracks = listOf(
+            createTrack(1, "Song One", "Artist A"),
+            createTrack(2, "Song Two", "Artist B")
+        )
+        fakeRepository.setCachedTracks(tracks)
+        fakeRepository.setSyncTracks(tracks)
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        fakeRepository.resetSyncCallCount()
+
+        viewModel.setBrowseTab(LibraryBrowseTab.Artists)
+        viewModel.setBrowseTab(LibraryBrowseTab.Albums)
+        advanceUntilIdle()
+
+        assertEquals(0, fakeRepository.syncLibraryCallCount)
+        val state = viewModel.uiState.value as LibraryUiState.Content
+        assertEquals(LibraryBrowseTab.Albums, state.browseTab)
+        assertEquals(2, state.artists.size)
+    }
+
+    @Test
+    fun `artist and album counts update when cache changes`() = runTest {
+        val initial = listOf(createTrack(1, "Song One", "Artist A"))
+        fakeRepository.setCachedTracks(initial)
+        fakeRepository.setSyncTracks(initial)
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        val updated = listOf(
+            createTrack(1, "Song One", "Artist A"),
+            createTrack(2, "Song Two", "Artist B")
+        )
+        fakeRepository.setCachedTracks(updated)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value as LibraryUiState.Content
+        assertEquals(2, state.artists.size)
+        assertEquals(2, state.albums.size)
+    }
+
+    @Test
+    fun `filters apply only to tracks tab list`() = runTest {
+        val tracks = listOf(
+            createTrack(1, "Fav Song", "Artist A"),
+            createTrack(2, "Other Song", "Artist B")
+        )
+        fakeRepository.setSyncTracks(tracks)
+        fakeFavoritesRepository.setFavoriteIds(setOf(1L))
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.setFilter(LibraryFilter(favoritesOnly = true))
+        viewModel.setBrowseTab(LibraryBrowseTab.Artists)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value as LibraryUiState.Content
+        assertEquals(1, state.tracks.size)
+        assertEquals(2, state.artists.size)
+    }
+
+    @Test
+    fun `saved browse tab restored from SavedStateHandle`() = runTest {
+        val tracks = listOf(createTrack(1, "Song One", "Artist A"))
+        fakeRepository.setSyncTracks(tracks)
+
+        val viewModel = createViewModel(
+            savedStateHandle = SavedStateHandle(
+                mapOf(LibraryViewModel.KEY_BROWSE_TAB to LibraryBrowseTab.Artists.name)
+            )
+        )
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value as LibraryUiState.Content
+        assertEquals(LibraryBrowseTab.Artists, state.browseTab)
+    }
+
+    @Test
+    fun `tracksForArtist returns matching tracks`() = runTest {
+        val tracks = listOf(
+            createTrack(1, "Alpha", "Artist A"),
+            createTrack(2, "Beta", "Artist B")
+        )
+        fakeRepository.setSyncTracks(tracks)
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        val artistTracks = viewModel.tracksForArtist("artist a")
+        assertEquals(1, artistTracks.size)
+        assertEquals("Alpha", artistTracks.first().title)
+    }
+
+    private fun createViewModel(
+        savedStateHandle: SavedStateHandle = SavedStateHandle()
+    ): LibraryViewModel {
         return LibraryViewModel(
             application = application,
+            savedStateHandle = savedStateHandle,
             repository = fakeRepository,
             favoritesRepository = fakeFavoritesRepository,
             trackDao = fakeTrackDao,
@@ -351,7 +452,8 @@ class LibraryViewModelTest {
 class FakeMusicLibraryRepository : MusicLibraryRepository {
     private val cacheFlow = MutableStateFlow<List<TrackInfo>>(emptyList())
     private var syncTracks: List<TrackInfo> = emptyList()
-    private var lastScanResult: LibraryScanResult = LibraryScanResult(emptyList(), 0, 0, 0)
+    private var lastScanResult: LibraryScanResult =
+        LibraryScanResult(emptyList(), 0, 0, 0, 0)
 
     var syncLibraryCallCount = 0
         private set
@@ -374,7 +476,8 @@ class FakeMusicLibraryRepository : MusicLibraryRepository {
             tracks = tracks,
             indexedCount = tracks.size,
             skippedDurationCount = 0,
-            skippedFolderCount = 0
+            skippedFolderCount = 0,
+            skippedArtistCount = 0
         )
     }
 

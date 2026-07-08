@@ -1,5 +1,7 @@
 package com.anplak.androidmusic.ui
 
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasContentDescription
@@ -71,9 +73,57 @@ fun MainActivityComposeRule.returnToMainShell() {
     }
 }
 
+/** Matches nodes whose test tag starts with [prefix]. */
+fun hasTestTagPrefix(prefix: String): SemanticsMatcher =
+    SemanticsMatcher("hasTestTagPrefix($prefix)") { node ->
+        node.config.getOrNull(SemanticsProperties.TestTag)?.startsWith(prefix) == true
+    }
+
+/** Clicks the first node whose test tag starts with [prefix]. */
+fun MainActivityComposeRule.clickFirstWithTagPrefix(prefix: String) {
+    waitUntil(timeoutMillis = 15_000) {
+        safeHasNodes(hasTestTagPrefix(prefix))
+    }
+    onAllNodes(hasTestTagPrefix(prefix)).onFirst().performClick()
+}
+
 fun MainActivityComposeRule.prepareLibraryTab() {
     waitForAppReady()
     navigateToLibrary()
+}
+
+fun MainActivityComposeRule.hasLibraryTracks(): Boolean =
+    safeHasNodes(hasTestTag("track_list"))
+
+fun MainActivityComposeRule.switchLibraryBrowseTab(tab: LibraryBrowseTab) {
+    onNodeWithTag("library_tab_${tab.name.lowercase()}").performClick()
+    waitForIdle()
+}
+
+fun MainActivityComposeRule.navigateToLibraryArtistsTab() {
+    switchLibraryBrowseTab(LibraryBrowseTab.Artists)
+    waitUntil(timeoutMillis = 15_000) {
+        safeHasNodes(hasTestTag("artist_list"))
+    }
+}
+
+fun MainActivityComposeRule.navigateToLibraryAlbumsTab() {
+    switchLibraryBrowseTab(LibraryBrowseTab.Albums)
+    waitUntil(timeoutMillis = 15_000) {
+        safeHasNodes(hasTestTag("album_list"))
+    }
+}
+
+fun MainActivityComposeRule.waitForLibraryDetailSettled() {
+    waitUntil(timeoutMillis = 15_000) {
+        safeHasNodes(hasTestTag("library_detail_track_list")) ||
+            safeHasNodes(hasTestTag("library_detail_empty"))
+    }
+}
+
+fun MainActivityComposeRule.returnFromLibraryDetail() {
+    onNodeWithTag("library_detail_back_button").performClick()
+    waitForLibraryContent()
 }
 
 fun MainActivityComposeRule.preparePlaylistsTab() {
@@ -91,7 +141,10 @@ fun MainActivityComposeRule.waitForLibraryContent() {
     waitUntil(timeoutMillis = 15_000) {
         safeHasNodes(hasTestTag("track_list")) ||
             safeHasNodes(hasTestTag("empty_state")) ||
-            safeHasNodes(hasTestTag("library_search_field"))
+            safeHasNodes(hasTestTag("library_search_field")) ||
+            safeHasNodes(hasTestTag("library_tab_tracks")) ||
+            safeHasNodes(hasTestTag("artist_list")) ||
+            safeHasNodes(hasTestTag("album_list"))
     }
 }
 

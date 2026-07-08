@@ -1,10 +1,16 @@
 package com.anplak.androidmusic.ui
 
 import android.app.Application
+import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import com.anplak.androidmusic.R
+import com.anplak.androidmusic.data.AlbumSummary
+import com.anplak.androidmusic.data.ArtistSummary
 import com.anplak.androidmusic.data.FavoritesRepository
 import com.anplak.androidmusic.data.FavoritesRepositoryImpl
+import com.anplak.androidmusic.data.LibraryBrowseAggregator
 import com.anplak.androidmusic.data.LibraryFilter
 import com.anplak.androidmusic.data.LibraryFilterEngine
 import com.anplak.androidmusic.data.LibraryScanResult
@@ -22,6 +28,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
+enum class LibraryBrowseTab(@StringRes val labelResId: Int) {
+    Tracks(R.string.library_tab_tracks),
+    Artists(R.string.library_tab_artists),
+    Albums(R.string.library_tab_albums)
+}
+
 sealed interface LibraryUiState {
     data object Loading : LibraryUiState
     data class Content(
@@ -31,13 +43,17 @@ sealed interface LibraryUiState {
         val favoriteIds: Set<Long> = emptySet(),
         val filter: LibraryFilter = LibraryFilter(),
         val localQuery: String = "",
-        val showNoFilterResults: Boolean = false
+        val showNoFilterResults: Boolean = false,
+        val browseTab: LibraryBrowseTab = LibraryBrowseTab.Tracks,
+        val artists: List<ArtistSummary> = emptyList(),
+        val albums: List<AlbumSummary> = emptyList()
     ) : LibraryUiState
     data object Empty : LibraryUiState
 }
 
 class LibraryViewModel @JvmOverloads constructor(
     application: Application,
+    private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
     private val repository: MusicLibraryRepository = MusicLibraryRepositoryFactory.create(application),
     private val favoritesRepository: FavoritesRepository = FavoritesRepositoryImpl(
         AppDatabase.getInstance(application).favoriteDao(),
@@ -60,6 +76,11 @@ class LibraryViewModel @JvmOverloads constructor(
     private var localQuery: String = ""
     private var isRefreshing: Boolean = false
     private var syncFailed: Boolean = false
+    private var cachedArtists: List<ArtistSummary>? = null
+    private var cachedAlbums: List<AlbumSummary>? = null
+    private var browseTab: LibraryBrowseTab = savedStateHandle.get<String>(KEY_BROWSE_TAB)
+        ?.let { runCatching { LibraryBrowseTab.valueOf(it) }.getOrNull() }
+        ?: LibraryBrowseTab.Tracks
 
     init {
         viewModelScope.launch {
@@ -75,7 +96,10 @@ class LibraryViewModel @JvmOverloads constructor(
             repository.observeCachedTracks().collect { cached ->
                 currentTracks = cached
                 recentlyAddedIds = loadRecentlyAddedIds()
+                cachedArtists = null
+                cachedAlbums = null
                 if (shouldApplyFilters()) {
+                    rebuildAggregates()
                     applyFilters()
                 }
             }
@@ -100,6 +124,8 @@ class LibraryViewModel @JvmOverloads constructor(
                 _uiState.value = LibraryUiState.Loading
                 syncCoordinator.syncNow()
             } else {
+                currentTracks = repository.getCachedTracks()
+                rebuildAggregates()
                 applyFilters()
                 syncCoordinator.scheduleSync()
             }
@@ -114,6 +140,12 @@ class LibraryViewModel @JvmOverloads constructor(
         }
     }
 
+    fun setBrowseTab(tab: LibraryBrowseTab) {
+        browseTab = tab
+        savedStateHandle[KEY_BROWSE_TAB] = tab.name
+        applyFilters()
+    }
+
     fun setFilter(newFilter: LibraryFilter) {
         filter = newFilter
         applyFilters()
@@ -126,8 +158,20 @@ class LibraryViewModel @JvmOverloads constructor(
 
     fun applyLibraryHint(query: String) {
         localQuery = query
+        browseTab = LibraryBrowseTab.Tracks
+        savedStateHandle[KEY_BROWSE_TAB] = browseTab.name
         applyFilters()
     }
+
+    fun tracksForArtist(normalizedKey: String): List<TrackInfo> =
+        LibraryBrowseAggregator.tracksForArtist(currentTracks, normalizedKey)
+
+    fun tracksForAlbum(summary: AlbumSummary): List<TrackInfo> =
+        LibraryBrowseAggregator.tracksForAlbum(
+            currentTracks,
+            summary.normalizedTitle,
+            summary.normalizedArtist
+        )
 
     fun toggleFavorite(trackId: Long) {
         val track = currentTracks.find { it.id == trackId } ?: return
@@ -163,6 +207,16 @@ class LibraryViewModel @JvmOverloads constructor(
         return trackDao.getTracksAddedSince(sinceMs).map { it.id }.toSet()
     }
 
+    private fun rebuildAggregates() {
+        if (currentTracks.isEmpty()) {
+            cachedArtists = emptyList()
+            cachedAlbums = emptyList()
+            return
+        }
+        cachedArtists = LibraryBrowseAggregator.aggregateArtists(currentTracks)
+        cachedAlbums = LibraryBrowseAggregator.aggregateAlbums(currentTracks)
+    }
+
     private fun shouldApplyFilters(): Boolean {
         if (_uiState.value !is LibraryUiState.Loading) return true
         if (currentTracks.isNotEmpty()) return true
@@ -175,7 +229,6 @@ class LibraryViewModel @JvmOverloads constructor(
         refreshFavoriteUiState()
     }
 
-    /** Rebuild list UI so favoriteIds and sync flags stay in sync (avoids stale partial copies). */
     private fun refreshFavoriteUiState() {
         if (shouldApplyFilters()) {
             applyFilters()
@@ -209,11 +262,15 @@ class LibraryViewModel @JvmOverloads constructor(
             favoriteIds = favoriteIds,
             filter = filter,
             localQuery = localQuery,
-            showNoFilterResults = filtered.isEmpty()
+            showNoFilterResults = filtered.isEmpty() && browseTab == LibraryBrowseTab.Tracks,
+            browseTab = browseTab,
+            artists = cachedArtists.orEmpty(),
+            albums = cachedAlbums.orEmpty()
         )
     }
 
     companion object {
+        const val KEY_BROWSE_TAB = "library_browse_tab"
         private const val RECENTLY_ADDED_WINDOW_MS = 7L * 24 * 60 * 60 * 1000
     }
 }
