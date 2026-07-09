@@ -2,6 +2,7 @@ package com.anplak.androidmusic.data
 
 import com.anplak.androidmusic.data.db.FavoriteDao
 import com.anplak.androidmusic.data.db.FavoriteEntity
+import com.anplak.androidmusic.data.db.FavoriteTimestamp
 import com.anplak.androidmusic.data.db.TrackDao
 import com.anplak.androidmusic.data.db.TrackEntity
 import com.anplak.androidmusic.player.TrackInfo
@@ -14,6 +15,7 @@ interface FavoritesRepository {
     fun isFavorite(trackId: Long): Flow<Boolean>
     fun getAllFavorites(): Flow<List<TrackInfo>>
     fun getAllFavoriteIds(): Flow<Set<Long>>
+    fun getFavoriteTimestamps(): Flow<Map<Long, Long>>
 }
 
 class FavoritesRepositoryImpl(
@@ -57,6 +59,12 @@ class FavoritesRepositoryImpl(
 
     override fun getAllFavoriteIds(): Flow<Set<Long>> {
         return favoriteDao.getAllFavoriteIds().map { it.toSet() }
+    }
+
+    override fun getFavoriteTimestamps(): Flow<Map<Long, Long>> {
+        return favoriteDao.getFavoriteTimestamps().map { rows ->
+            rows.associate { it.trackId to it.addedAt }
+        }
     }
 }
 

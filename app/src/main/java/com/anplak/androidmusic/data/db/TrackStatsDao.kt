@@ -25,6 +25,13 @@ interface TrackStatsDao {
         WHERE trackId = :trackId
     """)
     suspend fun incrementCompletionCount(trackId: Long)
+
+    @Query("""
+        UPDATE track_stats
+        SET skipCount = skipCount + 1
+        WHERE trackId = :trackId
+    """)
+    suspend fun incrementSkipCount(trackId: Long)
     
     @Query("SELECT * FROM track_stats WHERE trackId = :trackId")
     suspend fun getStatsForTrack(trackId: Long): TrackStatsEntity?

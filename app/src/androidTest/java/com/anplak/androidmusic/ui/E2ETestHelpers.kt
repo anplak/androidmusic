@@ -330,3 +330,60 @@ fun MainActivityComposeRule.waitForForYouSettled() {
                 )
     }
 }
+
+/** Waits until Now Playing queue position reaches at least [minPosition] (1-based). */
+fun MainActivityComposeRule.waitForQueuePositionAtLeast(minPosition: Int, timeoutMillis: Long = 8_000) {
+    waitUntil(timeoutMillis = timeoutMillis) {
+        if (!safeHasNodes(hasTestTag("queue_position"))) return@waitUntil false
+        try {
+            val text = onNodeWithTag("queue_position")
+                .fetchSemanticsNode()
+                .config
+                .getOrNull(SemanticsProperties.Text)
+                ?.firstOrNull()
+                ?.text
+                ?: return@waitUntil false
+            val position = Regex("""Track\s+(\d+)""").find(text)?.groupValues?.get(1)?.toIntOrNull()
+                ?: return@waitUntil false
+            position >= minPosition
+        } catch (_: Exception) {
+            false
+        }
+    }
+}
+
+/** Opens Now Playing from the first library track; returns false when the catalog is empty. */
+fun MainActivityComposeRule.openNowPlayingFromLibrary(): Boolean {
+    prepareLibraryTab()
+    if (!safeHasNodes(hasTestTag("track_list"))) return false
+
+    onNodeWithTag("track_item_0").performClick()
+    waitUntil(timeoutMillis = 10_000) {
+        safeHasNodes(hasTestTag("now_playing_screen")) &&
+            safeHasNodes(hasTestTag("play_pause_button"))
+    }
+    return true
+}
+
+/** Clicks next when the control exists and is enabled. */
+fun MainActivityComposeRule.clickNextIfEnabled() {
+    if (!safeHasNodes(hasTestTag("next_button"))) return
+    try {
+        onNodeWithTag("next_button").performClick()
+        waitForIdle()
+    } catch (_: AssertionError) {
+        // Disabled at queue end — caller handles boundary cases.
+    }
+}
+
+/** Clicks smart shuffle in the Now Playing overflow menu. */
+fun MainActivityComposeRule.triggerSmartShuffleFromNowPlaying() {
+    onNodeWithTag("more_button").performClick()
+    waitUntil(timeoutMillis = 5_000) {
+        safeHasNodes(hasTestTag("smart_shuffle_menu"))
+    }
+    onNodeWithTag("smart_shuffle_menu").performClick()
+    waitUntil(timeoutMillis = 10_000) {
+        safeHasNodes(hasTestTag("play_pause_button"))
+    }
+}

@@ -30,6 +30,9 @@ interface FavoriteDao {
     @Query("SELECT trackId FROM favorites")
     fun getAllFavoriteIds(): Flow<List<Long>>
 
+    @Query("SELECT trackId, addedAt FROM favorites")
+    fun getFavoriteTimestamps(): Flow<List<FavoriteTimestamp>>
+
     @Query("SELECT COUNT(*) FROM favorites")
     fun getFavoriteCount(): Flow<Int>
 }

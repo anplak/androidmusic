@@ -12,7 +12,8 @@ data class TrackStats(
     val trackId: Long,
     val playCount: Int,
     val lastPlayedAt: Long?,
-    val completionCount: Int
+    val completionCount: Int,
+    val skipCount: Int = 0
 ) {
     val completionRatio: Float
         get() = if (playCount > 0) completionCount.toFloat() / playCount else 0f
@@ -20,30 +21,34 @@ data class TrackStats(
 
 interface TrackStatsRepository {
     /**
-     * Records a play event for the track.
+     * Records a qualified play event for the track.
      * Increments play count and updates last played timestamp.
      */
-    suspend fun recordPlay(trackId: Long)
-    
+    suspend fun recordQualifiedPlay(trackId: Long, timestamp: Long = System.currentTimeMillis())
+
+    /**
+     * Records a fast-skip negative signal without incrementing play count.
+     */
+    suspend fun recordSkip(trackId: Long)
+
     /**
      * Records a completion event for the track.
-     * Only increments completion count (play count should have been incremented on start).
+     * Only increments completion count (play count should have been incremented on qualify).
      */
     suspend fun recordCompletion(trackId: Long)
-    
+
     /**
      * Gets stats for a single track.
      */
     suspend fun getStats(trackId: Long): TrackStats?
-    
+
     /**
      * Observes stats for a single track.
      */
     fun observeStats(trackId: Long): Flow<TrackStats?>
-    
+
     /**
      * Gets all stats ordered by play count (descending).
-     * Useful for determining high play-count tracks for smart shuffle weighting.
      */
     suspend fun getAllStatsOrderedByPlayCount(): List<TrackStats>
 }
@@ -52,11 +57,14 @@ class TrackStatsRepositoryImpl(
     private val trackStatsDao: TrackStatsDao
 ) : TrackStatsRepository {
 
-    override suspend fun recordPlay(trackId: Long) {
-        // Ensure stats entry exists
+    override suspend fun recordQualifiedPlay(trackId: Long, timestamp: Long) {
         trackStatsDao.insertIfNotExists(TrackStatsEntity(trackId = trackId))
-        // Increment play count and update timestamp
-        trackStatsDao.incrementPlayCount(trackId)
+        trackStatsDao.incrementPlayCount(trackId, timestamp)
+    }
+
+    override suspend fun recordSkip(trackId: Long) {
+        trackStatsDao.insertIfNotExists(TrackStatsEntity(trackId = trackId))
+        trackStatsDao.incrementSkipCount(trackId)
     }
 
     override suspend fun recordCompletion(trackId: Long) {
@@ -76,15 +84,12 @@ class TrackStatsRepositoryImpl(
     }
 }
 
-/**
- * Extension function to convert TrackStatsEntity to TrackStats.
- */
 private fun TrackStatsEntity.toTrackStats(): TrackStats {
     return TrackStats(
         trackId = trackId,
         playCount = playCount,
         lastPlayedAt = lastPlayedAt,
-        completionCount = completionCount
+        completionCount = completionCount,
+        skipCount = skipCount
     )
 }
-

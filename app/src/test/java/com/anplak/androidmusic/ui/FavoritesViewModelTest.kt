@@ -146,5 +146,9 @@ class TestFavoritesRepository : FavoritesRepository {
     override fun getAllFavoriteIds(): Flow<Set<Long>> {
         return favoriteIds
     }
+
+    override fun getFavoriteTimestamps(): Flow<Map<Long, Long>> {
+        return MutableStateFlow(favoriteIds.value.associateWith { 0L })
+    }
 }
 

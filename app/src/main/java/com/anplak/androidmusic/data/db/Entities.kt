@@ -42,6 +42,11 @@ data class FavoriteEntity(
     val addedAt: Long = System.currentTimeMillis()
 )
 
+data class FavoriteTimestamp(
+    val trackId: Long,
+    val addedAt: Long
+)
+
 /**
  * User-created playlist.
  */
@@ -102,7 +107,8 @@ data class TrackStatsEntity(
     val trackId: Long,
     val playCount: Int = 0,
     val lastPlayedAt: Long? = null,
-    val completionCount: Int = 0
+    val completionCount: Int = 0,
+    val skipCount: Int = 0
 )
 
 /**

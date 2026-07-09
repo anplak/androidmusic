@@ -34,6 +34,20 @@ class FavoritesRepositoryTest {
     }
 
     @Test
+    fun `getFavoriteTimestamps returns trackId to addedAt map`() = runTest {
+        fakeFavoriteDao.setFavoriteTimestamps(
+            listOf(
+                com.anplak.androidmusic.data.db.FavoriteTimestamp(1L, 100L),
+                com.anplak.androidmusic.data.db.FavoriteTimestamp(2L, 200L)
+            )
+        )
+
+        val timestamps = repository.getFavoriteTimestamps().first()
+
+        assertEquals(mapOf(1L to 100L, 2L to 200L), timestamps)
+    }
+
+    @Test
     fun `toggleFavorite with TrackInfo upserts track and adds favorite`() = runTest {
         val track = createTrack(1L, "Song")
 
@@ -134,6 +148,8 @@ class FakeFavoriteDao : FavoriteDao {
     private val favoriteTracks = MutableStateFlow<List<TrackEntity>>(emptyList())
     private val favoriteIds = MutableStateFlow<Set<Long>>(emptySet())
 
+    private val favoriteTimestamps = MutableStateFlow<List<com.anplak.androidmusic.data.db.FavoriteTimestamp>>(emptyList())
+
     var addFavoriteCalled = false
         private set
     var lastAddedFavoriteId: Long? = null
@@ -142,6 +158,10 @@ class FakeFavoriteDao : FavoriteDao {
         private set
     var lastRemovedFavoriteId: Long? = null
         private set
+
+    fun setFavoriteTimestamps(rows: List<com.anplak.androidmusic.data.db.FavoriteTimestamp>) {
+        favoriteTimestamps.value = rows
+    }
 
     fun setIsFavorite(value: Boolean) {
         isFavoriteSync = value
@@ -177,6 +197,9 @@ class FakeFavoriteDao : FavoriteDao {
 
     override fun getAllFavoriteIds(): Flow<List<Long>> =
         MutableStateFlow(favoriteIds.value.toList())
+
+    override fun getFavoriteTimestamps(): Flow<List<com.anplak.androidmusic.data.db.FavoriteTimestamp>> =
+        favoriteTimestamps
 
     override fun getFavoriteCount(): Flow<Int> = MutableStateFlow(favoriteIds.value.size)
 }
