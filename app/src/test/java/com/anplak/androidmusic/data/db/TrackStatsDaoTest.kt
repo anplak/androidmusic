@@ -201,6 +201,19 @@ class TrackStatsDaoTest {
     }
     
     @Test
+    fun `incrementSkipCount increases skip count`() = runTest {
+        trackDao.insert(createTrackEntity(1))
+        trackStatsDao.insertIfNotExists(TrackStatsEntity(trackId = 1))
+        trackStatsDao.incrementSkipCount(1)
+        trackStatsDao.incrementSkipCount(1)
+
+        val stats = trackStatsDao.getStatsForTrack(1)
+
+        assertNotNull(stats)
+        assertEquals(2, stats?.skipCount)
+    }
+
+    @Test
     fun `deleting track cascades to stats`() = runTest {
         trackDao.insert(createTrackEntity(1))
         trackStatsDao.insertIfNotExists(TrackStatsEntity(trackId = 1))

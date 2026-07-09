@@ -18,6 +18,11 @@ import com.anplak.androidmusic.data.db.AppDatabase
 import com.anplak.androidmusic.player.AudioPlayer
 import com.anplak.androidmusic.player.PlayerError
 import com.anplak.androidmusic.player.PlaybackQueue
+import com.anplak.androidmusic.player.PlaybackSession
+import com.anplak.androidmusic.player.PlaybackSessionClassifier
+import com.anplak.androidmusic.player.PlaybackStatsTracker
+import com.anplak.androidmusic.player.PlayStartReason
+import com.anplak.androidmusic.player.SessionOutcome
 import com.anplak.androidmusic.player.SmartShuffleGenerator
 import com.anplak.androidmusic.player.TrackInfo
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -55,33 +60,25 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     private val playHistoryRepository: PlayHistoryRepository = PlayHistoryRepositoryImpl(database.playHistoryDao())
     private val musicLibraryRepository: MusicLibraryRepository = MusicLibraryRepositoryFactory.create(application)
     private val smartShuffleGenerator = SmartShuffleGenerator(favoritesRepository, trackStatsRepository)
-    
+    private val playbackStatsTracker = PlaybackStatsTracker()
+
     private var queue = PlaybackQueue.EMPTY
-    
+
     private val _uiState = MutableStateFlow(PlaybackUiState())
     val uiState: StateFlow<PlaybackUiState> = _uiState.asStateFlow()
-    
-    // Track the current track ID for favorite status observation
+
     private val _currentTrackId = MutableStateFlow<Long?>(null)
-    
-    // Track state for stats recording
-    private var lastRecordedTrackId: Long? = null
+
+    private var lastTrackedTrackId: Long? = null
     private var lastTrackWasPlaying: Boolean = false
     private var lastPosition: Long = 0L
     private var lastDuration: Long = 0L
-    
-    // Play history tracking
+
     private var currentSessionId: String = UUID.randomUUID().toString()
-    private var currentHistoryEntryId: Long? = null
-    private var trackStartTime: Long = 0L
-    
+
     init {
-        // Connect to the service when ViewModel is created
         audioPlayer.connect()
-        
-        // Use flatMapLatest to automatically cancel previous favorite subscriptions
-        // when the track changes - prevents subscription leaks
-        // Note: StateFlow is already distinctUntilChanged, no need to apply it
+
         val favoriteStatusFlow = _currentTrackId
             .flatMapLatest { trackId ->
                 if (trackId != null) {
@@ -90,7 +87,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                     flowOf(false)
                 }
             }
-        
+
         viewModelScope.launch {
             combine(
                 audioPlayer.playbackState,
@@ -100,7 +97,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                 val currentTrack = if (queueState.queueSize > 0 && queue.tracks.isNotEmpty()) {
                     queue.tracks.getOrNull(queueState.currentIndex)
                 } else null
-                
+
                 PlaybackUiState(
                     selectedTrack = currentTrack,
                     isPlaying = playbackState.isPlaying,
@@ -114,94 +111,114 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                     isFavorite = isFavorite
                 )
             }.collect { state ->
-                // Track stats before updating UI state
                 trackPlaybackStats(state)
-                
                 _uiState.value = state
-                
-                // Update current track ID for favorite observation (flatMapLatest handles cancellation)
                 _currentTrackId.value = state.selectedTrack?.id
             }
         }
     }
-    
-    /**
-     * Tracks playback statistics and history:
-     * - Records play when a new track starts
-     * - Records completion when a track finishes naturally (reaches ~end of duration)
-     * - Records play history entries for timeline view
-     */
+
     private fun trackPlaybackStats(state: PlaybackUiState) {
         val currentTrackId = state.selectedTrack?.id
-        
-        // Check for track completion before track change
-        if (lastRecordedTrackId != null && 
-            lastTrackWasPlaying && 
+        val nowMs = System.currentTimeMillis()
+
+        if (lastTrackedTrackId != null &&
+            lastTrackWasPlaying &&
             lastDuration > 0 &&
-            currentTrackId != lastRecordedTrackId) {
-            // Previous track finished - check if it was near the end (>90% played)
+            currentTrackId != lastTrackedTrackId
+        ) {
             val completionThreshold = lastDuration * 0.9
             if (lastPosition >= completionThreshold) {
                 viewModelScope.launch {
-                    lastRecordedTrackId?.let { trackStatsRepository.recordCompletion(it) }
+                    lastTrackedTrackId?.let { trackStatsRepository.recordCompletion(it) }
                 }
             }
-            
-            // Update play history entry with duration
-            finalizeHistoryEntry()
         }
-        
-        // Record new track play
-        if (currentTrackId != null && currentTrackId != lastRecordedTrackId) {
-            viewModelScope.launch {
-                trackStatsRepository.recordPlay(currentTrackId)
-                
-                // Record play history entry
-                currentHistoryEntryId = playHistoryRepository.recordPlay(currentTrackId, currentSessionId)
-                trackStartTime = System.currentTimeMillis()
+
+        if (currentTrackId != lastTrackedTrackId) {
+            val finalizedSession = playbackStatsTracker.onTrackChanged(currentTrackId, nowMs)
+            finalizedSession?.let { session ->
+                viewModelScope.launch {
+                    finalizeSession(session, nowMs)
+                }
             }
-            lastRecordedTrackId = currentTrackId
+
+            playbackStatsTracker.currentSession()?.let { session ->
+                if (session.startReason == PlayStartReason.EXPLICIT) {
+                    viewModelScope.launch {
+                        recordQualifiedPlay(session)
+                    }
+                }
+            }
+            lastTrackedTrackId = currentTrackId
+        } else if (currentTrackId != null) {
+            playbackStatsTracker.updatePlaybackProgress(
+                positionMs = state.currentPosition,
+                durationMs = state.duration
+            )
         }
-        
-        // Update tracking state
+
         lastTrackWasPlaying = state.isPlaying
         lastPosition = state.currentPosition
         lastDuration = state.duration
     }
-    
-    /**
-     * Finalizes the current play history entry with the actual duration listened.
-     */
-    private fun finalizeHistoryEntry() {
-        val historyId = currentHistoryEntryId ?: return
-        val duration = if (lastPosition > 0) lastPosition else System.currentTimeMillis() - trackStartTime
-        
-        viewModelScope.launch {
-            playHistoryRepository.updateDuration(historyId, duration)
+
+    private suspend fun finalizeSession(
+        session: PlaybackSession,
+        nowMs: Long
+    ) {
+        val listenedMs = PlaybackSessionClassifier.listenedMs(
+            session,
+            lastPositionMs = session.maxPositionMs,
+            nowMs = nowMs
+        )
+        when (PlaybackSessionClassifier.classify(session, listenedMs, session.durationMs)) {
+            SessionOutcome.AlreadyRecorded -> Unit
+            SessionOutcome.QualifiedPlay -> recordQualifiedPlay(session)
+            SessionOutcome.FastSkip -> {
+                if (!session.skipRecorded) {
+                    trackStatsRepository.recordSkip(session.trackId)
+                }
+            }
+            SessionOutcome.NoOp -> Unit
         }
-        currentHistoryEntryId = null
     }
-    
-    /**
-     * Starts playback with a queue built from the track list, starting at the selected track.
-     */
+
+    private suspend fun recordQualifiedPlay(session: PlaybackSession) {
+        if (session.qualifiedPlayRecorded) return
+        trackStatsRepository.recordQualifiedPlay(session.trackId, session.startedAtMs)
+        session.qualifiedPlayRecorded = true
+        recordQualifiedHistory(session)
+    }
+
+    private suspend fun recordQualifiedHistory(session: PlaybackSession) {
+        if (session.historyRecorded) return
+        playHistoryRepository.recordPlay(session.trackId, currentSessionId)
+        session.historyRecorded = true
+    }
+
     fun onTrackSelected(tracks: List<TrackInfo>, selectedIndex: Int) {
+        playbackStatsTracker.markExplicitStart()
         queue = PlaybackQueue.fromLibrary(tracks, selectedIndex)
         audioPlayer.setQueue(tracks, selectedIndex)
     }
-    
-    /**
-     * Legacy single-track selection (builds a single-item queue).
-     */
+
     fun onTrackSelected(track: TrackInfo) {
         onTrackSelected(listOf(track), 0)
     }
-    
+
     fun clearTrack() {
+        val finalized = playbackStatsTracker.onTrackChanged(null)
+        finalized?.let { session ->
+            viewModelScope.launch {
+                finalizeSession(session, System.currentTimeMillis())
+            }
+        }
         queue = PlaybackQueue.EMPTY
         audioPlayer.stop()
+        lastTrackedTrackId = null
     }
-    
+
     fun onPlayPause() {
         if (_uiState.value.isPlaying) {
             audioPlayer.pause()
@@ -209,66 +226,76 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
             audioPlayer.play()
         }
     }
-    
+
     fun onNext() {
+        recordSkipOnManualAdvance()
+        playbackStatsTracker.markAutoAdvance()
         audioPlayer.next()
     }
-    
+
     fun onPrevious() {
+        recordSkipOnManualAdvance()
+        playbackStatsTracker.markAutoAdvance()
         audioPlayer.previous()
     }
-    
+
+    private fun recordSkipOnManualAdvance() {
+        val session = playbackStatsTracker.currentSession() ?: return
+        if (session.startReason != PlayStartReason.AUTO_ADVANCE ||
+            session.qualifiedPlayRecorded ||
+            session.skipRecorded
+        ) {
+            return
+        }
+        session.skipRecorded = true
+        viewModelScope.launch {
+            trackStatsRepository.recordSkip(session.trackId)
+        }
+    }
+
     fun onSeek(position: Long) {
         audioPlayer.seekTo(position)
     }
-    
+
     fun onErrorDismissed() {
         audioPlayer.clearError()
     }
-    
+
     fun toggleFavorite() {
         val track = _uiState.value.selectedTrack ?: return
         viewModelScope.launch {
             favoritesRepository.toggleFavorite(track)
         }
     }
-    
+
     fun addToPlaylist(playlistId: Long) {
         val track = _uiState.value.selectedTrack ?: return
         viewModelScope.launch {
             playlistRepository.addTrackToPlaylist(playlistId, track.id)
         }
     }
-    
-    /**
-     * Starts smart shuffle mode with the entire library.
-     * Uses weighted randomization favoring favorites and frequently played tracks.
-     */
+
     fun startSmartShuffle() {
         viewModelScope.launch {
             val allTracks = musicLibraryRepository.getAllTracks()
             if (allTracks.isEmpty()) return@launch
-            
-            // Get recently played track IDs to avoid immediate repeats
+
             val recentlyPlayedIds = queue.tracks
                 .take(SMART_SHUFFLE_RECENT_EXCLUDE_COUNT)
                 .map { it.id }
                 .toSet()
-            
+
             val shuffledTracks = smartShuffleGenerator.generateShuffledQueue(
                 tracks = allTracks,
                 recentlyPlayedIds = recentlyPlayedIds
             )
-            
+
             if (shuffledTracks.isNotEmpty()) {
                 onTrackSelected(shuffledTracks, 0)
             }
         }
     }
 
-    /**
-     * Starts smart shuffle mode using a provided track list (e.g., a playlist).
-     */
     fun startSmartShuffleFromPlaylist(tracks: List<TrackInfo>) {
         viewModelScope.launch {
             if (tracks.isEmpty()) return@launch
@@ -285,14 +312,17 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
             }
         }
     }
-    
+
     override fun onCleared() {
         super.onCleared()
-        // Finalize any pending history entry before cleanup
-        finalizeHistoryEntry()
+        playbackStatsTracker.currentSession()?.let { session ->
+            viewModelScope.launch {
+                finalizeSession(session, System.currentTimeMillis())
+            }
+        }
         audioPlayer.release()
     }
-    
+
     companion object {
         private const val SMART_SHUFFLE_RECENT_EXCLUDE_COUNT = 5
     }

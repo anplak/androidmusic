@@ -25,7 +25,7 @@ class RecommendationEngineTest {
         val smartShuffle = SmartShuffleGenerator(
             FakeFavoritesRepo(),
             FakeStatsRepo(),
-            Random(1)
+            random = Random(1)
         )
         engine = RecommendationEngine(
             autoMixGenerator = AutoMixGenerator(smartShuffle),
@@ -134,15 +134,17 @@ class RecommendationEngineTest {
         override fun isFavorite(trackId: Long) = kotlinx.coroutines.flow.flowOf(false)
         override fun getAllFavorites() = kotlinx.coroutines.flow.flowOf(emptyList<TrackInfo>())
         override fun getAllFavoriteIds() = kotlinx.coroutines.flow.flowOf(emptySet<Long>())
+        override fun getFavoriteTimestamps() = kotlinx.coroutines.flow.flowOf(emptyMap<Long, Long>())
     }
 
     private class FakeStatsRepo : com.anplak.androidmusic.data.TrackStatsRepository {
-        override suspend fun recordPlay(trackId: Long) {}
+        override suspend fun recordQualifiedPlay(trackId: Long, timestamp: Long) {}
+        override suspend fun recordSkip(trackId: Long) {}
         override suspend fun recordCompletion(trackId: Long) {}
         override suspend fun getStats(trackId: Long): TrackStats? =
-            TrackStats(trackId, 0, null, 0)
+            TrackStats(trackId, 0, null, 0, 0)
         override fun observeStats(trackId: Long) =
-            kotlinx.coroutines.flow.flowOf(TrackStats(trackId, 0, null, 0))
+            kotlinx.coroutines.flow.flowOf(TrackStats(trackId, 0, null, 0, 0))
         override suspend fun getAllStatsOrderedByPlayCount(): List<TrackStats> = emptyList()
     }
 }

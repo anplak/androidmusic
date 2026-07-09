@@ -29,12 +29,21 @@ class TrackStatsRepositoryTest {
     }
     
     @Test
-    fun `recordPlay inserts if not exists and increments count`() = runTest {
-        repository.recordPlay(1L)
-        
+    fun `recordQualifiedPlay inserts if not exists and increments count`() = runTest {
+        repository.recordQualifiedPlay(1L)
+
         assertEquals(1, fakeTrackStatsDao.insertIfNotExistsCalls)
         assertEquals(1, fakeTrackStatsDao.incrementPlayCountCalls)
         assertEquals(1L, fakeTrackStatsDao.lastIncrementedTrackId)
+    }
+
+    @Test
+    fun `recordSkip inserts if not exists and increments skip count`() = runTest {
+        repository.recordSkip(1L)
+
+        assertEquals(1, fakeTrackStatsDao.insertIfNotExistsCalls)
+        assertEquals(1, fakeTrackStatsDao.incrementSkipCountCalls)
+        assertEquals(1L, fakeTrackStatsDao.lastSkipTrackId)
     }
     
     @Test
@@ -110,7 +119,8 @@ class TrackStatsRepositoryTest {
             trackId = 1L,
             playCount = 10,
             lastPlayedAt = 1000L,
-            completionCount = 8
+            completionCount = 8,
+            skipCount = 2
         )
         
         assertEquals(0.8f, stats.completionRatio, 0.001f)
@@ -122,7 +132,8 @@ class TrackStatsRepositoryTest {
             trackId = 1L,
             playCount = 0,
             lastPlayedAt = null,
-            completionCount = 0
+            completionCount = 0,
+            skipCount = 0
         )
         
         assertEquals(0f, stats.completionRatio, 0.001f)
@@ -143,6 +154,10 @@ class FakeTrackStatsDao : TrackStatsDao {
     var incrementCompletionCountCalls = 0
         private set
     var lastCompletionTrackId: Long? = null
+        private set
+    var incrementSkipCountCalls = 0
+        private set
+    var lastSkipTrackId: Long? = null
         private set
     
     fun setStatsForTrack(stats: TrackStatsEntity?) {
@@ -169,6 +184,11 @@ class FakeTrackStatsDao : TrackStatsDao {
     override suspend fun incrementCompletionCount(trackId: Long) {
         incrementCompletionCountCalls++
         lastCompletionTrackId = trackId
+    }
+
+    override suspend fun incrementSkipCount(trackId: Long) {
+        incrementSkipCountCalls++
+        lastSkipTrackId = trackId
     }
     
     override suspend fun getStatsForTrack(trackId: Long): TrackStatsEntity? = statsForTrack
