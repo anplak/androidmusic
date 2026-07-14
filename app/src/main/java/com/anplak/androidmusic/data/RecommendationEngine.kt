@@ -15,7 +15,7 @@ class RecommendationEngine(
         val rows = mutableListOf<RecommendationRow>()
 
         buildContinueListening(inputs, libraryById)?.let { rows += it }
-        rows += buildDailyMix(inputs)
+        rows += buildDailyMixes(inputs)
         rows += buildBecauseRows(inputs, libraryById)
         rows += buildQuickMixes(inputs)
 
@@ -40,28 +40,47 @@ class RecommendationEngine(
         )
     }
 
-    private suspend fun buildDailyMix(inputs: RecommendationInputs): RecommendationRow {
+    private suspend fun buildDailyMixes(inputs: RecommendationInputs): List<RecommendationRow> {
         val daySeed = clock.epochDay()
-        val artist = inputs.topArtists30d.firstOrNull { it.isNotBlank() }
-            ?: inputs.library
-                .filter { it.artist.isNotBlank() }
-                .randomOrNull(Random(daySeed))
-                ?.artist
-            ?: "Unknown Artist"
-
-        val tracks = autoMixGenerator.fromFavoriteArtist(
-            artist = artist,
-            libraryTracks = inputs.library,
-            limit = DAILY_MIX_LIMIT
+        val selections = DailyMixThemePicker.pickAll(
+            library = inputs.library,
+            epochDay = daySeed,
+            topArtists = inputs.topArtists30d
         )
+        val usedTrackIds = mutableSetOf<Long>()
+        val rows = mutableListOf<RecommendationRow>()
 
-        return RecommendationRow(
-            id = "daily_mix_$daySeed",
-            type = RecommendationRowType.DAILY_MIX,
-            title = "Daily Mix",
-            subtitle = artist,
-            tracks = tracks
-        )
+        for (selection in selections) {
+            val pool = DailyMixThemePicker.poolFor(selection, inputs.library, daySeed)
+                .filter { it.id !in usedTrackIds }
+            if (pool.size < DailyMixConfig.MIN_TRACKS_PER_THEME) continue
+
+            val slotRandom = Random(DailyMixConfig.slotSeed(daySeed, selection.slot))
+            val tracks = when (selection.theme) {
+                DailyMixTheme.TOP_ARTIST -> autoMixGenerator.fromFavoriteArtist(
+                    artist = selection.artistSeed!!,
+                    libraryTracks = pool,
+                    limit = DailyMixConfig.DAILY_MIX_LIMIT,
+                    random = slotRandom
+                )
+                else -> autoMixGenerator.fromSmartPlaylist(
+                    pool,
+                    DailyMixConfig.DAILY_MIX_LIMIT,
+                    random = slotRandom
+                )
+            }
+            if (tracks.isEmpty()) continue
+
+            usedTrackIds += tracks.map { it.id }
+            rows += RecommendationRow(
+                id = "daily_mix_${selection.slot}_$daySeed",
+                type = RecommendationRowType.DAILY_MIX,
+                title = selection.rowTitle(),
+                subtitle = selection.subtitle(),
+                tracks = tracks
+            )
+        }
+        return rows
     }
 
     private suspend fun buildBecauseRows(
@@ -142,7 +161,6 @@ class RecommendationEngine(
     companion object {
         private const val PREVIEW_LIMIT = 15
         private const val DETAIL_LIMIT = 25
-        private const val DAILY_MIX_LIMIT = 15
         private const val QUICK_MIX_LIMIT = 10
         private const val MAX_BECAUSE_ROWS = 3
         private const val MAX_QUICK_MIX_ROWS = 2

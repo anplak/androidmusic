@@ -77,7 +77,10 @@ fun TrackEntity.toTrackInfo(): TrackInfo {
         title = title,
         artist = artist,
         album = album,
-        duration = duration
+        duration = duration,
+        path = path,
+        year = year,
+        dateAddedSec = dateAddedSec ?: (firstSeenAt / 1000).takeIf { firstSeenAt > 0 }
     )
 }
 
@@ -91,7 +94,9 @@ fun TrackInfo.toEntity(filePath: String = path): TrackEntity {
         artist = artist,
         album = album,
         duration = duration,
-        path = filePath.ifBlank { path }
+        path = filePath.ifBlank { path },
+        year = year,
+        dateAddedSec = dateAddedSec
     )
 }
 

@@ -200,7 +200,9 @@ private fun RecommendationRowSection(
         Text(
             text = row.title,
             style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(horizontal = 16.dp)
+            modifier = Modifier
+                .padding(horizontal = 16.dp)
+                .testTag("for_you_title_${row.id}")
         )
         row.subtitle?.let { subtitle ->
             Text(
@@ -209,7 +211,9 @@ private fun RecommendationRowSection(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)
+                modifier = Modifier
+                    .padding(horizontal = 16.dp, vertical = 2.dp)
+                    .testTag("for_you_subtitle_${row.id}")
             )
         }
         LazyRow(
@@ -227,6 +231,7 @@ private fun RecommendationRowSection(
             }
         }
         RowActions(
+            rowId = row.id,
             onSeeAll = onRowClick,
             onPlayMix = onPlayMix
         )
@@ -235,6 +240,7 @@ private fun RecommendationRowSection(
 
 @Composable
 private fun RowActions(
+    rowId: String,
     onSeeAll: () -> Unit,
     onPlayMix: () -> Unit
 ) {
@@ -244,13 +250,13 @@ private fun RowActions(
     ) {
         TextButton(
             onClick = onSeeAll,
-            modifier = Modifier.testTag("for_you_see_all")
+            modifier = Modifier.testTag("for_you_see_all_$rowId")
         ) {
             Text(text = stringResource(R.string.see_all))
         }
         TextButton(
             onClick = onPlayMix,
-            modifier = Modifier.testTag("for_you_play_mix")
+            modifier = Modifier.testTag("for_you_play_mix_$rowId")
         ) {
             Text(text = stringResource(R.string.play_mix))
         }

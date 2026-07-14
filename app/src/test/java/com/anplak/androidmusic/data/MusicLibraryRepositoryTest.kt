@@ -37,7 +37,9 @@ class MusicLibraryRepositoryTest {
         MediaStore.Audio.Media.DURATION,
         MediaStore.Audio.Media.DATA,
         MediaStore.Audio.Media.DISPLAY_NAME,
-        MediaStore.Audio.Media.RELATIVE_PATH
+        MediaStore.Audio.Media.RELATIVE_PATH,
+        MediaStore.Audio.Media.YEAR,
+        MediaStore.Audio.Media.DATE_ADDED
     )
 
     private val defaultPath = "/storage/emulated/0/Music/track.mp3"
@@ -510,7 +512,9 @@ class MusicLibraryRepositoryTest {
                     track.duration,
                     track.path,
                     track.title,
-                    null
+                    null,
+                    track.year,
+                    track.dateAddedSec
                 )
             )
         }
@@ -523,6 +527,8 @@ class MusicLibraryRepositoryTest {
         val artist: String?,
         val album: String?,
         val duration: Long,
-        val path: String = "/storage/emulated/0/Music/track.mp3"
+        val path: String = "/storage/emulated/0/Music/track.mp3",
+        val year: Int = 0,
+        val dateAddedSec: Long = 0L
     )
 }
