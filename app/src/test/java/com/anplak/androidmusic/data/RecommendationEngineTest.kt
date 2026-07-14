@@ -148,6 +148,72 @@ class RecommendationEngineTest {
         assertEquals(3, continueRow!!.tracks.size)
     }
 
+    @Test
+    fun `buildRows includes genre mix when enough folder tags`() = runTest {
+        val library = (1L..8L).map {
+            track(it, "Song $it", "Artist", folderTag = "metal")
+        }
+        val rows = engine.buildRows(emptyInputs(library = library))
+
+        val genreMixes = rows.filter { it.type == RecommendationRowType.GENRE_MIX }
+        assertEquals(1, genreMixes.size)
+        assertEquals("Your Metal mix", genreMixes.first().title)
+        assertTrue(genreMixes.first().tracks.all { it.effectiveGenre()?.equals("metal", true) == true })
+    }
+
+    @Test
+    fun `buildRows omits dimension rows for sparse metadata`() = runTest {
+        val library = (1L..12L).map { track(it, "Song $it", "Artist One") }
+        val rows = engine.buildRows(
+            emptyInputs(
+                library = library,
+                topArtists30d = listOf("Artist One")
+            )
+        )
+
+        assertTrue(rows.none { it.type == RecommendationRowType.GENRE_MIX })
+        assertTrue(rows.none { it.type == RecommendationRowType.PLAYLIST_AFFINITY })
+        assertTrue(rows.none { it.type == RecommendationRowType.LANGUAGE_MIX })
+        assertTrue(rows.any { it.type == RecommendationRowType.DAILY_MIX })
+    }
+
+    @Test
+    fun `buildRows includes playlist affinity row`() = runTest {
+        val library = (1L..4L).map { track(it, "Song $it", "Artist") }
+        val rows = engine.buildRows(
+            emptyInputs(
+                library = library,
+                favorites = setOf(1L),
+                coPlaylistBySeed = mapOf(1L to listOf(2L, 3L, 4L))
+            )
+        )
+
+        val playlistRow = rows.find { it.type == RecommendationRowType.PLAYLIST_AFFINITY }
+        assertNotNull(playlistRow)
+        assertEquals("From your playlists", playlistRow!!.title)
+        assertTrue(playlistRow.tracks.none { it.id == 1L })
+    }
+
+    @Test
+    fun `buildRows adds at most two dimension rows`() = runTest {
+        val library = (1L..10L).map { track(it, "Song $it", "Artist", folderTag = "metal") } +
+            (11L..13L).map { track(it, "Sibling $it", "Artist") }
+        val rows = engine.buildRows(
+            emptyInputs(
+                library = library,
+                favorites = setOf(1L),
+                coPlaylistBySeed = mapOf(1L to listOf(11L, 12L, 13L))
+            )
+        )
+
+        val dimensionRows = rows.filter {
+            it.type == RecommendationRowType.GENRE_MIX ||
+                it.type == RecommendationRowType.PLAYLIST_AFFINITY ||
+                it.type == RecommendationRowType.LANGUAGE_MIX
+        }
+        assertTrue(dimensionRows.size <= 2)
+    }
+
     private fun richLibrary(): List<TrackInfo> {
         val decadeTracks = (1L..12L).map { track(it, "Decade $it", "Decade Artist", year = 1985) }
         val recentTracks = (13L..24L).map {
@@ -176,6 +242,7 @@ class RecommendationEngineTest {
         topArtists30d: List<String> = emptyList(),
         topTracks30d: List<Long> = emptyList(),
         coOccurrenceBySeed: Map<Long, List<Long>> = emptyMap(),
+        coPlaylistBySeed: Map<Long, List<Long>> = emptyMap(),
         lastSessionTrackIds: List<Long> = emptyList()
     ) = RecommendationInputs(
         library = library,
@@ -185,7 +252,8 @@ class RecommendationEngineTest {
         recentHistory = emptyList(),
         coOccurrenceBySeed = coOccurrenceBySeed,
         lastSessionTrackIds = lastSessionTrackIds,
-        userPlaylists = emptyList()
+        userPlaylists = emptyList(),
+        coPlaylistBySeed = coPlaylistBySeed
     )
 
     private fun track(
@@ -194,7 +262,9 @@ class RecommendationEngineTest {
         artist: String,
         album: String = "",
         year: Int? = null,
-        dateAddedSec: Long? = null
+        dateAddedSec: Long? = null,
+        genre: String? = null,
+        folderTag: String? = null
     ) = TrackInfo(
         uri = Uri.parse("content://media/external/audio/media/$id"),
         title = title,
@@ -202,7 +272,9 @@ class RecommendationEngineTest {
         album = album,
         duration = 180_000L,
         year = year,
-        dateAddedSec = dateAddedSec
+        dateAddedSec = dateAddedSec,
+        genre = genre,
+        folderTag = folderTag
     )
 
     private class FakeFavoritesRepo : FavoritesRepository {

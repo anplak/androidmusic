@@ -174,6 +174,8 @@ class MusicLibraryRepositoryImpl(
                         )
                         val year = cursor.getInt(yearColumn).takeIf { it > 0 }
                         val dateAddedSec = cursor.getLong(dateAddedColumn).takeIf { it > 0 }
+                        val folderTag = FolderTagExtractor.primaryTag(filePath)
+                        val language = LanguageTagResolver.resolve(cursor, filePath)
 
                         when (LibraryIndexFilter.skipReason(filePath, duration, artist, policy)) {
                             IndexSkipReason.DURATION -> {
@@ -204,7 +206,9 @@ class MusicLibraryRepositoryImpl(
                             duration = duration,
                             path = filePath,
                             year = year,
-                            dateAddedSec = dateAddedSec
+                            dateAddedSec = dateAddedSec,
+                            folderTag = folderTag,
+                            language = language
                         )
                         tracks.add(track)
                         entities.add(track.toEntity(filePath))

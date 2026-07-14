@@ -198,7 +198,23 @@ class PlaylistDaoTest {
         
         assertEquals(2, count)
     }
-    
+
+    @Test
+    fun `getCoPlaylistTrackIds returns siblings excluding seed`() = runTest {
+        val playlistId = playlistDao.createPlaylist(PlaylistEntity(name = "Mix"))
+        trackDao.insert(createTrackEntity(1))
+        trackDao.insert(createTrackEntity(2))
+        trackDao.insert(createTrackEntity(3))
+        playlistDao.addTrackToPlaylistAtEnd(playlistId, 1)
+        playlistDao.addTrackToPlaylistAtEnd(playlistId, 2)
+        playlistDao.addTrackToPlaylistAtEnd(playlistId, 3)
+
+        val siblings = playlistDao.getCoPlaylistTrackIds(1, limit = 10)
+
+        assertEquals(setOf(2L, 3L), siblings.toSet())
+        assertTrue(siblings.none { it == 1L })
+    }
+
     private fun createTrackEntity(id: Long) = TrackEntity(
         id = id,
         title = "Track $id",

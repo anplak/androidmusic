@@ -3,6 +3,7 @@ package com.anplak.androidmusic.ui
 import android.content.Context
 import com.anplak.androidmusic.data.DailyMixConfig
 import com.anplak.androidmusic.data.FavoritesRepositoryImpl
+import com.anplak.androidmusic.data.MixDimensionConfig
 import com.anplak.androidmusic.data.MusicLibraryRepositoryFactory
 import com.anplak.androidmusic.data.PlayHistoryRepositoryImpl
 import com.anplak.androidmusic.data.PlaylistRepositoryImpl
@@ -44,6 +45,15 @@ object E2ETestRecommendations {
     fun dailyMixRows(context: Context): List<RecommendationRow> =
         buildRows(context).filter { it.type == RecommendationRowType.DAILY_MIX }
 
+    fun genreMixRows(context: Context): List<RecommendationRow> =
+        buildRows(context).filter { it.type == RecommendationRowType.GENRE_MIX }
+
+    fun playlistAffinityRows(context: Context): List<RecommendationRow> =
+        buildRows(context).filter { it.type == RecommendationRowType.PLAYLIST_AFFINITY }
+
+    fun languageMixRows(context: Context): List<RecommendationRow> =
+        buildRows(context).filter { it.type == RecommendationRowType.LANGUAGE_MIX }
+
     fun tracksWithYearMetadata(context: Context): Int = runBlocking {
         AppDatabase.getInstance(context).trackDao().getAll()
             .count { it.year != null && it.year!! > 0 }
@@ -54,8 +64,30 @@ object E2ETestRecommendations {
             .count { it.dateAddedSec != null && it.dateAddedSec!! > 0 }
     }
 
+    fun tracksWithFolderTag(context: Context, tag: String): Int = runBlocking {
+        AppDatabase.getInstance(context).trackDao().getAll()
+            .count { it.folderTag?.equals(tag, ignoreCase = true) == true }
+    }
+
+    fun tracksWithLanguageMetadata(context: Context): Int = runBlocking {
+        AppDatabase.getInstance(context).trackDao().getAll()
+            .count { !it.language.isNullOrBlank() }
+    }
+
     fun libraryMeetsDailyMixMinimum(context: Context): Boolean =
         E2ETestDatabase.cachedTrackCount(context) >= DailyMixConfig.MIN_TRACKS_PER_THEME
+
+    fun libraryMeetsGenreMixMinimum(context: Context, tag: String? = null): Boolean {
+        val count = if (tag == null) {
+            runBlocking {
+                AppDatabase.getInstance(context).trackDao().getAll()
+                    .count { !it.genre.isNullOrBlank() || !it.folderTag.isNullOrBlank() }
+            }
+        } else {
+            tracksWithFolderTag(context, tag)
+        }
+        return count >= MixDimensionConfig.MIN_TRACKS_PER_BUCKET
+    }
 
     fun dailyMixTrackIdsOverlap(rows: List<RecommendationRow>): Boolean {
         val dailyMixes = rows.filter { it.type == RecommendationRowType.DAILY_MIX }

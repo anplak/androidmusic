@@ -6,7 +6,10 @@ enum class RecommendationRowType {
     BECAUSE_YOU_LISTEN,
     QUICK_MIX,
     DAILY_MIX,
-    CONTINUE_LISTENING
+    CONTINUE_LISTENING,
+    GENRE_MIX,
+    PLAYLIST_AFFINITY,
+    LANGUAGE_MIX
 }
 
 data class RecommendationRow(
@@ -32,7 +35,8 @@ data class RecommendationInputs(
     val recentHistory: List<PlayHistoryEntry>,
     val coOccurrenceBySeed: Map<Long, List<Long>>,
     val lastSessionTrackIds: List<Long>,
-    val userPlaylists: List<PlaylistSummary>
+    val userPlaylists: List<PlaylistSummary>,
+    val coPlaylistBySeed: Map<Long, List<Long>> = emptyMap()
 )
 
 fun interface RecommendationClock {

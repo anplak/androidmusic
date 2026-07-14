@@ -379,5 +379,18 @@ class FakePlaylistDao : PlaylistDao {
 
     override suspend fun searchPlaylists(query: String, limit: Int): List<PlaylistWithTrackCount> =
         emptyList()
+
+    override suspend fun getCoPlaylistTrackIds(seedTrackId: Long, limit: Int): List<Long> {
+        val playlistIds = playlistTrackRefs
+            .filter { it.trackId == seedTrackId }
+            .map { it.playlistId }
+            .distinct()
+        return playlistTrackRefs
+            .filter { it.playlistId in playlistIds && it.trackId != seedTrackId }
+            .sortedByDescending { it.addedAt }
+            .map { it.trackId }
+            .distinct()
+            .take(limit)
+    }
 }
 

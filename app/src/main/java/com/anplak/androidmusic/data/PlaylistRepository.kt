@@ -33,6 +33,7 @@ interface PlaylistRepository {
     suspend fun mergePlaylists(primaryPlaylistId: Long, secondaryPlaylistId: Long, name: String): Long
     fun getPlaylistTracks(playlistId: Long): Flow<List<TrackInfo>>
     suspend fun isTrackInPlaylist(playlistId: Long, trackId: Long): Boolean
+    suspend fun getCoPlaylistTrackIds(seedTrackId: Long, limit: Int): List<Long>
 }
 
 class PlaylistRepositoryImpl(
@@ -129,6 +130,10 @@ class PlaylistRepositoryImpl(
 
     override suspend fun isTrackInPlaylist(playlistId: Long, trackId: Long): Boolean {
         return playlistDao.isTrackInPlaylist(playlistId, trackId)
+    }
+
+    override suspend fun getCoPlaylistTrackIds(seedTrackId: Long, limit: Int): List<Long> {
+        return playlistDao.getCoPlaylistTrackIds(seedTrackId, limit)
     }
 
     private suspend fun insertTracksAtPositions(

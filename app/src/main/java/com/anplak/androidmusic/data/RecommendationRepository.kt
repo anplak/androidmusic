@@ -41,6 +41,11 @@ class RecommendationRepositoryImpl(
             )
         }
 
+        val playlistSeeds = (favorites.take(3) + topTracks.take(3)).distinct()
+        val coPlaylistBySeed = playlistSeeds.associateWith { seedId ->
+            playlistRepository.getCoPlaylistTrackIds(seedId, CO_PLAYLIST_LIMIT)
+        }
+
         val userPlaylists = playlistRepository.getPlaylists().first().map { playlist ->
             PlaylistSummary(
                 id = playlist.id,
@@ -57,7 +62,8 @@ class RecommendationRepositoryImpl(
             recentHistory = recentHistory,
             coOccurrenceBySeed = coOccurrenceBySeed,
             lastSessionTrackIds = lastSessionTrackIds,
-            userPlaylists = userPlaylists
+            userPlaylists = userPlaylists,
+            coPlaylistBySeed = coPlaylistBySeed
         )
     }
 
@@ -67,5 +73,6 @@ class RecommendationRepositoryImpl(
         private const val TOP_TRACK_LIMIT = 10
         private const val HISTORY_LIMIT = 50
         private const val LAST_SESSION_LIMIT = 15
+        private const val CO_PLAYLIST_LIMIT = 15
     }
 }

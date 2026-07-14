@@ -496,6 +496,28 @@ class MusicLibraryRepositoryTest {
         verify(trackDao, never()).deleteAll()
     }
 
+    @Test
+    fun `syncLibrary derives folder tag from path`() = runTest {
+        val cursor = createCursorWithTracks(
+            listOf(
+                TrackData(
+                    1L,
+                    "Song",
+                    "Artist",
+                    "Album",
+                    180_000L,
+                    "/storage/emulated/0/Music/metal/Artist/Album/track.mp3"
+                )
+            )
+        )
+        whenever(contentResolver.query(any(), any(), anyOrNull(), anyOrNull(), anyOrNull()))
+            .thenReturn(cursor)
+
+        val tracks = repository.syncLibrary().tracks
+
+        assertEquals("metal", tracks.first().folderTag)
+    }
+
     private fun createEmptyCursor(): Cursor {
         return MatrixCursor(projection)
     }

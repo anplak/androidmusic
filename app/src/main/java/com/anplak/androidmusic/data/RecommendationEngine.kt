@@ -18,6 +18,7 @@ class RecommendationEngine(
         rows += buildDailyMixes(inputs)
         rows += buildBecauseRows(inputs, libraryById)
         rows += buildQuickMixes(inputs)
+        rows += buildDimensionRows(inputs)
 
         return rows.distinctBy { it.id }.filter { it.tracks.isNotEmpty() }
     }
@@ -114,6 +115,7 @@ class RecommendationEngine(
 
     private suspend fun buildQuickMixes(inputs: RecommendationInputs): List<RecommendationRow> {
         val libraryById = inputs.library.associateBy { it.id }
+        val genrePool = MixDimensionEngine.largestGenrePool(inputs)
         val seeds = inputs.favorites
             .mapNotNull { libraryById[it] }
             .ifEmpty {
@@ -123,17 +125,54 @@ class RecommendationEngine(
             .take(MAX_QUICK_MIX_ROWS)
 
         return seeds.mapIndexed { index, seed ->
-            val tracks = autoMixGenerator.fromFavoriteTrack(
-                seed = seed,
-                libraryTracks = inputs.library,
-                limit = QUICK_MIX_LIMIT
-            )
+            val tracks = if (
+                index == 0 &&
+                genrePool != null &&
+                genrePool.size >= MixDimensionConfig.MIN_TRACKS_PER_BUCKET
+            ) {
+                autoMixGenerator.fromSmartPlaylist(
+                    genrePool,
+                    MixDimensionConfig.QUICK_MIX_DIMENSION_LIMIT
+                )
+            } else {
+                autoMixGenerator.fromFavoriteTrack(
+                    seed = seed,
+                    libraryTracks = inputs.library,
+                    limit = QUICK_MIX_LIMIT
+                )
+            }
             RecommendationRow(
                 id = "quick_mix_${seed.id}_$index",
                 type = RecommendationRowType.QUICK_MIX,
                 title = "Quick Mix",
                 subtitle = seed.title,
                 seedTrack = seed,
+                tracks = tracks
+            )
+        }
+    }
+
+    private suspend fun buildDimensionRows(inputs: RecommendationInputs): List<RecommendationRow> {
+        val epochDay = clock.epochDay()
+        return MixDimensionEngine.pickCandidates(inputs, epochDay).mapNotNull { candidate ->
+            val limit = when (candidate.type) {
+                RecommendationRowType.GENRE_MIX -> MixDimensionConfig.GENRE_MIX_LIMIT
+                RecommendationRowType.PLAYLIST_AFFINITY -> MixDimensionConfig.PLAYLIST_MIX_LIMIT
+                RecommendationRowType.LANGUAGE_MIX -> MixDimensionConfig.LANGUAGE_MIX_LIMIT
+                else -> PREVIEW_LIMIT
+            }
+            val tracks = autoMixGenerator.fromSmartPlaylist(
+                candidate.pool,
+                limit,
+                random = Random(candidate.id.hashCode().toLong())
+            )
+            if (tracks.isEmpty()) return@mapNotNull null
+            RecommendationRow(
+                id = candidate.id,
+                type = candidate.type,
+                title = candidate.title,
+                subtitle = candidate.subtitle,
+                seedTrack = candidate.seedTrack,
                 tracks = tracks
             )
         }

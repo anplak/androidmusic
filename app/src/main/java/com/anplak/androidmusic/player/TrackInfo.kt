@@ -12,8 +12,15 @@ data class TrackInfo(
     val duration: Long = 0L,
     val path: String = "",
     val year: Int? = null,
-    val dateAddedSec: Long? = null
+    val dateAddedSec: Long? = null,
+    val genre: String? = null,
+    val folderTag: String? = null,
+    val language: String? = null
 ) {
+    fun effectiveGenre(): String? =
+        genre?.trim()?.takeIf { it.isNotBlank() }
+            ?: folderTag?.trim()?.takeIf { it.isNotBlank() }
+
     /**
      * Extracts the MediaStore ID from the content URI.
      */

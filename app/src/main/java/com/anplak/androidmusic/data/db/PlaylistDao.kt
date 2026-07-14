@@ -106,6 +106,16 @@ interface PlaylistDao {
     @Query("SELECT EXISTS(SELECT 1 FROM playlist_tracks WHERE playlistId = :playlistId AND trackId = :trackId)")
     suspend fun isTrackInPlaylist(playlistId: Long, trackId: Long): Boolean
 
+    @Query("""
+        SELECT DISTINCT pt2.trackId
+        FROM playlist_tracks pt1
+        INNER JOIN playlist_tracks pt2 ON pt1.playlistId = pt2.playlistId
+        WHERE pt1.trackId = :seedTrackId AND pt2.trackId != :seedTrackId
+        ORDER BY pt2.addedAt DESC
+        LIMIT :limit
+    """)
+    suspend fun getCoPlaylistTrackIds(seedTrackId: Long, limit: Int): List<Long>
+
     @Transaction
     suspend fun addTrackToPlaylistAtEnd(playlistId: Long, trackId: Long) {
         val maxPosition = getMaxPosition(playlistId) ?: -1

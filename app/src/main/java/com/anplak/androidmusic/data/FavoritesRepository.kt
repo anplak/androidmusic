@@ -80,7 +80,10 @@ fun TrackEntity.toTrackInfo(): TrackInfo {
         duration = duration,
         path = path,
         year = year,
-        dateAddedSec = dateAddedSec ?: (firstSeenAt / 1000).takeIf { firstSeenAt > 0 }
+        dateAddedSec = dateAddedSec ?: (firstSeenAt / 1000).takeIf { firstSeenAt > 0 },
+        genre = genre,
+        folderTag = folderTag,
+        language = language
     )
 }
 
@@ -96,7 +99,10 @@ fun TrackInfo.toEntity(filePath: String = path): TrackEntity {
         duration = duration,
         path = filePath.ifBlank { path },
         year = year,
-        dateAddedSec = dateAddedSec
+        dateAddedSec = dateAddedSec,
+        genre = genre,
+        folderTag = folderTag,
+        language = language
     )
 }
 

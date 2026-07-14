@@ -293,5 +293,7 @@ class TestPlaylistRepository : PlaylistRepository {
     override suspend fun isTrackInPlaylist(playlistId: Long, trackId: Long): Boolean {
         return false
     }
+
+    override suspend fun getCoPlaylistTrackIds(seedTrackId: Long, limit: Int): List<Long> = emptyList()
 }
 
