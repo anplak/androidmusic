@@ -28,7 +28,8 @@ class SmartShuffleGenerator(
      */
     suspend fun generateShuffledQueue(
         tracks: List<TrackInfo>,
-        recentlyPlayedIds: Set<Long> = emptySet()
+        recentlyPlayedIds: Set<Long> = emptySet(),
+        random: Random = this.random
     ): List<TrackInfo> {
         if (tracks.isEmpty()) return emptyList()
         if (tracks.size == 1) return tracks
@@ -52,7 +53,7 @@ class SmartShuffleGenerator(
             WeightedTrack(track, weight)
         }
 
-        return weightedShuffle(weightedTracks, recentlyPlayedIds)
+        return weightedShuffle(weightedTracks, recentlyPlayedIds, random)
     }
 
     /**
@@ -61,7 +62,8 @@ class SmartShuffleGenerator(
      */
     private fun weightedShuffle(
         weightedTracks: List<WeightedTrack>,
-        recentlyPlayedIds: Set<Long>
+        recentlyPlayedIds: Set<Long>,
+        random: Random
     ): List<TrackInfo> {
         val result = mutableListOf<TrackInfo>()
         val remaining = weightedTracks.toMutableList()
@@ -70,7 +72,7 @@ class SmartShuffleGenerator(
         remaining.removeAll(recentlyPlayed)
 
         while (remaining.isNotEmpty()) {
-            val selected = selectWeightedRandom(remaining)
+            val selected = selectWeightedRandom(remaining, random)
             result.add(selected.track)
             remaining.remove(selected)
         }
@@ -81,7 +83,7 @@ class SmartShuffleGenerator(
         return result
     }
 
-    private fun selectWeightedRandom(weighted: List<WeightedTrack>): WeightedTrack {
+    private fun selectWeightedRandom(weighted: List<WeightedTrack>, random: Random): WeightedTrack {
         val totalWeight = weighted.sumOf { it.weight }
         var randomValue = random.nextDouble() * totalWeight
 

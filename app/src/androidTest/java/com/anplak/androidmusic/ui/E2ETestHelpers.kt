@@ -13,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.rules.ActivityScenarioRule
@@ -329,6 +330,45 @@ fun MainActivityComposeRule.waitForForYouSettled() {
                     safeHasNodes(hasTestTag("for_you_error"))
                 )
     }
+}
+
+/** Scrolls the For You list until a row whose test tag starts with [prefix] is visible. */
+fun MainActivityComposeRule.scrollToForYouRowTagPrefix(prefix: String) {
+    waitUntil(timeoutMillis = 30_000) {
+        scrollForYouToNode(hasTestTagPrefix(prefix))
+        safeHasNodes(hasTestTagPrefix(prefix))
+    }
+    waitForIdle()
+}
+
+/** Scrolls the For You list to an exact row test tag. */
+fun MainActivityComposeRule.scrollToForYouRow(tag: String) {
+    waitUntil(timeoutMillis = 30_000) {
+        scrollForYouToNode(hasTestTag(tag))
+        safeHasNodes(hasTestTag(tag))
+    }
+    waitForIdle()
+}
+
+private fun MainActivityComposeRule.scrollForYouToNode(matcher: SemanticsMatcher): Boolean {
+    if (safeHasNodes(matcher)) return true
+    if (!safeHasNodes(hasTestTag("for_you_list"))) return false
+    return try {
+        onNodeWithTag("for_you_list").performScrollToNode(matcher)
+        true
+    } catch (_: Exception) {
+        false
+    }
+}
+
+fun MainActivityComposeRule.countForYouRowsWithTagPrefix(prefix: String): Int =
+    onAllNodes(hasTestTagPrefix(prefix)).fetchSemanticsNodes().size
+
+/** Refreshes For You and waits for content to settle. */
+fun MainActivityComposeRule.refreshForYou() {
+    onNodeWithTag("for_you_refresh").performClick()
+    waitForIdle()
+    waitForForYouSettled()
 }
 
 /** Waits until Now Playing queue position reaches at least [minPosition] (1-based). */

@@ -127,7 +127,9 @@ class MusicLibraryRepositoryImpl(
             MediaStore.Audio.Media.DURATION,
             MediaStore.Audio.Media.DATA,
             MediaStore.Audio.Media.DISPLAY_NAME,
-            MediaStore.Audio.Media.RELATIVE_PATH
+            MediaStore.Audio.Media.RELATIVE_PATH,
+            MediaStore.Audio.Media.YEAR,
+            MediaStore.Audio.Media.DATE_ADDED
         )
 
         val selection: String? = null
@@ -153,6 +155,8 @@ class MusicLibraryRepositoryImpl(
                 val dataColumn = cursor.getColumnIndex(MediaStore.Audio.Media.DATA)
                 val displayNameColumn = cursor.getColumnIndex(MediaStore.Audio.Media.DISPLAY_NAME)
                 val relativePathColumn = cursor.getColumnIndex(MediaStore.Audio.Media.RELATIVE_PATH)
+                val yearColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.YEAR)
+                val dateAddedColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_ADDED)
 
                 while (cursor.moveToNext()) {
                     scannedCount++
@@ -168,6 +172,8 @@ class MusicLibraryRepositoryImpl(
                             relativePathColumn = relativePathColumn,
                             displayNameColumn = displayNameColumn
                         )
+                        val year = cursor.getInt(yearColumn).takeIf { it > 0 }
+                        val dateAddedSec = cursor.getLong(dateAddedColumn).takeIf { it > 0 }
 
                         when (LibraryIndexFilter.skipReason(filePath, duration, artist, policy)) {
                             IndexSkipReason.DURATION -> {
@@ -196,7 +202,9 @@ class MusicLibraryRepositoryImpl(
                             artist = artist,
                             album = album,
                             duration = duration,
-                            path = filePath
+                            path = filePath,
+                            year = year,
+                            dateAddedSec = dateAddedSec
                         )
                         tracks.add(track)
                         entities.add(track.toEntity(filePath))
