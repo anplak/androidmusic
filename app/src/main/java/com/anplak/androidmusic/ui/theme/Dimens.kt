@@ -9,4 +9,6 @@ object Dimens {
     val nowPlayingArtworkSize = 200.dp
     val nowPlayingControlSize = 72.dp
     val nowPlayingPlayButtonSize = 80.dp
+    val miniPlayerHeight = 56.dp
+    val miniPlayerArtworkSize = 40.dp
 }

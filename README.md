@@ -33,6 +33,7 @@ A minimal offline music player for Android. It discovers local audio via MediaSt
 ### UI
 - **Jetpack Compose** with Material Design 3
 - **Bottom navigation** — For You, Your Library, Favorites, Playlists, History
+- **Persistent mini player** — title, Play/Pause, and Like above the bottom nav (and on overlays) while a track session is active; tap opens Now Playing
 - **Permissions** — runtime access to audio files (API 33+ uses `READ_MEDIA_AUDIO`)
 
 ## Requirements

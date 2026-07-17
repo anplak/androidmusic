@@ -60,7 +60,11 @@ class SmartRankingE2ETest {
 
         assertTrue(composeTestRule.openNowPlayingFromLibrary())
 
-        composeTestRule.waitForIdle()
+        composeTestRule.waitUntil(timeoutMillis = 10_000) {
+            trackStatsSnapshot(context).any { (trackId, stats) ->
+                stats.playCount > (playBefore[trackId] ?: 0)
+            }
+        }
 
         val after = trackStatsSnapshot(context)
         val increased = after.filter { (trackId, stats) ->
@@ -135,7 +139,10 @@ class SmartRankingE2ETest {
         val historyBefore = E2ETestDatabase.historyCount(context)
 
         assertTrue(composeTestRule.openNowPlayingFromLibrary())
-        composeTestRule.waitForIdle()
+
+        composeTestRule.waitUntil(timeoutMillis = 10_000) {
+            E2ETestDatabase.historyCount(context) > historyBefore
+        }
 
         composeTestRule.returnToMainShell()
         composeTestRule.navigateToHistory()
