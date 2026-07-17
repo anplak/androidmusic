@@ -141,6 +141,9 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_5_6,
                     MIGRATION_6_7
                 )
+                // Allow installing an older schema over a newer on-device DB (e.g. after
+                // switching feature branches). Local cache is wiped; MediaStore re-syncs.
+                .fallbackToDestructiveMigrationOnDowngrade()
                 .build()
         }
     }

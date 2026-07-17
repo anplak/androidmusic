@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.anplak.androidmusic.data.FavoritesRepositoryImpl
+import com.anplak.androidmusic.data.MusicLibraryRepository
 import com.anplak.androidmusic.data.MusicLibraryRepositoryFactory
 import com.anplak.androidmusic.data.PlayHistoryRepositoryImpl
 import com.anplak.androidmusic.data.PlaylistRepositoryImpl
@@ -35,10 +36,12 @@ class DiscoveryViewModel @JvmOverloads constructor(
 ) : AndroidViewModel(application) {
 
     private val db = AppDatabase.getInstance(application)
+    private val musicLibraryRepository: MusicLibraryRepository =
+        MusicLibraryRepositoryFactory.create(application)
     private val repository: RecommendationRepository = recommendationRepository ?: run {
         val favoritesRepository = FavoritesRepositoryImpl(db.favoriteDao(), db.trackDao())
         RecommendationRepositoryImpl(
-            musicLibraryRepository = MusicLibraryRepositoryFactory.create(application),
+            musicLibraryRepository = musicLibraryRepository,
             favoritesRepository = favoritesRepository,
             playHistoryRepository = PlayHistoryRepositoryImpl(db.playHistoryDao()),
             playlistRepository = PlaylistRepositoryImpl(db.playlistDao())
@@ -56,12 +59,28 @@ class DiscoveryViewModel @JvmOverloads constructor(
 
     private var refreshJob: Job? = null
     private var cachedRows: List<RecommendationRow> = emptyList()
+    private var lastRefreshedLibrarySize: Int = -1
 
     init {
-        refresh()
+        viewModelScope.launch {
+            musicLibraryRepository.observeCachedTracks().collect { tracks ->
+                if (tracks.size != lastRefreshedLibrarySize) {
+                    refresh()
+                }
+            }
+        }
     }
 
     fun getRow(rowId: String): RecommendationRow? = cachedRows.find { it.id == rowId }
+
+    /** Refreshes when the cached library changed since the last successful build. */
+    fun onForYouVisible() {
+        viewModelScope.launch {
+            if (musicLibraryRepository.getCachedTracks().size != lastRefreshedLibrarySize) {
+                refresh()
+            }
+        }
+    }
 
     fun refresh() {
         refreshJob?.cancel()
@@ -71,6 +90,7 @@ class DiscoveryViewModel @JvmOverloads constructor(
                 val inputs = repository.loadInputs()
                 val rows = engine.buildRows(inputs)
                 cachedRows = rows
+                lastRefreshedLibrarySize = inputs.library.size
                 _uiState.value = when {
                     rows.isEmpty() -> ForYouUiState.Empty
                     else -> ForYouUiState.Content(rows)
