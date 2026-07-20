@@ -136,7 +136,8 @@ fun MusicPlayerApp(
                         onAddToPlaylist = {
                             uiState.selectedTrack?.let { trackForPlaylistDialog = it }
                         },
-                        onSmartShuffle = playbackViewModel::startSmartShuffle
+                        onSmartShuffle = playbackViewModel::startSmartShuffle,
+                        artworkUri = uiState.selectedTrack?.artworkUri
                     )
                 }
 
@@ -361,6 +362,7 @@ private fun BoundMiniPlayerBar(
     MiniPlayerBar(
         title = track.title,
         artist = track.artist,
+        artworkUri = track.artworkUri,
         isPlaying = uiState.isPlaying,
         isFavorite = uiState.isFavorite,
         onBarClick = onOpenNowPlaying,

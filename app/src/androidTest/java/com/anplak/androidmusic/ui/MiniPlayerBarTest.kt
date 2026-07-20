@@ -44,6 +44,7 @@ class MiniPlayerBarTest {
         }
 
         composeTestRule.onNodeWithTag("mini_player_bar").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("media_artwork").assertIsDisplayed()
         composeTestRule.onNodeWithText("Fixture Track").assertIsDisplayed()
         composeTestRule.onNodeWithText("Fixture Artist").assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription(pauseLabel()).assertIsDisplayed()

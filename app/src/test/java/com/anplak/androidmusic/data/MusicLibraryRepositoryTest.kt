@@ -39,7 +39,8 @@ class MusicLibraryRepositoryTest {
         MediaStore.Audio.Media.DISPLAY_NAME,
         MediaStore.Audio.Media.RELATIVE_PATH,
         MediaStore.Audio.Media.YEAR,
-        MediaStore.Audio.Media.DATE_ADDED
+        MediaStore.Audio.Media.DATE_ADDED,
+        MediaStore.Audio.Media.ALBUM_ID
     )
 
     private val defaultPath = "/storage/emulated/0/Music/track.mp3"
@@ -81,6 +82,28 @@ class MusicLibraryRepositoryTest {
         assertEquals(180000L, tracks[0].duration)
         assertEquals("Song Two", tracks[1].title)
         assertEquals("Artist B", tracks[1].artist)
+    }
+
+    @Test
+    fun `syncLibrary maps albumId when MediaStore provides valid ALBUM_ID`() = runTest {
+        val cursor = createCursorWithTracks(
+            listOf(
+                TrackData(1L, "Song", "Artist", "Album", 180000L, albumId = 99L),
+                TrackData(2L, "Song Two", "Artist", "Album", 180000L, albumId = 0L)
+            )
+        )
+        whenever(contentResolver.query(any(), any(), anyOrNull(), anyOrNull(), anyOrNull()))
+            .thenReturn(cursor)
+
+        val tracks = repository.syncLibrary().tracks
+
+        assertEquals(99L, tracks[0].albumId)
+        assertEquals(
+            "content://media/external/audio/albumart/99",
+            tracks[0].artworkUri.toString()
+        )
+        assertNull(tracks[1].albumId)
+        assertNull(tracks[1].artworkUri)
     }
     
     @Test
@@ -514,7 +537,8 @@ class MusicLibraryRepositoryTest {
                     track.title,
                     null,
                     track.year,
-                    track.dateAddedSec
+                    track.dateAddedSec,
+                    track.albumId
                 )
             )
         }
@@ -529,6 +553,7 @@ class MusicLibraryRepositoryTest {
         val duration: Long,
         val path: String = "/storage/emulated/0/Music/track.mp3",
         val year: Int = 0,
-        val dateAddedSec: Long = 0L
+        val dateAddedSec: Long = 0L,
+        val albumId: Long = 0L
     )
 }

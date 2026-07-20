@@ -3,6 +3,7 @@ package com.anplak.androidmusic.data
 import android.net.Uri
 import com.anplak.androidmusic.player.TrackInfo
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -153,18 +154,87 @@ class LibraryBrowseAggregatorTest {
         assertEquals("B Artist", albums[2].displayArtist)
     }
 
+    @Test
+    fun `aggregateAlbums picks first valid artwork by track id`() {
+        val tracks = listOf(
+            track(2, album = "Album", albumId = 20L),
+            track(1, album = "Album", albumId = null),
+            track(3, album = "Album", albumId = 30L)
+        )
+
+        val albums = LibraryBrowseAggregator.aggregateAlbums(tracks)
+
+        assertEquals(1, albums.size)
+        assertEquals(
+            "content://media/external/audio/albumart/20",
+            albums.first().artworkUri.toString()
+        )
+    }
+
+    @Test
+    fun `aggregateArtists skips missing covers and picks deterministic art`() {
+        val tracks = listOf(
+            track(2, artist = "Solo", albumId = null),
+            track(1, artist = "Solo", albumId = 11L),
+            track(3, artist = "Solo", albumId = 33L)
+        )
+
+        val artists = LibraryBrowseAggregator.aggregateArtists(tracks)
+
+        assertEquals(1, artists.size)
+        assertEquals(
+            "content://media/external/audio/albumart/11",
+            artists.first().artworkUri.toString()
+        )
+    }
+
+    @Test
+    fun `aggregateAlbums falls back to artist cover when album has no art`() {
+        val tracks = listOf(
+            track(1, artist = "Solo", album = "With Art", albumId = 11L),
+            track(2, artist = "Solo", album = "No Art", albumId = null)
+        )
+
+        val albums = LibraryBrowseAggregator.aggregateAlbums(tracks)
+        val bare = albums.first { it.displayTitle == "No Art" }
+        val covered = albums.first { it.displayTitle == "With Art" }
+
+        assertEquals(
+            "content://media/external/audio/albumart/11",
+            covered.artworkUri.toString()
+        )
+        assertEquals(
+            "content://media/external/audio/albumart/11",
+            bare.artworkUri.toString()
+        )
+    }
+
+    @Test
+    fun `aggregateArtists leaves artwork null when no covers exist`() {
+        val tracks = listOf(
+            track(1, artist = "Bare", albumId = null),
+            track(2, artist = "Bare", albumId = 0L)
+        )
+
+        val artists = LibraryBrowseAggregator.aggregateArtists(tracks)
+
+        assertNull(artists.first().artworkUri)
+    }
+
     private fun track(
         id: Long,
         title: String = "Song $id",
         artist: String = "Artist",
-        album: String = "Album"
+        album: String = "Album",
+        albumId: Long? = null
     ): TrackInfo {
         return TrackInfo(
             uri = Uri.parse("content://media/external/audio/media/$id"),
             title = title,
             artist = artist,
             album = album,
-            duration = 180_000L
+            duration = 180_000L,
+            albumId = albumId
         )
     }
 }

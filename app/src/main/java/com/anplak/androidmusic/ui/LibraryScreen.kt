@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
@@ -30,7 +29,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -362,7 +360,12 @@ private fun ArtistList(
                     )
                 },
                 leadingContent = {
-                    InitialsAvatar(label = artist.displayName)
+                    MediaArtwork(
+                        uri = artist.artworkUri,
+                        contentDescription = artist.displayName,
+                        fallbackLabel = artist.displayName,
+                        modifier = Modifier.size(Dimens.listArtworkSize)
+                    )
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -407,7 +410,12 @@ private fun AlbumList(
                     )
                 },
                 leadingContent = {
-                    InitialsAvatar(label = album.displayTitle)
+                    MediaArtwork(
+                        uri = album.artworkUri,
+                        contentDescription = album.displayTitle,
+                        fallbackLabel = album.displayTitle,
+                        modifier = Modifier.size(Dimens.listArtworkSize)
+                    )
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -415,24 +423,6 @@ private fun AlbumList(
                     .testTag(
                         "album_item_${album.normalizedTitle}_${album.normalizedArtist}"
                     )
-            )
-        }
-    }
-}
-
-@Composable
-private fun InitialsAvatar(label: String) {
-    val initial = label.firstOrNull()?.uppercaseChar()?.toString() ?: "?"
-    Surface(
-        modifier = Modifier.size(40.dp),
-        shape = RoundedCornerShape(4.dp),
-        color = MaterialTheme.colorScheme.secondaryContainer
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Text(
-                text = initial,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
             )
         }
     }

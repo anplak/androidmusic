@@ -35,6 +35,7 @@ A minimal offline music player for Android. It discovers local audio via MediaSt
 - **Bottom navigation** — For You, Library, Favorites, Playlists, History
 - **Dense main-tab chrome** — no duplicate large TopAppBar titles; compact trailing actions where needed (Search, Index, Refresh)
 - **Persistent mini player** — title, Play/Pause, and Like above the bottom nav (and on overlays) while a track session is active; tap opens Now Playing
+- **Album artwork** — MediaStore covers on Now Playing, For You, Library Artists/Albums, and the mini player, with an on-brand monogram fallback
 - **Permissions** — runtime access to audio files (API 33+ uses `READ_MEDIA_AUDIO`)
 
 ## Requirements

@@ -1,5 +1,6 @@
 package com.anplak.androidmusic.ui
 
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -10,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.FavoriteBorder
@@ -42,6 +42,7 @@ fun MiniPlayerBar(
     onBarClick: () -> Unit,
     onPlayPauseClick: () -> Unit,
     onToggleFavorite: () -> Unit,
+    artworkUri: Uri? = null,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -58,13 +59,11 @@ fun MiniPlayerBar(
                 .padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = Icons.Default.MusicNote,
-                contentDescription = null,
-                modifier = Modifier
-                    .size(Dimens.miniPlayerArtworkSize)
-                    .padding(4.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            MediaArtwork(
+                uri = artworkUri,
+                contentDescription = title,
+                fallbackLabel = title,
+                modifier = Modifier.size(Dimens.miniPlayerArtworkSize)
             )
             Column(
                 modifier = Modifier

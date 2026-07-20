@@ -77,6 +77,7 @@ class MusicPlaybackService : MediaSessionService() {
                 .setTitle(track.title)
                 .setArtist(track.artist)
                 .setAlbumTitle(track.album)
+                .setArtworkUri(track.artworkUri)
                 .build()
             
             return MediaItem.Builder()
