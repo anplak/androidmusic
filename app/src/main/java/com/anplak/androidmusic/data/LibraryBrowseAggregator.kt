@@ -1,11 +1,13 @@
 package com.anplak.androidmusic.data
 
+import android.net.Uri
 import com.anplak.androidmusic.player.TrackInfo
 
 data class ArtistSummary(
     val displayName: String,
     val normalizedKey: String,
-    val trackCount: Int
+    val trackCount: Int,
+    val artworkUri: Uri? = null
 )
 
 data class AlbumSummary(
@@ -13,7 +15,8 @@ data class AlbumSummary(
     val displayArtist: String,
     val normalizedTitle: String,
     val normalizedArtist: String,
-    val trackCount: Int
+    val trackCount: Int,
+    val artworkUri: Uri? = null
 )
 
 object LibraryBrowseAggregator {
@@ -27,7 +30,8 @@ object LibraryBrowseAggregator {
                 ArtistSummary(
                     displayName = displayArtistName(group.first().artist),
                     normalizedKey = key,
-                    trackCount = group.size
+                    trackCount = group.size,
+                    artworkUri = representativeArtworkUri(group)
                 )
             }
             .sortedBy { it.displayName.lowercase() }
@@ -35,6 +39,9 @@ object LibraryBrowseAggregator {
 
     fun aggregateAlbums(tracks: List<TrackInfo>): List<AlbumSummary> {
         val homonyms = findHomonymAlbumTitles(tracks)
+        val artistArtwork = tracks
+            .groupBy { normalizeArtistKey(it.artist) }
+            .mapValues { (_, group) -> representativeArtworkUri(group) }
         return tracks
             .groupBy { albumGroupKey(it, homonyms) }
             .map { (_, group) ->
@@ -42,12 +49,14 @@ object LibraryBrowseAggregator {
                 val title = albumTitle(first)
                 val artist = displayArtistName(first.artist)
                 val needsArtist = homonyms.contains(title.lowercase())
+                val artistKey = normalizeArtistKey(first.artist)
                 AlbumSummary(
                     displayTitle = title,
                     displayArtist = artist,
                     normalizedTitle = title.lowercase(),
-                    normalizedArtist = if (needsArtist) normalizeArtistKey(first.artist) else "",
-                    trackCount = group.size
+                    normalizedArtist = if (needsArtist) artistKey else "",
+                    trackCount = group.size,
+                    artworkUri = representativeArtworkUri(group) ?: artistArtwork[artistKey]
                 )
             }
             .sortedWith(compareBy({ it.displayTitle.lowercase() }, { it.displayArtist.lowercase() }))
@@ -71,6 +80,13 @@ object LibraryBrowseAggregator {
                     (normalizedArtist.isEmpty() || artist == normalizedArtist)
             }
             .sortedBy { it.title.lowercase() }
+
+    private fun representativeArtworkUri(tracks: List<TrackInfo>): Uri? =
+        tracks
+            .sortedBy { it.id }
+            .asSequence()
+            .mapNotNull { it.artworkUri }
+            .firstOrNull()
 
     private data class AlbumGroupKey(val title: String, val artist: String)
 

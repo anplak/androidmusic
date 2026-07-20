@@ -1,6 +1,5 @@
 package com.anplak.androidmusic.ui
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -13,6 +12,7 @@ import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.anplak.androidmusic.R
+import com.anplak.androidmusic.ui.theme.MusicTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -30,7 +30,7 @@ class MiniPlayerBarTest {
     @Test
     fun showsTitleAndArtist_andReflectsPlayingFavoriteState() {
         composeTestRule.setContent {
-            MaterialTheme {
+            MusicTheme(darkTheme = true) {
                 MiniPlayerBar(
                     title = "Fixture Track",
                     artist = "Fixture Artist",
@@ -44,6 +44,7 @@ class MiniPlayerBarTest {
         }
 
         composeTestRule.onNodeWithTag("mini_player_bar").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("media_artwork").assertIsDisplayed()
         composeTestRule.onNodeWithText("Fixture Track").assertIsDisplayed()
         composeTestRule.onNodeWithText("Fixture Artist").assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription(pauseLabel()).assertIsDisplayed()
@@ -53,7 +54,7 @@ class MiniPlayerBarTest {
     @Test
     fun showsPausedAndUnfavoritedIcons() {
         composeTestRule.setContent {
-            MaterialTheme {
+            MusicTheme(darkTheme = true) {
                 MiniPlayerBar(
                     title = "Track",
                     artist = null,
@@ -77,7 +78,7 @@ class MiniPlayerBarTest {
         var favoriteClicks = 0
 
         composeTestRule.setContent {
-            MaterialTheme {
+            MusicTheme(darkTheme = true) {
                 MiniPlayerBar(
                     title = "Click Me",
                     artist = "Artist",
@@ -112,7 +113,7 @@ class MiniPlayerBarTest {
         var isFavorite by mutableStateOf(false)
 
         composeTestRule.setContent {
-            MaterialTheme {
+            MusicTheme(darkTheme = true) {
                 MiniPlayerBar(
                     title = "Track",
                     artist = "Artist",

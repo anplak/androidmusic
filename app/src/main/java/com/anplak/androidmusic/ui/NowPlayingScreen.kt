@@ -9,12 +9,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.background
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
@@ -51,8 +48,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import android.net.Uri
 import com.anplak.androidmusic.R
 import com.anplak.androidmusic.player.PlayerError
 import com.anplak.androidmusic.ui.theme.Dimens
@@ -80,6 +77,7 @@ fun NowPlayingScreen(
     onToggleFavorite: () -> Unit,
     onAddToPlaylist: () -> Unit,
     onSmartShuffle: () -> Unit = {},
+    artworkUri: Uri? = null,
     modifier: Modifier = Modifier
 ) {
     var showMenu by remember { mutableStateOf(false) }
@@ -182,21 +180,12 @@ fun NowPlayingScreen(
                 Spacer(modifier = Modifier.height(Dimens.listVerticalPadding))
             }
 
-            Box(
-                modifier = Modifier
-                    .size(Dimens.nowPlayingArtworkSize)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.primaryContainer)
-                    .testTag("artwork_placeholder"),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.MusicNote,
-                    contentDescription = null,
-                    modifier = Modifier.size(96.dp),
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
+            MediaArtwork(
+                uri = artworkUri,
+                contentDescription = trackTitle,
+                fallbackLabel = trackTitle,
+                modifier = Modifier.size(Dimens.nowPlayingArtworkSize)
+            )
 
             Spacer(modifier = Modifier.height(Dimens.screenPadding))
 

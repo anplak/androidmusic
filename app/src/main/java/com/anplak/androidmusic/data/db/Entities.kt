@@ -20,7 +20,8 @@ data class TrackEntity(
     val path: String,
     val firstSeenAt: Long = System.currentTimeMillis(),
     val year: Int? = null,
-    val dateAddedSec: Long? = null
+    val dateAddedSec: Long? = null,
+    val albumId: Long? = null
 )
 
 /**

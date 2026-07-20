@@ -3,8 +3,14 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- Waveform bars — thick enough to read at 48dp under adaptive masks -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M54,30L54,78M36,54L72,54"/>
+        android:fillColor="#E6E9ED"
+        android:pathData="M36,44 h8 v20 h-8 z" />
+    <path
+        android:fillColor="#3DDC97"
+        android:pathData="M50,34 h8 v40 h-8 z" />
+    <path
+        android:fillColor="#E6E9ED"
+        android:pathData="M64,40 h8 v28 h-8 z" />
 </vector>
-

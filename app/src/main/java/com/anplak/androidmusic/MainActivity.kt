@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -26,13 +27,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.core.content.ContextCompat
 import com.anplak.androidmusic.ui.MusicPlayerApp
+import com.anplak.androidmusic.ui.theme.MusicTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MusicPlayerAppWithPermissionCheck()
+            MusicTheme {
+                MusicPlayerAppWithPermissionCheck()
+            }
         }
     }
 }
@@ -87,7 +91,10 @@ fun PermissionRequestScreen(onRequestPermission: () -> Unit) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Storage permission is required to play music.")
+        Text(
+            text = "Storage permission is required to play music.",
+            color = MaterialTheme.colorScheme.onBackground
+        )
         Button(
             onClick = onRequestPermission,
             modifier = Modifier.testTag("permission_request_grant")

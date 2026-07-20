@@ -36,11 +36,15 @@ class MusicLibraryRepositoryImpl(
 ) : MusicLibraryRepository {
 
     override suspend fun getCachedTracks(): List<TrackInfo> =
-        trackDao?.getAll().orEmpty().map { it.toTrackInfo() }
+        AlbumArtworkUri.withArtistFallbacks(
+            trackDao?.getAll().orEmpty().map { it.toTrackInfo() }
+        )
 
     override fun observeCachedTracks(): Flow<List<TrackInfo>> =
         (trackDao?.observeAll() ?: flowOf(emptyList()))
-            .map { entities -> entities.map { it.toTrackInfo() } }
+            .map { entities ->
+                AlbumArtworkUri.withArtistFallbacks(entities.map { it.toTrackInfo() })
+            }
 
     /**
      * Scans common music directories (Music, Download) to ensure MediaStore is up-to-date.
@@ -129,7 +133,8 @@ class MusicLibraryRepositoryImpl(
             MediaStore.Audio.Media.DISPLAY_NAME,
             MediaStore.Audio.Media.RELATIVE_PATH,
             MediaStore.Audio.Media.YEAR,
-            MediaStore.Audio.Media.DATE_ADDED
+            MediaStore.Audio.Media.DATE_ADDED,
+            MediaStore.Audio.Media.ALBUM_ID
         )
 
         val selection: String? = null
@@ -157,6 +162,7 @@ class MusicLibraryRepositoryImpl(
                 val relativePathColumn = cursor.getColumnIndex(MediaStore.Audio.Media.RELATIVE_PATH)
                 val yearColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.YEAR)
                 val dateAddedColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_ADDED)
+                val albumIdColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID)
 
                 while (cursor.moveToNext()) {
                     scannedCount++
@@ -174,6 +180,7 @@ class MusicLibraryRepositoryImpl(
                         )
                         val year = cursor.getInt(yearColumn).takeIf { it > 0 }
                         val dateAddedSec = cursor.getLong(dateAddedColumn).takeIf { it > 0 }
+                        val albumId = cursor.getLong(albumIdColumn).takeIf { it > 0L }
 
                         when (LibraryIndexFilter.skipReason(filePath, duration, artist, policy)) {
                             IndexSkipReason.DURATION -> {
@@ -204,7 +211,8 @@ class MusicLibraryRepositoryImpl(
                             duration = duration,
                             path = filePath,
                             year = year,
-                            dateAddedSec = dateAddedSec
+                            dateAddedSec = dateAddedSec,
+                            albumId = albumId
                         )
                         tracks.add(track)
                         entities.add(track.toEntity(filePath))

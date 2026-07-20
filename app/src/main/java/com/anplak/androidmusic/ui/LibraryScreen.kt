@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -13,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
@@ -29,13 +29,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -57,7 +54,6 @@ import com.anplak.androidmusic.data.LibraryFilter
 import com.anplak.androidmusic.player.TrackInfo
 import com.anplak.androidmusic.ui.theme.Dimens
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryScreen(
     onTrackSelected: (List<TrackInfo>, Int) -> Unit,
@@ -102,34 +98,28 @@ fun LibraryScreen(
     }
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
-            TopAppBar(
-                title = { Text(text = stringResource(R.string.your_library)) },
-                actions = {
-                    IconButton(
-                        onClick = onOpenLibraryIndex,
-                        modifier = Modifier.testTag("open_library_index")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.FilterList,
-                            contentDescription = stringResource(R.string.library_index)
-                        )
-                    }
-                    IconButton(
-                        onClick = onOpenSearch,
-                        modifier = Modifier.testTag("open_search")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = stringResource(R.string.search)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            )
+            CompactTabActions {
+                IconButton(
+                    onClick = onOpenLibraryIndex,
+                    modifier = Modifier.testTag("open_library_index")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.FilterList,
+                        contentDescription = stringResource(R.string.library_index)
+                    )
+                }
+                IconButton(
+                    onClick = onOpenSearch,
+                    modifier = Modifier.testTag("open_search")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = stringResource(R.string.search)
+                    )
+                }
+            }
         },
         snackbarHost = {
             SnackbarHost(
@@ -370,7 +360,12 @@ private fun ArtistList(
                     )
                 },
                 leadingContent = {
-                    InitialsAvatar(label = artist.displayName)
+                    MediaArtwork(
+                        uri = artist.artworkUri,
+                        contentDescription = artist.displayName,
+                        fallbackLabel = artist.displayName,
+                        modifier = Modifier.size(Dimens.listArtworkSize)
+                    )
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -415,7 +410,12 @@ private fun AlbumList(
                     )
                 },
                 leadingContent = {
-                    InitialsAvatar(label = album.displayTitle)
+                    MediaArtwork(
+                        uri = album.artworkUri,
+                        contentDescription = album.displayTitle,
+                        fallbackLabel = album.displayTitle,
+                        modifier = Modifier.size(Dimens.listArtworkSize)
+                    )
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -423,24 +423,6 @@ private fun AlbumList(
                     .testTag(
                         "album_item_${album.normalizedTitle}_${album.normalizedArtist}"
                     )
-            )
-        }
-    }
-}
-
-@Composable
-private fun InitialsAvatar(label: String) {
-    val initial = label.firstOrNull()?.uppercaseChar()?.toString() ?: "?"
-    Surface(
-        modifier = Modifier.size(40.dp),
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.secondaryContainer
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Text(
-                text = initial,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
             )
         }
     }

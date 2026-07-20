@@ -24,7 +24,7 @@
     <string name="play_mix">Play mix</string>
     <string name="unknown_artist">Unknown Artist</string>
 
-    <string name="your_library">Your Library</string>
+    <string name="library">Library</string>
     <string name="scanning_library">Scanning library…</string>
     <string name="updating_library">Updating library…</string>
     <string name="library_sync_retry">Couldn\'t update library. Tap to retry.</string>

@@ -86,6 +86,9 @@ dependencies {
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
 
+    // Coil for MediaStore album art
+    implementation(libs.coil.compose)
+
     testImplementation(libs.junit)
     testImplementation(libs.room.testing)
     testImplementation(libs.kotlinx.coroutines.test)
