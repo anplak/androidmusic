@@ -6,7 +6,7 @@ A minimal offline music player for Android. It discovers local audio via MediaSt
 
 ### Library & playback
 - **Offline-first** — no network or account required
-- **Your Library** — browse tracks with title, artist, album, and duration
+- **Library** — browse tracks with title, artist, album, and duration
 - **Cached library** — last-known tracks show immediately; MediaStore sync runs in the background when you open Library or change index rules
 - **Library index rules** — skip tracks over a duration limit; include or exclude folders; blocklist artists; review and revert exclusions from Library Index
 - **Playback queue** — tap a track to play from that point in the list; next/previous with queue position
@@ -31,8 +31,9 @@ A minimal offline music player for Android. It discovers local audio via MediaSt
 - **Retention** — play history older than 90 days is removed automatically
 
 ### UI
-- **Jetpack Compose** with Material Design 3
-- **Bottom navigation** — For You, Your Library, Favorites, Playlists, History
+- **Jetpack Compose** with a dark-first geek-minimal Material 3 theme (`MusicTheme`)
+- **Bottom navigation** — For You, Library, Favorites, Playlists, History
+- **Dense main-tab chrome** — no duplicate large TopAppBar titles; compact trailing actions where needed (Search, Index, Refresh)
 - **Persistent mini player** — title, Play/Pause, and Like above the bottom nav (and on overlays) while a track session is active; tap opens Now Playing
 - **Permissions** — runtime access to audio files (API 33+ uses `READ_MEDIA_AUDIO`)
 
@@ -52,7 +53,7 @@ A minimal offline music player for Android. It discovers local audio via MediaSt
 3. Sync Gradle
 4. Run on an emulator or device with local audio files
 
-Grant media permission when prompted. On first visit to **Your Library** with an empty cache, a full scan runs once; later visits show cached tracks while sync updates in the background.
+Grant media permission when prompted. On first visit to **Library** with an empty cache, a full scan runs once; later visits show cached tracks while sync updates in the background.
 
 ## Testing
 

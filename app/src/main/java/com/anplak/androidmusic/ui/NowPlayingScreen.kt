@@ -185,8 +185,8 @@ fun NowPlayingScreen(
             Box(
                 modifier = Modifier
                     .size(Dimens.nowPlayingArtworkSize)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
                     .testTag("artwork_placeholder"),
                 contentAlignment = Alignment.Center
             ) {
@@ -194,7 +194,7 @@ fun NowPlayingScreen(
                     imageVector = Icons.Default.MusicNote,
                     contentDescription = null,
                     modifier = Modifier.size(96.dp),
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    tint = MaterialTheme.colorScheme.primary
                 )
             }
 

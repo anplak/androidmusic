@@ -11,4 +11,5 @@ object Dimens {
     val nowPlayingPlayButtonSize = 80.dp
     val miniPlayerHeight = 56.dp
     val miniPlayerArtworkSize = 40.dp
+    val compactTabActionsHeight = 48.dp
 }

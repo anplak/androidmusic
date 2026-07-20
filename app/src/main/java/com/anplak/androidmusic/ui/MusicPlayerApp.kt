@@ -43,7 +43,7 @@ import com.anplak.androidmusic.player.TrackInfo
 
 enum class NavigationTab(val icon: ImageVector, val labelResId: Int) {
     ForYou(Icons.Default.Explore, R.string.for_you),
-    Library(Icons.Default.LibraryMusic, R.string.your_library),
+    Library(Icons.Default.LibraryMusic, R.string.library),
     Favorites(Icons.Default.Favorite, R.string.favorites),
     Playlists(Icons.AutoMirrored.Filled.QueueMusic, R.string.playlists),
     History(Icons.Default.History, R.string.history)
@@ -100,22 +100,21 @@ fun MusicPlayerApp(
     }
     val showMiniPlayer = uiState.selectedTrack != null
 
-    MaterialTheme {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
-        ) {
-            when {
-                !permissionState.isGranted -> {
-                    PermissionRationaleScreen(
-                        onGrantPermissionClick = {
-                            permissionState.requestPermission()
-                        }
-                    )
-                }
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        when {
+            !permissionState.isGranted -> {
+                PermissionRationaleScreen(
+                    onGrantPermissionClick = {
+                        permissionState.requestPermission()
+                    }
+                )
+            }
 
-                currentScreen is AppScreen.NowPlaying && uiState.selectedTrack != null -> {
-                    NowPlayingScreen(
+            currentScreen is AppScreen.NowPlaying && uiState.selectedTrack != null -> {
+                NowPlayingScreen(
                         trackTitle = uiState.selectedTrack?.title ?: "",
                         artistName = uiState.selectedTrack?.artist ?: "",
                         isPlaying = uiState.isPlaying,
@@ -334,21 +333,20 @@ fun MusicPlayerApp(
                     )
                 }
             }
-        }
-    }
 
-    trackForPlaylistDialog?.let { track ->
-        AddToPlaylistDialog(
-            track = track,
-            onDismiss = { trackForPlaylistDialog = null },
-            onPlaylistSelected = { playlistId, trackId ->
-                playlistsViewModel.addTrackToPlaylist(playlistId, trackId)
-            },
-            onCreatePlaylist = { name, trackId ->
-                playlistsViewModel.createPlaylistAndAddTrack(name, trackId)
-            },
-            viewModel = playlistsViewModel
-        )
+            trackForPlaylistDialog?.let { track ->
+                AddToPlaylistDialog(
+                    track = track,
+                    onDismiss = { trackForPlaylistDialog = null },
+                    onPlaylistSelected = { playlistId, trackId ->
+                        playlistsViewModel.addTrackToPlaylist(playlistId, trackId)
+                    },
+                    onCreatePlaylist = { name, trackId ->
+                        playlistsViewModel.createPlaylistAndAddTrack(name, trackId)
+                    },
+                    viewModel = playlistsViewModel
+                )
+            }
     }
 }
 
