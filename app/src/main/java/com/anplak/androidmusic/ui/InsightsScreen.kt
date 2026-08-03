@@ -1,3 +1,4 @@
+@file:Suppress("ktlint:standard:function-naming", "FunctionName")
 package com.anplak.androidmusic.ui
 
 import androidx.compose.foundation.clickable
@@ -35,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -201,7 +203,7 @@ private fun InsightsContent(
 
         item {
             PlayTimeCard(
-                title = stringResource(R.string.total_play_time),
+title = stringResource(R.string.total_play_time),
                 playTime = state.todayPlayTime,
                 modifier = Modifier.testTag("insights_today_time")
             )
@@ -379,7 +381,7 @@ private fun TopTrackItem(
         },
         trailingContent = {
             Text(
-                text = stringResource(R.string.play_count, playCount),
+text = pluralStringResource(R.plurals.play_count, playCount, playCount),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -404,7 +406,7 @@ private fun TopArtistItem(
         },
         trailingContent = {
             Text(
-                text = stringResource(R.string.play_count, artistCount.playCount),
+text = pluralStringResource(R.plurals.play_count, artistCount.playCount, artistCount.playCount),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

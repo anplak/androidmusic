@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anplak.androidmusic.R
@@ -295,7 +296,7 @@ private fun PlaylistItem(
         },
         supportingContent = {
             Text(
-                text = stringResource(R.string.tracks_count, playlist.trackCount),
+text = pluralStringResource(R.plurals.tracks_count, playlist.trackCount, playlist.trackCount),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         },

@@ -1,6 +1,7 @@
 package com.anplak.androidmusic.ui
 
 import android.app.Application
+import android.os.Build
 import android.os.Environment
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -130,14 +131,18 @@ class LibraryIndexViewModel @JvmOverloads constructor(
         return listOf(unknown) + indexedArtists.filter { !it.equals(unknown, ignoreCase = true) }
     }
 
-    private fun loadPresetRoots(): List<String> {
-        return listOf(
+private fun loadPresetRoots(): List<String> {
+        val roots = mutableListOf(
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC),
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS),
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PODCASTS),
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_AUDIOBOOKS)
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PODCASTS)
         )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // DIRECTORY_AUDIOBOOKS requires API 29
+            roots += Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_AUDIOBOOKS)
+        }
+        return roots
             .filter { it.exists() && it.isDirectory }
             .map { it.absolutePath }
     }

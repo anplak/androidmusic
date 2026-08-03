@@ -36,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -51,8 +52,8 @@ fun LibraryArtistDetailScreen(
     onBackClick: () -> Unit,
     onPlayAll: (List<TrackInfo>, Int) -> Unit,
     onAddToPlaylist: (TrackInfo) -> Unit,
-    onExcludeArtist: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier,
+    onExcludeArtist: ((String) -> Unit)? = null,
     viewModel: LibraryViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -61,7 +62,7 @@ fun LibraryArtistDetailScreen(
 
     LibraryCollectionDetailContent(
         title = displayName,
-        subtitle = stringResource(R.string.tracks_count, tracks.size),
+subtitle = pluralStringResource(R.plurals.tracks_count, tracks.size, tracks.size),
         tracks = tracks,
         favoriteIds = favoriteIds,
         onBackClick = onBackClick,

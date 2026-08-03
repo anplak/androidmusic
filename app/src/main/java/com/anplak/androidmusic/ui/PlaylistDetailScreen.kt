@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming", "FunctionName")
+@file:Suppress("ktlint:standard:function-naming", "ktlint:standard:max-line-length", "FunctionName")
 package com.anplak.androidmusic.ui
 
 import androidx.compose.foundation.clickable

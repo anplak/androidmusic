@@ -1,6 +1,7 @@
 package com.anplak.androidmusic.data
 
 import android.content.Context
+import androidx.core.content.edit
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,9 +25,9 @@ class SharedPreferencesRecentSearchStore(context: Context) : RecentSearchStore {
 
         val updated = (listOf(trimmed) + readQueries().filter { !it.equals(trimmed, ignoreCase = true) })
             .take(MAX_RECENT)
-        prefs.edit()
-            .putString(KEY_QUERIES, updated.joinToString(DELIMITER))
-            .apply()
+        prefs.edit {
+            putString(KEY_QUERIES, updated.joinToString(DELIMITER))
+        }
         _queries.value = updated
     }
 

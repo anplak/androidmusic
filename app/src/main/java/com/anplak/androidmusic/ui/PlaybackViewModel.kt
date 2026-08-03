@@ -67,7 +67,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     private val _uiState = MutableStateFlow(PlaybackUiState())
     val uiState: StateFlow<PlaybackUiState> = _uiState.asStateFlow()
 
-    private val _currentTrackId = MutableStateFlow<Long?>(null)
+    private val currentTrackIdFlow = MutableStateFlow<Long?>(null)
 
     private var lastTrackedTrackId: Long? = null
     private var lastTrackWasPlaying: Boolean = false
@@ -113,7 +113,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
             }.collect { state ->
                 trackPlaybackStats(state)
                 _uiState.value = state
-                _currentTrackId.value = state.selectedTrack?.id
+                    currentTrackIdFlow.value = state.selectedTrack?.id
             }
         }
     }

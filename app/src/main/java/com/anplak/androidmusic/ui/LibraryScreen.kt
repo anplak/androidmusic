@@ -1,3 +1,4 @@
+@file:Suppress("ktlint:standard:function-naming", "FunctionName")
 package com.anplak.androidmusic.ui
 
 import androidx.compose.foundation.clickable
@@ -43,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -355,7 +357,7 @@ private fun ArtistList(
                 },
                 supportingContent = {
                     Text(
-                        text = stringResource(R.string.tracks_count, artist.trackCount),
+text = pluralStringResource(R.plurals.tracks_count, artist.trackCount, artist.trackCount),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 },

@@ -1,3 +1,4 @@
+@file:Suppress("ktlint:standard:max-line-length")
 package com.anplak.androidmusic.ui
 
 import android.app.Application
@@ -75,6 +76,7 @@ class InsightsViewModel @JvmOverloads constructor(
                 val todayPlayTime = flows[0] as Long
                 val weekPlayTime = flows[1] as Long
                 @Suppress("UNCHECKED_CAST")
+@Suppress("UNCHECKED_CAST")
                 val todayTopTrackCounts = flows[2] as List<com.anplak.androidmusic.data.TrackPlayCount>
                 @Suppress("UNCHECKED_CAST")
                 val weekTopTrackCounts = flows[3] as List<com.anplak.androidmusic.data.TrackPlayCount>
@@ -84,11 +86,14 @@ class InsightsViewModel @JvmOverloads constructor(
                 val weekTopArtists = flows[5] as List<ArtistPlayCount>
 
                 // Fetch track info for top tracks
-                val todayTopTracks = fetchTracksWithCounts(todayTopTrackCounts)
+val todayTopTracks = fetchTracksWithCounts(todayTopTrackCounts)
                 val weekTopTracks = fetchTracksWithCounts(weekTopTrackCounts)
 
-                val hasData = todayPlayTime > 0 || weekPlayTime > 0 ||
-                        todayTopTracks.isNotEmpty() || weekTopTracks.isNotEmpty()
+val hasData =
+                    todayPlayTime > 0 ||
+                    weekPlayTime > 0 ||
+                    todayTopTracks.isNotEmpty() ||
+                    weekTopTracks.isNotEmpty()
 
                 InsightsUiState(
                     isLoading = false,
@@ -125,20 +130,18 @@ class InsightsViewModel @JvmOverloads constructor(
         val tracks = trackDao.getByIds(trackIds)
         val trackMap = tracks.associateBy { it.id }
 
-        return trackCounts.mapNotNull { trackCount ->
-            trackMap[trackCount.trackId]?.let { entity ->
-                TrackWithPlayCount(
-                    track = TrackInfo(
-                        uri = TrackInfo.uriFromId(entity.id),
-                        title = entity.title,
-                        artist = entity.artist,
-                        album = entity.album,
-                        duration = entity.duration
-                    ),
-                    playCount = trackCount.playCount
-                )
-            }
-        }
+                return trackCounts.mapNotNull { trackCount ->
+                    trackMap[trackCount.trackId]?.let { entity ->
+                        val trackInfo = TrackInfo(
+                            uri = TrackInfo.uriFromId(entity.id),
+                            title = entity.title,
+                            artist = entity.artist,
+                            album = entity.album,
+                            duration = entity.duration
+                        )
+                        TrackWithPlayCount(track = trackInfo, playCount = trackCount.playCount)
+                    }
+                }
     }
 
     /**

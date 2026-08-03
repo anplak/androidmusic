@@ -58,6 +58,13 @@ class AudioPlayer(
                     )
                     stopPositionUpdates()
                 }
+                Player.STATE_BUFFERING -> {
+                    // No-op: buffering state reflected via progress updates
+                }
+                Player.STATE_IDLE -> {
+                    // Player is idle; reset minimal state
+                    _playbackState.value = _playbackState.value.copy(isPlaying = false)
+                }
             }
         }
         

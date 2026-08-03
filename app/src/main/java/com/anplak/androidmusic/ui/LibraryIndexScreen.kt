@@ -37,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anplak.androidmusic.R
@@ -103,9 +104,10 @@ fun LibraryIndexScreen(
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.max_track_duration)) },
                     supportingContent = {
-                        Text(
-                            stringResource(
-                                R.string.max_track_duration_value,
+Text(
+                            pluralStringResource(
+                                R.plurals.max_track_duration_value,
+                                uiState.maxDurationMinutes,
                                 uiState.maxDurationMinutes
                             )
                         )

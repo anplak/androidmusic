@@ -1,3 +1,4 @@
+@file:Suppress("ktlint:standard:function-naming", "FunctionName")
 package com.anplak.androidmusic.ui
 
 import androidx.compose.foundation.clickable
