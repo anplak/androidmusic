@@ -13,15 +13,14 @@ import com.anplak.androidmusic.data.PlaylistRepository
 import com.anplak.androidmusic.data.PlaylistRepositoryImpl
 import com.anplak.androidmusic.data.TrackStatsRepository
 import com.anplak.androidmusic.data.TrackStatsRepositoryImpl
-import java.util.UUID
 import com.anplak.androidmusic.data.db.AppDatabase
 import com.anplak.androidmusic.player.AudioPlayer
-import com.anplak.androidmusic.player.PlayerError
+import com.anplak.androidmusic.player.PlayStartReason
 import com.anplak.androidmusic.player.PlaybackQueue
 import com.anplak.androidmusic.player.PlaybackSession
 import com.anplak.androidmusic.player.PlaybackSessionClassifier
 import com.anplak.androidmusic.player.PlaybackStatsTracker
-import com.anplak.androidmusic.player.PlayStartReason
+import com.anplak.androidmusic.player.PlayerError
 import com.anplak.androidmusic.player.SessionOutcome
 import com.anplak.androidmusic.player.SmartShuffleGenerator
 import com.anplak.androidmusic.player.TrackInfo
@@ -33,6 +32,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 data class PlaybackUiState(
     val selectedTrack: TrackInfo? = null,
@@ -44,17 +44,18 @@ data class PlaybackUiState(
     val queueSize: Int = 0,
     val hasNext: Boolean = false,
     val hasPrevious: Boolean = false,
-    val isFavorite: Boolean = false
+    val isFavorite: Boolean = false,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PlaybackViewModel(application: Application) : AndroidViewModel(application) {
     private val audioPlayer = AudioPlayer(application, viewModelScope)
     private val database = AppDatabase.getInstance(application)
-    private val favoritesRepository: FavoritesRepository = FavoritesRepositoryImpl(
-        database.favoriteDao(),
-        database.trackDao()
-    )
+    private val favoritesRepository: FavoritesRepository =
+        FavoritesRepositoryImpl(
+            database.favoriteDao(),
+            database.trackDao(),
+        )
     private val playlistRepository: PlaylistRepository = PlaylistRepositoryImpl(database.playlistDao())
     private val trackStatsRepository: TrackStatsRepository = TrackStatsRepositoryImpl(database.trackStatsDao())
     private val playHistoryRepository: PlayHistoryRepository = PlayHistoryRepositoryImpl(database.playHistoryDao())
@@ -79,24 +80,28 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     init {
         audioPlayer.connect()
 
-        val favoriteStatusFlow = _currentTrackId
-            .flatMapLatest { trackId ->
-                if (trackId != null) {
-                    favoritesRepository.isFavorite(trackId)
-                } else {
-                    flowOf(false)
+        val favoriteStatusFlow =
+            currentTrackIdFlow
+                .flatMapLatest { trackId ->
+                    if (trackId != null) {
+                        favoritesRepository.isFavorite(trackId)
+                    } else {
+                        flowOf(false)
+                    }
                 }
-            }
 
         viewModelScope.launch {
             combine(
                 audioPlayer.playbackState,
                 audioPlayer.queueState,
-                favoriteStatusFlow
+                favoriteStatusFlow,
             ) { playbackState, queueState, isFavorite ->
-                val currentTrack = if (queueState.queueSize > 0 && queue.tracks.isNotEmpty()) {
-                    queue.tracks.getOrNull(queueState.currentIndex)
-                } else null
+                val currentTrack =
+                    if (queueState.queueSize > 0 && queue.tracks.isNotEmpty()) {
+                        queue.tracks.getOrNull(queueState.currentIndex)
+                    } else {
+                        null
+                    }
 
                 PlaybackUiState(
                     selectedTrack = currentTrack,
@@ -108,12 +113,12 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                     queueSize = queueState.queueSize,
                     hasNext = queueState.hasNext,
                     hasPrevious = queueState.hasPrevious,
-                    isFavorite = isFavorite
+                    isFavorite = isFavorite,
                 )
             }.collect { state ->
                 trackPlaybackStats(state)
                 _uiState.value = state
-                    currentTrackIdFlow.value = state.selectedTrack?.id
+                currentTrackIdFlow.value = state.selectedTrack?.id
             }
         }
     }
@@ -154,7 +159,7 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         } else if (currentTrackId != null) {
             playbackStatsTracker.updatePlaybackProgress(
                 positionMs = state.currentPosition,
-                durationMs = state.duration
+                durationMs = state.duration,
             )
         }
 
@@ -165,13 +170,14 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
 
     private suspend fun finalizeSession(
         session: PlaybackSession,
-        nowMs: Long
+        nowMs: Long,
     ) {
-        val listenedMs = PlaybackSessionClassifier.listenedMs(
-            session,
-            lastPositionMs = session.maxPositionMs,
-            nowMs = nowMs
-        )
+        val listenedMs =
+            PlaybackSessionClassifier.listenedMs(
+                session,
+                lastPositionMs = session.maxPositionMs,
+                nowMs = nowMs,
+            )
         when (PlaybackSessionClassifier.classify(session, listenedMs, session.durationMs)) {
             SessionOutcome.AlreadyRecorded -> Unit
             SessionOutcome.QualifiedPlay -> recordQualifiedPlay(session)
@@ -197,7 +203,10 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
         session.historyRecorded = true
     }
 
-    fun onTrackSelected(tracks: List<TrackInfo>, selectedIndex: Int) {
+    fun onTrackSelected(
+        tracks: List<TrackInfo>,
+        selectedIndex: Int,
+    ) {
         playbackStatsTracker.markExplicitStart()
         queue = PlaybackQueue.fromLibrary(tracks, selectedIndex)
         audioPlayer.setQueue(tracks, selectedIndex)
@@ -280,15 +289,17 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
             val allTracks = musicLibraryRepository.getAllTracks()
             if (allTracks.isEmpty()) return@launch
 
-            val recentlyPlayedIds = queue.tracks
-                .take(SMART_SHUFFLE_RECENT_EXCLUDE_COUNT)
-                .map { it.id }
-                .toSet()
+            val recentlyPlayedIds =
+                queue.tracks
+                    .take(SMART_SHUFFLE_RECENT_EXCLUDE_COUNT)
+                    .map { it.id }
+                    .toSet()
 
-            val shuffledTracks = smartShuffleGenerator.generateShuffledQueue(
-                tracks = allTracks,
-                recentlyPlayedIds = recentlyPlayedIds
-            )
+            val shuffledTracks =
+                smartShuffleGenerator.generateShuffledQueue(
+                    tracks = allTracks,
+                    recentlyPlayedIds = recentlyPlayedIds,
+                )
 
             if (shuffledTracks.isNotEmpty()) {
                 onTrackSelected(shuffledTracks, 0)
@@ -299,14 +310,16 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
     fun startSmartShuffleFromPlaylist(tracks: List<TrackInfo>) {
         viewModelScope.launch {
             if (tracks.isEmpty()) return@launch
-            val recentlyPlayedIds = queue.tracks
-                .take(SMART_SHUFFLE_RECENT_EXCLUDE_COUNT)
-                .map { it.id }
-                .toSet()
-            val shuffledTracks = smartShuffleGenerator.generateShuffledQueue(
-                tracks = tracks,
-                recentlyPlayedIds = recentlyPlayedIds
-            )
+            val recentlyPlayedIds =
+                queue.tracks
+                    .take(SMART_SHUFFLE_RECENT_EXCLUDE_COUNT)
+                    .map { it.id }
+                    .toSet()
+            val shuffledTracks =
+                smartShuffleGenerator.generateShuffledQueue(
+                    tracks = tracks,
+                    recentlyPlayedIds = recentlyPlayedIds,
+                )
             if (shuffledTracks.isNotEmpty()) {
                 onTrackSelected(shuffledTracks, 0)
             }

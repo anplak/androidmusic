@@ -20,11 +20,13 @@ interface FavoriteDao {
     @Query("SELECT EXISTS(SELECT 1 FROM favorites WHERE trackId = :trackId)")
     suspend fun isFavoriteSync(trackId: Long): Boolean
 
-    @Query("""
+    @Query(
+        """
         SELECT t.* FROM tracks t
         INNER JOIN favorites f ON t.id = f.trackId
         ORDER BY f.addedAt DESC
-    """)
+    """,
+    )
     fun getAllFavorites(): Flow<List<TrackEntity>>
 
     @Query("SELECT trackId FROM favorites")
@@ -36,4 +38,3 @@ interface FavoriteDao {
     @Query("SELECT COUNT(*) FROM favorites")
     fun getFavoriteCount(): Flow<Int>
 }
-

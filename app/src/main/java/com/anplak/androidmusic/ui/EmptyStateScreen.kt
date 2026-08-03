@@ -1,4 +1,5 @@
 @file:Suppress("ktlint:standard:function-naming", "FunctionName")
+
 package com.anplak.androidmusic.ui
 
 import androidx.compose.foundation.layout.Arrangement
@@ -21,29 +22,29 @@ import com.anplak.androidmusic.R
 @Composable
 fun EmptyStateScreen(
     onSelectMusicClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(32.dp),
+        modifier =
+            modifier
+                .fillMaxSize()
+                .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
     ) {
         Text(
             text = stringResource(R.string.no_music_selected),
             style = MaterialTheme.typography.headlineSmall,
             textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        
+
         Spacer(modifier = Modifier.height(32.dp))
-        
+
         Button(
-            onClick = onSelectMusicClick
+            onClick = onSelectMusicClick,
         ) {
             Text(text = stringResource(R.string.select_music))
         }
     }
 }
-

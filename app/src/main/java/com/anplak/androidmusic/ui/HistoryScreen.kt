@@ -1,4 +1,5 @@
 @file:Suppress("ktlint:standard:function-naming", "FunctionName")
+
 package com.anplak.androidmusic.ui
 
 import androidx.compose.foundation.clickable
@@ -42,18 +43,19 @@ import com.anplak.androidmusic.player.TrackInfo
 fun HistoryScreen(
     onTrackSelected: (List<TrackInfo>, Int) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: HistoryViewModel = viewModel()
+    viewModel: HistoryViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        modifier = modifier
+        modifier = modifier,
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
         ) {
             when (val state = uiState) {
                 is HistoryUiState.Loading -> {
@@ -71,7 +73,7 @@ fun HistoryScreen(
                             onTrackSelected(listOf(entry.track), 0)
                         },
                         onLoadMore = { viewModel.loadMore() },
-                        onRefresh = { viewModel.refresh() }
+                        onRefresh = { viewModel.refresh() },
                     )
                 }
             }
@@ -82,10 +84,11 @@ fun HistoryScreen(
 @Composable
 private fun HistoryLoadingState() {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("history_loading"),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("history_loading"),
+        contentAlignment = Alignment.Center,
     ) {
         CircularProgressIndicator()
     }
@@ -94,31 +97,32 @@ private fun HistoryLoadingState() {
 @Composable
 private fun HistoryEmptyState() {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("history_empty"),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("history_empty"),
+        contentAlignment = Alignment.Center,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(32.dp)
+            modifier = Modifier.padding(32.dp),
         ) {
             Icon(
                 imageVector = Icons.Default.History,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier.padding(bottom = 8.dp),
             )
             Text(
                 text = stringResource(R.string.no_history),
                 style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = stringResource(R.string.no_history_description),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -130,10 +134,10 @@ private fun HistoryContent(
     hasMore: Boolean,
     onEntryClick: (PlayHistoryEntry) -> Unit,
     onLoadMore: () -> Unit,
-    @Suppress("UNUSED_PARAMETER") onRefresh: () -> Unit
+    @Suppress("UNUSED_PARAMETER") onRefresh: () -> Unit,
 ) {
     val listState = rememberLazyListState()
-    
+
     // Trigger load more when reaching the end of the list
     val shouldLoadMore by remember {
         derivedStateOf {
@@ -142,7 +146,7 @@ private fun HistoryContent(
             hasMore && lastVisibleItem >= totalItems - 5
         }
     }
-    
+
     LaunchedEffect(shouldLoadMore) {
         if (shouldLoadMore) {
             onLoadMore()
@@ -151,31 +155,33 @@ private fun HistoryContent(
 
     LazyColumn(
         state = listState,
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("history_list"),
-        contentPadding = PaddingValues(vertical = 8.dp)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("history_list"),
+        contentPadding = PaddingValues(vertical = 8.dp),
     ) {
         items(
             items = entries,
-            key = { it.id }
+            key = { it.id },
         ) { entry ->
             HistoryEntryItem(
                 entry = entry,
-                onClick = { onEntryClick(entry) }
+                onClick = { onEntryClick(entry) },
             )
         }
-        
+
         if (hasMore) {
             item {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                    contentAlignment = Alignment.Center,
                 ) {
                     CircularProgressIndicator(
-                        modifier = Modifier.testTag("history_loading_more")
+                        modifier = Modifier.testTag("history_loading_more"),
                     )
                 }
             }
@@ -186,14 +192,14 @@ private fun HistoryContent(
 @Composable
 private fun HistoryEntryItem(
     entry: PlayHistoryEntry,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     ListItem(
         headlineContent = {
             Text(
                 text = entry.track.title,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
         },
         supportingContent = {
@@ -202,12 +208,12 @@ private fun HistoryEntryItem(
                     text = entry.track.artist,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
                     text = TimeFormatter.formatPlayTime(entry.playedAt),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         },
@@ -216,19 +222,20 @@ private fun HistoryEntryItem(
                 Text(
                     text = TimeFormatter.formatPositionWithTotal(entry.duration, entry.track.duration),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             } else {
                 Text(
                     text = TimeFormatter.formatDuration(entry.track.duration),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         },
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .testTag("history_entry")
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .testTag("history_entry"),
     )
 }

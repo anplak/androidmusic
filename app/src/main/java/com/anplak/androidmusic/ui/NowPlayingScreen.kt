@@ -1,5 +1,8 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package com.anplak.androidmusic.ui
 
+import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,18 +12,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
-import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
@@ -49,7 +52,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import android.net.Uri
 import com.anplak.androidmusic.R
 import com.anplak.androidmusic.player.PlayerError
 import com.anplak.androidmusic.ui.theme.Dimens
@@ -78,10 +80,10 @@ fun NowPlayingScreen(
     onAddToPlaylist: () -> Unit,
     onSmartShuffle: () -> Unit = {},
     artworkUri: Uri? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     var showMenu by remember { mutableStateOf(false) }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -89,46 +91,48 @@ fun NowPlayingScreen(
                 navigationIcon = {
                     IconButton(
                         onClick = onBackClick,
-                        modifier = Modifier.testTag("back_button")
+                        modifier = Modifier.testTag("back_button"),
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back to library"
+                            contentDescription = "Back to library",
                         )
                     }
                 },
                 actions = {
                     IconButton(
                         onClick = onToggleFavorite,
-                        modifier = Modifier.testTag("favorite_button")
+                        modifier = Modifier.testTag("favorite_button"),
                     ) {
                         Icon(
                             imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                            contentDescription = if (isFavorite) {
-                                stringResource(R.string.remove_from_favorites)
-                            } else {
-                                stringResource(R.string.add_to_favorites)
-                            },
-                            tint = if (isFavorite) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
-                            }
+                            contentDescription =
+                                if (isFavorite) {
+                                    stringResource(R.string.remove_from_favorites)
+                                } else {
+                                    stringResource(R.string.add_to_favorites)
+                                },
+                            tint =
+                                if (isFavorite) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                },
                         )
                     }
                     Box {
                         IconButton(
                             onClick = { showMenu = true },
-                            modifier = Modifier.testTag("more_button")
+                            modifier = Modifier.testTag("more_button"),
                         ) {
                             Icon(
                                 imageVector = Icons.Default.MoreVert,
-                                contentDescription = stringResource(R.string.more_options)
+                                contentDescription = stringResource(R.string.more_options),
                             )
                         }
                         DropdownMenu(
                             expanded = showMenu,
-                            onDismissRequest = { showMenu = false }
+                            onDismissRequest = { showMenu = false },
                         ) {
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.add_to_playlist)) },
@@ -136,46 +140,48 @@ fun NowPlayingScreen(
                                     showMenu = false
                                     onAddToPlaylist()
                                 },
-                                modifier = Modifier.testTag("add_to_playlist_menu")
+                                modifier = Modifier.testTag("add_to_playlist_menu"),
                             )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.smart_shuffle)) },
                                 leadingIcon = {
                                     Icon(
                                         imageVector = Icons.Default.Shuffle,
-                                        contentDescription = null
+                                        contentDescription = null,
                                     )
                                 },
                                 onClick = {
                                     showMenu = false
                                     onSmartShuffle()
                                 },
-                                modifier = Modifier.testTag("smart_shuffle_menu")
+                                modifier = Modifier.testTag("smart_shuffle_menu"),
                             )
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.background,
+                    ),
             )
         },
-        modifier = modifier.testTag("now_playing_screen")
+        modifier = modifier.testTag("now_playing_screen"),
     ) { paddingValues ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-                .padding(Dimens.screenPadding),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .verticalScroll(rememberScrollState())
+                    .padding(Dimens.screenPadding),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             if (queueSize > 1) {
                 Text(
                     text = stringResource(R.string.queue_position, queuePosition, queueSize),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.testTag("queue_position")
+                    modifier = Modifier.testTag("queue_position"),
                 )
                 Spacer(modifier = Modifier.height(Dimens.listVerticalPadding))
             }
@@ -184,7 +190,7 @@ fun NowPlayingScreen(
                 uri = artworkUri,
                 contentDescription = trackTitle,
                 fallbackLabel = trackTitle,
-                modifier = Modifier.size(Dimens.nowPlayingArtworkSize)
+                modifier = Modifier.size(Dimens.nowPlayingArtworkSize),
             )
 
             Spacer(modifier = Modifier.height(Dimens.screenPadding))
@@ -195,9 +201,9 @@ fun NowPlayingScreen(
                 textAlign = TextAlign.Center,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.testTag("track_title")
+                modifier = Modifier.testTag("track_title"),
             )
-            
+
             if (artistName.isNotBlank()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
@@ -207,114 +213,122 @@ fun NowPlayingScreen(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.testTag("artist_name")
+                    modifier = Modifier.testTag("artist_name"),
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(Dimens.screenPadding))
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(Dimens.screenPadding),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(
                     onClick = onPreviousClick,
                     enabled = hasPrevious,
-                    modifier = Modifier
-                        .size(Dimens.nowPlayingControlSize)
-                        .testTag("previous_button")
+                    modifier =
+                        Modifier
+                            .size(Dimens.nowPlayingControlSize)
+                            .testTag("previous_button"),
                 ) {
                     Icon(
                         imageVector = Icons.Default.SkipPrevious,
                         contentDescription = stringResource(R.string.previous),
                         modifier = Modifier.size(36.dp),
-                        tint = if (hasPrevious) {
-                            MaterialTheme.colorScheme.onSurface
-                        } else {
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                        }
+                        tint =
+                            if (hasPrevious) {
+                                MaterialTheme.colorScheme.onSurface
+                            } else {
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            },
                     )
                 }
-                
+
                 FilledIconButton(
                     onClick = onPlayPauseClick,
-                    modifier = Modifier
-                        .size(Dimens.nowPlayingPlayButtonSize)
-                        .testTag("play_pause_button"),
-                    colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
+                    modifier =
+                        Modifier
+                            .size(Dimens.nowPlayingPlayButtonSize)
+                            .testTag("play_pause_button"),
+                    colors =
+                        IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                        ),
                 ) {
                     Icon(
                         imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                        contentDescription = if (isPlaying) {
-                            stringResource(R.string.pause)
-                        } else {
-                            stringResource(R.string.play)
-                        },
-                        modifier = Modifier.size(48.dp)
+                        contentDescription =
+                            if (isPlaying) {
+                                stringResource(R.string.pause)
+                            } else {
+                                stringResource(R.string.play)
+                            },
+                        modifier = Modifier.size(48.dp),
                     )
                 }
-                
+
                 IconButton(
                     onClick = onNextClick,
                     enabled = hasNext,
-                    modifier = Modifier
-                        .size(Dimens.nowPlayingControlSize)
-                        .testTag("next_button")
+                    modifier =
+                        Modifier
+                            .size(Dimens.nowPlayingControlSize)
+                            .testTag("next_button"),
                 ) {
                     Icon(
                         imageVector = Icons.Default.SkipNext,
                         contentDescription = stringResource(R.string.next),
                         modifier = Modifier.size(36.dp),
-                        tint = if (hasNext) {
-                            MaterialTheme.colorScheme.onSurface
-                        } else {
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                        }
+                        tint =
+                            if (hasNext) {
+                                MaterialTheme.colorScheme.onSurface
+                            } else {
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            },
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(Dimens.screenPadding))
             Column(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 Slider(
                     value = currentPosition.toFloat(),
                     onValueChange = { onSeek(it.toLong()) },
                     valueRange = 0f..duration.coerceAtLeast(1L).toFloat(),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("seek_bar")
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .testTag("seek_bar"),
                 )
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
                         text = formatTime(currentPosition),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.testTag("current_time")
+                        modifier = Modifier.testTag("current_time"),
                     )
                     Text(
                         text = formatTime(duration),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.testTag("duration_time")
+                        modifier = Modifier.testTag("duration_time"),
                     )
                 }
             }
         }
     }
-    
+
     // Error dialog
     if (error != null) {
         ErrorDialog(
             error = error,
-            onDismiss = onErrorDismiss
+            onDismiss = onErrorDismiss,
         )
     }
 }
@@ -322,14 +336,15 @@ fun NowPlayingScreen(
 @Composable
 private fun ErrorDialog(
     error: PlayerError,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
-    val errorMessage = when (error) {
-        PlayerError.FileNotFound -> stringResource(R.string.file_not_found)
-        PlayerError.UnsupportedFormat -> stringResource(R.string.unsupported_format)
-        is PlayerError.Unknown -> error.message
-    }
-    
+    val errorMessage =
+        when (error) {
+            PlayerError.FileNotFound -> stringResource(R.string.file_not_found)
+            PlayerError.UnsupportedFormat -> stringResource(R.string.unsupported_format)
+            is PlayerError.Unknown -> error.message
+        }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -341,12 +356,12 @@ private fun ErrorDialog(
         confirmButton = {
             TextButton(
                 onClick = onDismiss,
-                modifier = Modifier.testTag("error_dismiss_button")
+                modifier = Modifier.testTag("error_dismiss_button"),
             ) {
                 Text(text = stringResource(R.string.dismiss))
             }
         },
-        modifier = Modifier.testTag("error_dialog")
+        modifier = Modifier.testTag("error_dialog"),
     )
 }
 

@@ -20,39 +20,42 @@ import kotlinx.coroutines.runBlocking
  * Builds recommendation rows from the on-device Room cache (same path as [DiscoveryViewModel]).
  */
 object E2ETestRecommendations {
-
-    fun buildRows(context: Context): List<RecommendationRow> = runBlocking {
-        val db = AppDatabase.getInstance(context)
-        val favoritesRepository = FavoritesRepositoryImpl(db.favoriteDao(), db.trackDao())
-        val repository = RecommendationRepositoryImpl(
-            musicLibraryRepository = MusicLibraryRepositoryFactory.create(context),
-            favoritesRepository = favoritesRepository,
-            playHistoryRepository = PlayHistoryRepositoryImpl(db.playHistoryDao()),
-            playlistRepository = PlaylistRepositoryImpl(db.playlistDao())
-        )
-        val engine = RecommendationEngine(
-            AutoMixGenerator(
-                SmartShuffleGenerator(
-                    favoritesRepository,
-                    TrackStatsRepositoryImpl(db.trackStatsDao())
+    fun buildRows(context: Context): List<RecommendationRow> =
+        runBlocking {
+            val db = AppDatabase.getInstance(context)
+            val favoritesRepository = FavoritesRepositoryImpl(db.favoriteDao(), db.trackDao())
+            val repository =
+                RecommendationRepositoryImpl(
+                    musicLibraryRepository = MusicLibraryRepositoryFactory.create(context),
+                    favoritesRepository = favoritesRepository,
+                    playHistoryRepository = PlayHistoryRepositoryImpl(db.playHistoryDao()),
+                    playlistRepository = PlaylistRepositoryImpl(db.playlistDao()),
                 )
-            )
-        )
-        engine.buildRows(repository.loadInputs())
-    }
+            val engine =
+                RecommendationEngine(
+                    AutoMixGenerator(
+                        SmartShuffleGenerator(
+                            favoritesRepository,
+                            TrackStatsRepositoryImpl(db.trackStatsDao()),
+                        ),
+                    ),
+                )
+            engine.buildRows(repository.loadInputs())
+        }
 
-    fun dailyMixRows(context: Context): List<RecommendationRow> =
-        buildRows(context).filter { it.type == RecommendationRowType.DAILY_MIX }
+    fun dailyMixRows(context: Context): List<RecommendationRow> = buildRows(context).filter { it.type == RecommendationRowType.DAILY_MIX }
 
-    fun tracksWithYearMetadata(context: Context): Int = runBlocking {
-        AppDatabase.getInstance(context).trackDao().getAll()
-            .count { it.year != null && it.year!! > 0 }
-    }
+    fun tracksWithYearMetadata(context: Context): Int =
+        runBlocking {
+            AppDatabase.getInstance(context).trackDao().getAll()
+                .count { it.year != null && it.year!! > 0 }
+        }
 
-    fun tracksWithDateAddedMetadata(context: Context): Int = runBlocking {
-        AppDatabase.getInstance(context).trackDao().getAll()
-            .count { it.dateAddedSec != null && it.dateAddedSec!! > 0 }
-    }
+    fun tracksWithDateAddedMetadata(context: Context): Int =
+        runBlocking {
+            AppDatabase.getInstance(context).trackDao().getAll()
+                .count { it.dateAddedSec != null && it.dateAddedSec!! > 0 }
+        }
 
     fun libraryMeetsDailyMixMinimum(context: Context): Boolean =
         E2ETestDatabase.cachedTrackCount(context) >= DailyMixConfig.MIN_TRACKS_PER_THEME

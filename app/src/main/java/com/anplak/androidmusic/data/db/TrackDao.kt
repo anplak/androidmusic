@@ -25,21 +25,24 @@ interface TrackDao {
 
     @Query("SELECT * FROM tracks ORDER BY title ASC")
     fun observeAll(): Flow<List<TrackEntity>>
-    
+
     @Query("SELECT * FROM tracks WHERE id IN (:trackIds)")
     suspend fun getByIds(trackIds: List<Long>): List<TrackEntity>
-    
+
     @Query("SELECT * FROM tracks ORDER BY firstSeenAt DESC LIMIT :limit")
     fun getRecentlyAddedTracks(limit: Int): Flow<List<TrackEntity>>
 
-    @Query("""
+    @Query(
+        """
         SELECT * FROM tracks
         WHERE firstSeenAt >= :sinceMs
         ORDER BY firstSeenAt DESC
-    """)
+    """,
+    )
     suspend fun getTracksAddedSince(sinceMs: Long): List<TrackEntity>
 
-    @Query("""
+    @Query(
+        """
         SELECT * FROM tracks
         WHERE title LIKE '%' || :query || '%' COLLATE NOCASE
            OR artist LIKE '%' || :query || '%' COLLATE NOCASE
@@ -47,8 +50,12 @@ interface TrackDao {
            OR path LIKE '%' || :query || '%' COLLATE NOCASE
         ORDER BY title ASC
         LIMIT :limit
-    """)
-    suspend fun searchTracks(query: String, limit: Int): List<TrackEntity>
+    """,
+    )
+    suspend fun searchTracks(
+        query: String,
+        limit: Int,
+    ): List<TrackEntity>
 
     @Query("DELETE FROM tracks WHERE id NOT IN (:validIds)")
     suspend fun deleteStaleEntries(validIds: List<Long>)
@@ -56,14 +63,15 @@ interface TrackDao {
     @Query("DELETE FROM tracks")
     suspend fun deleteAll()
 
-    @Query("""
+    @Query(
+        """
         SELECT DISTINCT artist FROM tracks
         WHERE artist != '' AND artist != 'Unknown Artist'
         ORDER BY artist COLLATE NOCASE ASC
-    """)
+    """,
+    )
     suspend fun getDistinctArtists(): List<String>
 
     @Query("SELECT path FROM tracks WHERE path != ''")
     suspend fun getTrackPaths(): List<String>
 }
-

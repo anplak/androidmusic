@@ -10,6 +10,7 @@ object Dimens {
     val artworkFallbackBorderWidth = 1.dp
     val listArtworkSize = 40.dp
     val forYouArtworkSize = 72.dp
+
     /** Fixed card width for horizontal For You rows (matches artwork). */
     val forYouTrackCardWidth = forYouArtworkSize
     val nowPlayingArtworkSize = 200.dp

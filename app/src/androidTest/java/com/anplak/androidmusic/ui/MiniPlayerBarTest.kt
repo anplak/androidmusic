@@ -23,7 +23,6 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class MiniPlayerBarTest {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
@@ -38,7 +37,7 @@ class MiniPlayerBarTest {
                     isFavorite = true,
                     onBarClick = {},
                     onPlayPauseClick = {},
-                    onToggleFavorite = {}
+                    onToggleFavorite = {},
                 )
             }
         }
@@ -62,7 +61,7 @@ class MiniPlayerBarTest {
                     isFavorite = false,
                     onBarClick = {},
                     onPlayPauseClick = {},
-                    onToggleFavorite = {}
+                    onToggleFavorite = {},
                 )
             }
         }
@@ -86,7 +85,7 @@ class MiniPlayerBarTest {
                     isFavorite = false,
                     onBarClick = { barClicks++ },
                     onPlayPauseClick = { playPauseClicks++ },
-                    onToggleFavorite = { favoriteClicks++ }
+                    onToggleFavorite = { favoriteClicks++ },
                 )
             }
         }
@@ -121,7 +120,7 @@ class MiniPlayerBarTest {
                     isFavorite = isFavorite,
                     onBarClick = {},
                     onPlayPauseClick = {},
-                    onToggleFavorite = {}
+                    onToggleFavorite = {},
                 )
             }
         }
@@ -138,10 +137,12 @@ class MiniPlayerBarTest {
     }
 
     private fun playLabel(): String = string(R.string.play)
+
     private fun pauseLabel(): String = string(R.string.pause)
+
     private fun addFavoriteLabel(): String = string(R.string.add_to_favorites)
+
     private fun removeFavoriteLabel(): String = string(R.string.remove_from_favorites)
 
-    private fun string(resId: Int): String =
-        InstrumentationRegistry.getInstrumentation().targetContext.getString(resId)
+    private fun string(resId: Int): String = InstrumentationRegistry.getInstrumentation().targetContext.getString(resId)
 }

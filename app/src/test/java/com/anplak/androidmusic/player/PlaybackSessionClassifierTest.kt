@@ -3,19 +3,18 @@ package com.anplak.androidmusic.player
 import com.anplak.androidmusic.data.RankingConfig
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PlaybackSessionClassifierTest {
-
     @Test
     fun `classify returns AlreadyRecorded when qualified play already recorded`() {
-        val session = PlaybackSession(
-            trackId = 1L,
-            startedAtMs = 0L,
-            startReason = PlayStartReason.EXPLICIT,
-            qualifiedPlayRecorded = true
-        )
+        val session =
+            PlaybackSession(
+                trackId = 1L,
+                startedAtMs = 0L,
+                startReason = PlayStartReason.EXPLICIT,
+                qualifiedPlayRecorded = true,
+            )
 
         val outcome = PlaybackSessionClassifier.classify(session, listenedMs = 0L, trackDurationMs = 180_000L)
 
@@ -26,11 +25,12 @@ class PlaybackSessionClassifierTest {
     fun `classify returns QualifiedPlay at listen threshold`() {
         val session = PlaybackSession(1L, 0L, PlayStartReason.AUTO_ADVANCE)
 
-        val outcome = PlaybackSessionClassifier.classify(
-            session,
-            listenedMs = RankingConfig.QUALIFIED_PLAY_MS,
-            trackDurationMs = 180_000L
-        )
+        val outcome =
+            PlaybackSessionClassifier.classify(
+                session,
+                listenedMs = RankingConfig.QUALIFIED_PLAY_MS,
+                trackDurationMs = 180_000L,
+            )
 
         assertEquals(SessionOutcome.QualifiedPlay, outcome)
     }
@@ -39,11 +39,12 @@ class PlaybackSessionClassifierTest {
     fun `classify returns FastSkip within skip window`() {
         val session = PlaybackSession(1L, 0L, PlayStartReason.AUTO_ADVANCE)
 
-        val outcome = PlaybackSessionClassifier.classify(
-            session,
-            listenedMs = 10_000L,
-            trackDurationMs = 180_000L
-        )
+        val outcome =
+            PlaybackSessionClassifier.classify(
+                session,
+                listenedMs = 10_000L,
+                trackDurationMs = 180_000L,
+            )
 
         assertEquals(SessionOutcome.FastSkip, outcome)
     }
@@ -52,11 +53,12 @@ class PlaybackSessionClassifierTest {
     fun `classify returns NoOp for abandoned auto-advance before threshold`() {
         val session = PlaybackSession(1L, 0L, PlayStartReason.AUTO_ADVANCE)
 
-        val outcome = PlaybackSessionClassifier.classify(
-            session,
-            listenedMs = 20_000L,
-            trackDurationMs = 180_000L
-        )
+        val outcome =
+            PlaybackSessionClassifier.classify(
+                session,
+                listenedMs = 20_000L,
+                trackDurationMs = 180_000L,
+            )
 
         assertEquals(SessionOutcome.NoOp, outcome)
     }
@@ -89,11 +91,12 @@ class PlaybackSessionClassifierTest {
     fun `listenedMs caps stale player position by wall clock`() {
         val session = PlaybackSession(1L, startedAtMs = 1_000L, startReason = PlayStartReason.AUTO_ADVANCE)
 
-        val listened = PlaybackSessionClassifier.listenedMs(
-            session,
-            lastPositionMs = 60_000L,
-            nowMs = 3_000L
-        )
+        val listened =
+            PlaybackSessionClassifier.listenedMs(
+                session,
+                lastPositionMs = 60_000L,
+                nowMs = 3_000L,
+            )
 
         assertEquals(2_000L, listened)
     }
@@ -114,11 +117,12 @@ class PlaybackSessionClassifierTest {
 
     @Test
     fun `auto-advance session is eligible for manual skip before qualification`() {
-        val session = PlaybackSession(
-            trackId = 3L,
-            startedAtMs = 300L,
-            startReason = PlayStartReason.AUTO_ADVANCE
-        )
+        val session =
+            PlaybackSession(
+                trackId = 3L,
+                startedAtMs = 300L,
+                startReason = PlayStartReason.AUTO_ADVANCE,
+            )
         assertEquals(PlayStartReason.AUTO_ADVANCE, session.startReason)
         assertFalse(session.qualifiedPlayRecorded)
         assertFalse(session.skipRecorded)

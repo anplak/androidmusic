@@ -7,7 +7,7 @@ data class ArtistSummary(
     val displayName: String,
     val normalizedKey: String,
     val trackCount: Int,
-    val artworkUri: Uri? = null
+    val artworkUri: Uri? = null,
 )
 
 data class AlbumSummary(
@@ -16,11 +16,10 @@ data class AlbumSummary(
     val normalizedTitle: String,
     val normalizedArtist: String,
     val trackCount: Int,
-    val artworkUri: Uri? = null
+    val artworkUri: Uri? = null,
 )
 
 object LibraryBrowseAggregator {
-
     const val UNKNOWN_ALBUM = "Unknown Album"
 
     fun aggregateArtists(tracks: List<TrackInfo>): List<ArtistSummary> {
@@ -31,7 +30,7 @@ object LibraryBrowseAggregator {
                     displayName = displayArtistName(group.first().artist),
                     normalizedKey = key,
                     trackCount = group.size,
-                    artworkUri = representativeArtworkUri(group)
+                    artworkUri = representativeArtworkUri(group),
                 )
             }
             .sortedBy { it.displayName.lowercase() }
@@ -39,9 +38,10 @@ object LibraryBrowseAggregator {
 
     fun aggregateAlbums(tracks: List<TrackInfo>): List<AlbumSummary> {
         val homonyms = findHomonymAlbumTitles(tracks)
-        val artistArtwork = tracks
-            .groupBy { normalizeArtistKey(it.artist) }
-            .mapValues { (_, group) -> representativeArtworkUri(group) }
+        val artistArtwork =
+            tracks
+                .groupBy { normalizeArtistKey(it.artist) }
+                .mapValues { (_, group) -> representativeArtworkUri(group) }
         return tracks
             .groupBy { albumGroupKey(it, homonyms) }
             .map { (_, group) ->
@@ -56,13 +56,16 @@ object LibraryBrowseAggregator {
                     normalizedTitle = title.lowercase(),
                     normalizedArtist = if (needsArtist) artistKey else "",
                     trackCount = group.size,
-                    artworkUri = representativeArtworkUri(group) ?: artistArtwork[artistKey]
+                    artworkUri = representativeArtworkUri(group) ?: artistArtwork[artistKey],
                 )
             }
             .sortedWith(compareBy({ it.displayTitle.lowercase() }, { it.displayArtist.lowercase() }))
     }
 
-    fun tracksForArtist(tracks: List<TrackInfo>, normalizedKey: String): List<TrackInfo> =
+    fun tracksForArtist(
+        tracks: List<TrackInfo>,
+        normalizedKey: String,
+    ): List<TrackInfo> =
         tracks
             .filter { normalizeArtistKey(it.artist) == normalizedKey }
             .sortedBy { it.title.lowercase() }
@@ -70,7 +73,7 @@ object LibraryBrowseAggregator {
     fun tracksForAlbum(
         tracks: List<TrackInfo>,
         normalizedTitle: String,
-        normalizedArtist: String
+        normalizedArtist: String,
     ): List<TrackInfo> =
         tracks
             .filter { track ->
@@ -90,15 +93,13 @@ object LibraryBrowseAggregator {
 
     private data class AlbumGroupKey(val title: String, val artist: String)
 
-    private fun albumTitle(track: TrackInfo): String =
-        track.album.trim().ifBlank { UNKNOWN_ALBUM }
+    private fun albumTitle(track: TrackInfo): String = track.album.trim().ifBlank { UNKNOWN_ALBUM }
 
-    private fun displayArtistName(artist: String): String =
-        artist.trim().ifBlank { LibraryIndexSuggestions.UNKNOWN_ARTIST_LABEL }
+    private fun displayArtistName(artist: String): String = artist.trim().ifBlank { LibraryIndexSuggestions.UNKNOWN_ARTIST_LABEL }
 
     private fun normalizeArtistKey(artist: String): String =
         LibraryIndexFilter.normalizeArtist(
-            artist.ifBlank { LibraryIndexSuggestions.UNKNOWN_ARTIST_LABEL }
+            artist.ifBlank { LibraryIndexSuggestions.UNKNOWN_ARTIST_LABEL },
         )
 
     private fun findHomonymAlbumTitles(tracks: List<TrackInfo>): Set<String> =
@@ -109,7 +110,10 @@ object LibraryBrowseAggregator {
             }
             .keys
 
-    private fun albumGroupKey(track: TrackInfo, homonyms: Set<String>): AlbumGroupKey {
+    private fun albumGroupKey(
+        track: TrackInfo,
+        homonyms: Set<String>,
+    ): AlbumGroupKey {
         val title = albumTitle(track).lowercase()
         val artist = normalizeArtistKey(track.artist)
         return if (title in homonyms) {

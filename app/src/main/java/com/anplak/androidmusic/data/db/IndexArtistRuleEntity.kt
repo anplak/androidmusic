@@ -6,5 +6,5 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "index_artist_rules")
 data class IndexArtistRuleEntity(
     @PrimaryKey
-    val name: String
+    val name: String,
 )

@@ -1,4 +1,5 @@
 @file:Suppress("ktlint:standard:function-naming", "FunctionName")
+
 package com.anplak.androidmusic.ui
 
 import androidx.compose.foundation.clickable
@@ -6,7 +7,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -43,8 +43,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -67,7 +67,7 @@ fun LibraryScreen(
     initialLocalQuery: String? = null,
     onConsumeLibraryHint: () -> Unit = {},
     modifier: Modifier = Modifier,
-    viewModel: LibraryViewModel = viewModel()
+    viewModel: LibraryViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scanSummary by viewModel.scanSummary.collectAsState()
@@ -87,13 +87,14 @@ fun LibraryScreen(
 
     LaunchedEffect(scanSummary) {
         scanSummary?.let { result ->
-            val message = context.getString(
-                R.string.scan_summary,
-                result.indexedCount,
-                result.skippedDurationCount,
-                result.skippedFolderCount,
-                result.skippedArtistCount
-            )
+            val message =
+                context.getString(
+                    R.string.scan_summary,
+                    result.indexedCount,
+                    result.skippedDurationCount,
+                    result.skippedFolderCount,
+                    result.skippedArtistCount,
+                )
             snackbarHostState.showSnackbar(message)
             viewModel.clearScanSummary()
         }
@@ -105,20 +106,20 @@ fun LibraryScreen(
             CompactTabActions {
                 IconButton(
                     onClick = onOpenLibraryIndex,
-                    modifier = Modifier.testTag("open_library_index")
+                    modifier = Modifier.testTag("open_library_index"),
                 ) {
                     Icon(
                         imageVector = Icons.Default.FilterList,
-                        contentDescription = stringResource(R.string.library_index)
+                        contentDescription = stringResource(R.string.library_index),
                     )
                 }
                 IconButton(
                     onClick = onOpenSearch,
-                    modifier = Modifier.testTag("open_search")
+                    modifier = Modifier.testTag("open_search"),
                 ) {
                     Icon(
                         imageVector = Icons.Default.Search,
-                        contentDescription = stringResource(R.string.search)
+                        contentDescription = stringResource(R.string.search),
                     )
                 }
             }
@@ -126,15 +127,16 @@ fun LibraryScreen(
         snackbarHost = {
             SnackbarHost(
                 hostState = snackbarHostState,
-                modifier = Modifier.testTag("scan_summary")
+                modifier = Modifier.testTag("scan_summary"),
             )
         },
-        modifier = modifier
+        modifier = modifier,
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
         ) {
             when (val state = uiState) {
                 is LibraryUiState.Loading -> LoadingState()
@@ -143,19 +145,20 @@ fun LibraryScreen(
                     Column(modifier = Modifier.fillMaxSize()) {
                         LibraryBrowseTabs(
                             selected = state.browseTab,
-                            onTabSelected = viewModel::setBrowseTab
+                            onTabSelected = viewModel::setBrowseTab,
                         )
                         if (state.isRefreshing) {
                             LinearProgressIndicator(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .testTag("library_refresh_indicator")
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .testTag("library_refresh_indicator"),
                             )
                         }
                         if (state.syncFailed) {
                             TextButton(
                                 onClick = { viewModel.refresh() },
-                                modifier = Modifier.testTag("library_sync_retry")
+                                modifier = Modifier.testTag("library_sync_retry"),
                             ) {
                                 Text(stringResource(R.string.library_sync_retry))
                             }
@@ -168,19 +171,19 @@ fun LibraryScreen(
                                     onAddToPlaylist = onAddToPlaylist,
                                     onFilterChange = viewModel::setFilter,
                                     onLocalQueryChange = viewModel::setLocalQuery,
-                                    onToggleFavorite = viewModel::toggleFavorite
+                                    onToggleFavorite = viewModel::toggleFavorite,
                                 )
                             }
                             LibraryBrowseTab.Artists -> {
                                 ArtistList(
                                     artists = state.artists,
-                                    onArtistClick = onArtistClick
+                                    onArtistClick = onArtistClick,
                                 )
                             }
                             LibraryBrowseTab.Albums -> {
                                 AlbumList(
                                     albums = state.albums,
-                                    onAlbumClick = onAlbumClick
+                                    onAlbumClick = onAlbumClick,
                                 )
                             }
                         }
@@ -194,7 +197,7 @@ fun LibraryScreen(
 @Composable
 private fun LibraryBrowseTabs(
     selected: LibraryBrowseTab,
-    onTabSelected: (LibraryBrowseTab) -> Unit
+    onTabSelected: (LibraryBrowseTab) -> Unit,
 ) {
     TabRow(selectedTabIndex = selected.ordinal) {
         LibraryBrowseTab.entries.forEach { tab ->
@@ -202,7 +205,7 @@ private fun LibraryBrowseTabs(
                 selected = tab == selected,
                 onClick = { onTabSelected(tab) },
                 text = { Text(stringResource(tab.labelResId)) },
-                modifier = Modifier.testTag("library_tab_${tab.name.lowercase()}")
+                modifier = Modifier.testTag("library_tab_${tab.name.lowercase()}"),
             )
         }
     }
@@ -215,13 +218,13 @@ private fun LibraryTracksContent(
     onAddToPlaylist: (TrackInfo) -> Unit,
     onFilterChange: (LibraryFilter) -> Unit,
     onLocalQueryChange: (String) -> Unit,
-    onToggleFavorite: (Long) -> Unit
+    onToggleFavorite: (Long) -> Unit,
 ) {
     LibraryFilterBar(
         filter = state.filter,
         localQuery = state.localQuery,
         onFilterChange = onFilterChange,
-        onLocalQueryChange = onLocalQueryChange
+        onLocalQueryChange = onLocalQueryChange,
     )
     if (state.showNoFilterResults) {
         NoFilterResultsState()
@@ -234,7 +237,7 @@ private fun LibraryTracksContent(
                 onTrackSelected(state.tracks, index)
             },
             onToggleFavorite = onToggleFavorite,
-            onAddToPlaylist = onAddToPlaylist
+            onAddToPlaylist = onAddToPlaylist,
         )
     }
 }
@@ -245,26 +248,28 @@ private fun LibraryFilterBar(
     filter: LibraryFilter,
     localQuery: String,
     onFilterChange: (LibraryFilter) -> Unit,
-    onLocalQueryChange: (String) -> Unit
+    onLocalQueryChange: (String) -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         OutlinedTextField(
             value = localQuery,
             onValueChange = onLocalQueryChange,
             placeholder = { Text(stringResource(R.string.search_library_hint)) },
             singleLine = true,
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag("library_search_field")
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .testTag("library_search_field"),
         )
         LazyRow(
             modifier = Modifier.testTag("library_filter_chips"),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             item {
                 FilterChip(
@@ -273,7 +278,7 @@ private fun LibraryFilterBar(
                         onFilterChange(filter.copy(favoritesOnly = !filter.favoritesOnly))
                     },
                     label = { Text(stringResource(R.string.filter_favorites)) },
-                    modifier = Modifier.testTag("library_filter_favorites")
+                    modifier = Modifier.testTag("library_filter_favorites"),
                 )
             }
             item {
@@ -283,7 +288,7 @@ private fun LibraryFilterBar(
                         onFilterChange(filter.copy(recentlyAdded = !filter.recentlyAdded))
                     },
                     label = { Text(stringResource(R.string.filter_recently_added)) },
-                    modifier = Modifier.testTag("library_filter_recently_added")
+                    modifier = Modifier.testTag("library_filter_recently_added"),
                 )
             }
             item {
@@ -292,12 +297,12 @@ private fun LibraryFilterBar(
                     onClick = {
                         onFilterChange(
                             filter.copy(
-                                durationBucket = toggleDuration(filter.durationBucket, DurationBucket.SHORT)
-                            )
+                                durationBucket = toggleDuration(filter.durationBucket, DurationBucket.SHORT),
+                            ),
                         )
                     },
                     label = { Text(stringResource(R.string.filter_duration_short)) },
-                    modifier = Modifier.testTag("library_filter_duration_short")
+                    modifier = Modifier.testTag("library_filter_duration_short"),
                 )
             }
             item {
@@ -306,12 +311,12 @@ private fun LibraryFilterBar(
                     onClick = {
                         onFilterChange(
                             filter.copy(
-                                durationBucket = toggleDuration(filter.durationBucket, DurationBucket.MEDIUM)
-                            )
+                                durationBucket = toggleDuration(filter.durationBucket, DurationBucket.MEDIUM),
+                            ),
                         )
                     },
                     label = { Text(stringResource(R.string.filter_duration_medium)) },
-                    modifier = Modifier.testTag("library_filter_duration_medium")
+                    modifier = Modifier.testTag("library_filter_duration_medium"),
                 )
             }
             item {
@@ -320,12 +325,12 @@ private fun LibraryFilterBar(
                     onClick = {
                         onFilterChange(
                             filter.copy(
-                                durationBucket = toggleDuration(filter.durationBucket, DurationBucket.LONG)
-                            )
+                                durationBucket = toggleDuration(filter.durationBucket, DurationBucket.LONG),
+                            ),
                         )
                     },
                     label = { Text(stringResource(R.string.filter_duration_long)) },
-                    modifier = Modifier.testTag("library_filter_duration_long")
+                    modifier = Modifier.testTag("library_filter_duration_long"),
                 )
             }
         }
@@ -335,30 +340,31 @@ private fun LibraryFilterBar(
 @Composable
 private fun ArtistList(
     artists: List<ArtistSummary>,
-    onArtistClick: (ArtistSummary) -> Unit
+    onArtistClick: (ArtistSummary) -> Unit,
 ) {
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("artist_list"),
-        contentPadding = PaddingValues(vertical = Dimens.listVerticalPadding)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("artist_list"),
+        contentPadding = PaddingValues(vertical = Dimens.listVerticalPadding),
     ) {
         items(
             items = artists,
-            key = { "artist_${it.normalizedKey}" }
+            key = { "artist_${it.normalizedKey}" },
         ) { artist ->
             ListItem(
                 headlineContent = {
                     Text(
                         text = artist.displayName,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
                     )
                 },
                 supportingContent = {
                     Text(
-text = pluralStringResource(R.plurals.tracks_count, artist.trackCount, artist.trackCount),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = pluralStringResource(R.plurals.tracks_count, artist.trackCount, artist.trackCount),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 },
                 leadingContent = {
@@ -366,13 +372,14 @@ text = pluralStringResource(R.plurals.tracks_count, artist.trackCount, artist.tr
                         uri = artist.artworkUri,
                         contentDescription = artist.displayName,
                         fallbackLabel = artist.displayName,
-                        modifier = Modifier.size(Dimens.listArtworkSize)
+                        modifier = Modifier.size(Dimens.listArtworkSize),
                     )
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onArtistClick(artist) }
-                    .testTag("artist_item_${artist.normalizedKey}")
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { onArtistClick(artist) }
+                        .testTag("artist_item_${artist.normalizedKey}"),
             )
         }
     }
@@ -381,26 +388,27 @@ text = pluralStringResource(R.plurals.tracks_count, artist.trackCount, artist.tr
 @Composable
 private fun AlbumList(
     albums: List<AlbumSummary>,
-    onAlbumClick: (AlbumSummary) -> Unit
+    onAlbumClick: (AlbumSummary) -> Unit,
 ) {
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("album_list"),
-        contentPadding = PaddingValues(vertical = Dimens.listVerticalPadding)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("album_list"),
+        contentPadding = PaddingValues(vertical = Dimens.listVerticalPadding),
     ) {
         items(
             items = albums,
             key = { album ->
                 "album_${album.normalizedTitle}_${album.normalizedArtist}"
-            }
+            },
         ) { album ->
             ListItem(
                 headlineContent = {
                     Text(
                         text = album.displayTitle,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
                     )
                 },
                 supportingContent = {
@@ -408,7 +416,7 @@ private fun AlbumList(
                         text = album.displayArtist,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 },
                 leadingContent = {
@@ -416,41 +424,46 @@ private fun AlbumList(
                         uri = album.artworkUri,
                         contentDescription = album.displayTitle,
                         fallbackLabel = album.displayTitle,
-                        modifier = Modifier.size(Dimens.listArtworkSize)
+                        modifier = Modifier.size(Dimens.listArtworkSize),
                     )
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onAlbumClick(album) }
-                    .testTag(
-                        "album_item_${album.normalizedTitle}_${album.normalizedArtist}"
-                    )
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { onAlbumClick(album) }
+                        .testTag(
+                            "album_item_${album.normalizedTitle}_${album.normalizedArtist}",
+                        ),
             )
         }
     }
 }
 
-private fun toggleDuration(current: DurationBucket?, bucket: DurationBucket): DurationBucket? {
+private fun toggleDuration(
+    current: DurationBucket?,
+    bucket: DurationBucket,
+): DurationBucket? {
     return if (current == bucket) null else bucket
 }
 
 @Composable
 private fun LoadingState() {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("loading_state"),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("loading_state"),
+        contentAlignment = Alignment.Center,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             CircularProgressIndicator(modifier = Modifier.testTag("loading_indicator"))
             Text(
                 text = stringResource(R.string.scanning_library),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -459,26 +472,27 @@ private fun LoadingState() {
 @Composable
 private fun EmptyLibraryState() {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("empty_state"),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("empty_state"),
+        contentAlignment = Alignment.Center,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(32.dp)
+            modifier = Modifier.padding(32.dp),
         ) {
             Text(
                 text = stringResource(R.string.no_music_found),
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.testTag("empty_state_title")
+                modifier = Modifier.testTag("empty_state_title"),
             )
             Text(
                 text = stringResource(R.string.no_music_found_description),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -487,24 +501,25 @@ private fun EmptyLibraryState() {
 @Composable
 private fun NoFilterResultsState() {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("library_no_filter_results"),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("library_no_filter_results"),
+        contentAlignment = Alignment.Center,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(32.dp)
+            modifier = Modifier.padding(32.dp),
         ) {
             Text(
                 text = stringResource(R.string.library_no_filter_results),
-                style = MaterialTheme.typography.headlineSmall
+                style = MaterialTheme.typography.headlineSmall,
             )
             Text(
                 text = stringResource(R.string.library_no_filter_results_description),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -516,17 +531,18 @@ private fun TrackList(
     favoriteIds: Set<Long>,
     onTrackSelected: (TrackInfo) -> Unit,
     onToggleFavorite: (Long) -> Unit,
-    onAddToPlaylist: (TrackInfo) -> Unit
+    onAddToPlaylist: (TrackInfo) -> Unit,
 ) {
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("track_list"),
-        contentPadding = PaddingValues(vertical = Dimens.listVerticalPadding)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("track_list"),
+        contentPadding = PaddingValues(vertical = Dimens.listVerticalPadding),
     ) {
         items(
             items = tracks,
-            key = { it.uri.toString() }
+            key = { it.uri.toString() },
         ) { track ->
             val index = tracks.indexOf(track)
             TrackListItem(
@@ -535,7 +551,7 @@ private fun TrackList(
                 isFavorite = favoriteIds.contains(track.id),
                 onClick = { onTrackSelected(track) },
                 onToggleFavorite = { onToggleFavorite(track.id) },
-                onAddToPlaylist = { onAddToPlaylist(track) }
+                onAddToPlaylist = { onAddToPlaylist(track) },
             )
         }
     }

@@ -14,41 +14,45 @@ import kotlinx.coroutines.launch
 
 sealed interface FavoritesUiState {
     data object Loading : FavoritesUiState
+
     data class Content(val tracks: List<TrackInfo>) : FavoritesUiState
+
     data object Empty : FavoritesUiState
 }
 
-class FavoritesViewModel @JvmOverloads constructor(
-    application: Application,
-    private val favoritesRepository: FavoritesRepository = FavoritesRepositoryImpl(
-        AppDatabase.getInstance(application).favoriteDao(),
-        AppDatabase.getInstance(application).trackDao()
-    )
-) : AndroidViewModel(application) {
+class FavoritesViewModel
+    @JvmOverloads
+    constructor(
+        application: Application,
+        private val favoritesRepository: FavoritesRepository =
+            FavoritesRepositoryImpl(
+                AppDatabase.getInstance(application).favoriteDao(),
+                AppDatabase.getInstance(application).trackDao(),
+            ),
+    ) : AndroidViewModel(application) {
+        private val _uiState = MutableStateFlow<FavoritesUiState>(FavoritesUiState.Loading)
+        val uiState: StateFlow<FavoritesUiState> = _uiState.asStateFlow()
 
-    private val _uiState = MutableStateFlow<FavoritesUiState>(FavoritesUiState.Loading)
-    val uiState: StateFlow<FavoritesUiState> = _uiState.asStateFlow()
+        init {
+            loadFavorites()
+        }
 
-    init {
-        loadFavorites()
-    }
-
-    private fun loadFavorites() {
-        viewModelScope.launch {
-            favoritesRepository.getAllFavorites().collect { favorites ->
-                _uiState.value = if (favorites.isEmpty()) {
-                    FavoritesUiState.Empty
-                } else {
-                    FavoritesUiState.Content(favorites)
+        private fun loadFavorites() {
+            viewModelScope.launch {
+                favoritesRepository.getAllFavorites().collect { favorites ->
+                    _uiState.value =
+                        if (favorites.isEmpty()) {
+                            FavoritesUiState.Empty
+                        } else {
+                            FavoritesUiState.Content(favorites)
+                        }
                 }
             }
         }
-    }
 
-    fun toggleFavorite(track: TrackInfo) {
-        viewModelScope.launch {
-            favoritesRepository.toggleFavorite(track)
+        fun toggleFavorite(track: TrackInfo) {
+            viewModelScope.launch {
+                favoritesRepository.toggleFavorite(track)
+            }
         }
     }
-}
-

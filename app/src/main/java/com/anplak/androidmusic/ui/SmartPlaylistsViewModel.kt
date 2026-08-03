@@ -15,42 +15,46 @@ import kotlinx.coroutines.launch
 
 sealed interface SmartPlaylistDetailUiState {
     data object Loading : SmartPlaylistDetailUiState
+
     data class Content(
         val type: SmartPlaylistType,
-        val tracks: List<TrackInfo>
+        val tracks: List<TrackInfo>,
     ) : SmartPlaylistDetailUiState
+
     data object Empty : SmartPlaylistDetailUiState
 }
 
-class SmartPlaylistsViewModel @JvmOverloads constructor(
-    application: Application,
-    private val smartPlaylistRepository: SmartPlaylistRepository = SmartPlaylistRepositoryImpl(
-        AppDatabase.getInstance(application).trackDao(),
-        AppDatabase.getInstance(application).trackStatsDao()
-    )
-) : AndroidViewModel(application) {
+class SmartPlaylistsViewModel
+    @JvmOverloads
+    constructor(
+        application: Application,
+        private val smartPlaylistRepository: SmartPlaylistRepository =
+            SmartPlaylistRepositoryImpl(
+                AppDatabase.getInstance(application).trackDao(),
+                AppDatabase.getInstance(application).trackStatsDao(),
+            ),
+    ) : AndroidViewModel(application) {
+        private val _detailState = MutableStateFlow<SmartPlaylistDetailUiState>(SmartPlaylistDetailUiState.Loading)
+        val detailState: StateFlow<SmartPlaylistDetailUiState> = _detailState.asStateFlow()
 
-    private val _detailState = MutableStateFlow<SmartPlaylistDetailUiState>(SmartPlaylistDetailUiState.Loading)
-    val detailState: StateFlow<SmartPlaylistDetailUiState> = _detailState.asStateFlow()
+        /**
+         * Loads the detail view for a specific smart playlist type.
+         */
+        fun loadSmartPlaylist(type: SmartPlaylistType) {
+            viewModelScope.launch {
+                _detailState.value = SmartPlaylistDetailUiState.Loading
 
-    /**
-     * Loads the detail view for a specific smart playlist type.
-     */
-    fun loadSmartPlaylist(type: SmartPlaylistType) {
-        viewModelScope.launch {
-            _detailState.value = SmartPlaylistDetailUiState.Loading
-            
-            smartPlaylistRepository.getTracksForType(type).collect { tracks ->
-                _detailState.value = if (tracks.isEmpty()) {
-                    SmartPlaylistDetailUiState.Empty
-                } else {
-                    SmartPlaylistDetailUiState.Content(
-                        type = type,
-                        tracks = tracks
-                    )
+                smartPlaylistRepository.getTracksForType(type).collect { tracks ->
+                    _detailState.value =
+                        if (tracks.isEmpty()) {
+                            SmartPlaylistDetailUiState.Empty
+                        } else {
+                            SmartPlaylistDetailUiState.Content(
+                                type = type,
+                                tracks = tracks,
+                            )
+                        }
                 }
             }
         }
     }
-}
-

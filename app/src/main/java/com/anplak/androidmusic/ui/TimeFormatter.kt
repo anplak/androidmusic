@@ -10,10 +10,11 @@ import java.util.concurrent.TimeUnit
  * Utility object for formatting timestamps and durations for UI display.
  */
 object TimeFormatter {
+    private fun timeFormat(): SimpleDateFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
 
-    private val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
-    private val dateFormat = SimpleDateFormat("MMM d", Locale.getDefault())
-    private val fullDateFormat = SimpleDateFormat("MMM d, h:mm a", Locale.getDefault())
+    private fun dateFormat(): SimpleDateFormat = SimpleDateFormat("MMM d", Locale.getDefault())
+
+    private fun fullDateFormat(): SimpleDateFormat = SimpleDateFormat("MMM d, h:mm a", Locale.getDefault())
 
     /**
      * Formats a timestamp for display in the history list.
@@ -28,13 +29,13 @@ object TimeFormatter {
 
         return when {
             isSameDay(now, then) -> {
-                "${timeFormat.format(date)} today"
+                "${timeFormat().format(date)} today"
             }
             isYesterday(now, then) -> {
-                "Yesterday ${timeFormat.format(date)}"
+                "Yesterday ${timeFormat().format(date)}"
             }
             else -> {
-                fullDateFormat.format(date)
+                fullDateFormat().format(date)
             }
         }
     }
@@ -97,7 +98,7 @@ object TimeFormatter {
             minutes < 60 -> "${minutes}m ago"
             hours < 24 && isSameDay(nowCal, thenCal) -> "${hours}h ago"
             isYesterday(nowCal, thenCal) -> "Yesterday"
-            else -> dateFormat.format(Date(timestamp))
+            else -> dateFormat().format(Date(timestamp))
         }
     }
 
@@ -105,20 +106,30 @@ object TimeFormatter {
      * Formats a track position as "current / total".
      * - "3:24 / 4:15" format
      */
-    fun formatPositionWithTotal(currentMillis: Long, totalMillis: Long): String {
+    fun formatPositionWithTotal(
+        currentMillis: Long,
+        totalMillis: Long,
+    ): String {
         return "${formatDuration(currentMillis)} / ${formatDuration(totalMillis)}"
     }
 
-    private fun isSameDay(cal1: Calendar, cal2: Calendar): Boolean {
+    private fun isSameDay(
+        cal1: Calendar,
+        cal2: Calendar,
+    ): Boolean {
         return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
-                cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
+            cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
     }
 
-    private fun isYesterday(now: Calendar, then: Calendar): Boolean {
-        val yesterday = Calendar.getInstance().apply {
-            timeInMillis = now.timeInMillis
-            add(Calendar.DAY_OF_YEAR, -1)
-        }
+    private fun isYesterday(
+        now: Calendar,
+        then: Calendar,
+    ): Boolean {
+        val yesterday =
+            Calendar.getInstance().apply {
+                timeInMillis = now.timeInMillis
+                add(Calendar.DAY_OF_YEAR, -1)
+            }
         return isSameDay(yesterday, then)
     }
 }

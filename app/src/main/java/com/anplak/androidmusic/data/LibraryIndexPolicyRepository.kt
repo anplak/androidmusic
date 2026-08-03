@@ -8,13 +8,13 @@ import com.anplak.androidmusic.data.db.IndexFolderRuleEntity
 class LibraryIndexPolicyRepository(
     private val preferences: LibraryIndexPreferences,
     private val folderRuleDao: IndexFolderRuleDao,
-    private val artistRuleDao: IndexArtistRuleDao
+    private val artistRuleDao: IndexArtistRuleDao,
 ) {
     suspend fun loadPolicy(): LibraryIndexPolicy {
         return LibraryIndexPolicy(
             maxDurationMs = preferences.getMaxDurationMs(),
             folderRules = folderRuleDao.getAll().map { it.toFolderRule() },
-            artistRules = artistRuleDao.getAll().map { ArtistRule(it.name) }
+            artistRules = artistRuleDao.getAll().map { ArtistRule(it.name) },
         )
     }
 
@@ -26,14 +26,17 @@ class LibraryIndexPolicyRepository(
         return artistRuleDao.getAll().map { ArtistRule(it.name) }
     }
 
-    suspend fun addFolderRule(path: String, mode: FolderRuleMode) {
+    suspend fun addFolderRule(
+        path: String,
+        mode: FolderRuleMode,
+    ) {
         val stored = path.trim().trimEnd('/')
         if (stored.isEmpty()) return
         folderRuleDao.insert(
             IndexFolderRuleEntity(
                 path = stored,
-                mode = mode.name
-            )
+                mode = mode.name,
+            ),
         )
     }
 
@@ -60,7 +63,7 @@ class LibraryIndexPolicyRepository(
     private fun IndexFolderRuleEntity.toFolderRule(): FolderRule {
         return FolderRule(
             path = path,
-            mode = FolderRuleMode.valueOf(mode)
+            mode = FolderRuleMode.valueOf(mode),
         )
     }
 }

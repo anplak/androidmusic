@@ -11,14 +11,14 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class LibraryBrowseAggregatorTest {
-
     @Test
     fun `aggregateArtists merges case-insensitive duplicates`() {
-        val tracks = listOf(
-            track(1, artist = "Beatles"),
-            track(2, artist = "BEATLES"),
-            track(3, artist = "Stones")
-        )
+        val tracks =
+            listOf(
+                track(1, artist = "Beatles"),
+                track(2, artist = "BEATLES"),
+                track(3, artist = "Stones"),
+            )
 
         val artists = LibraryBrowseAggregator.aggregateArtists(tracks)
 
@@ -30,27 +30,29 @@ class LibraryBrowseAggregatorTest {
 
     @Test
     fun `aggregateArtists groups blank artist as unknown`() {
-        val tracks = listOf(
-            track(1, artist = ""),
-            track(2, artist = "   ")
-        )
+        val tracks =
+            listOf(
+                track(1, artist = ""),
+                track(2, artist = "   "),
+            )
 
         val artists = LibraryBrowseAggregator.aggregateArtists(tracks)
 
         assertEquals(1, artists.size)
         assertEquals(
             LibraryIndexFilter.normalizeArtist(LibraryIndexSuggestions.UNKNOWN_ARTIST_LABEL),
-            artists.first().normalizedKey
+            artists.first().normalizedKey,
         )
         assertEquals(2, artists.first().trackCount)
     }
 
     @Test
     fun `aggregateArtists sorts alphabetically`() {
-        val tracks = listOf(
-            track(1, artist = "Zebra"),
-            track(2, artist = "Alpha")
-        )
+        val tracks =
+            listOf(
+                track(1, artist = "Zebra"),
+                track(2, artist = "Alpha"),
+            )
 
         val artists = LibraryBrowseAggregator.aggregateArtists(tracks)
 
@@ -59,11 +61,12 @@ class LibraryBrowseAggregatorTest {
 
     @Test
     fun `aggregateAlbums splits homonymous titles by artist`() {
-        val tracks = listOf(
-            track(1, artist = "Artist A", album = "Greatest Hits"),
-            track(2, artist = "Artist B", album = "Greatest Hits"),
-            track(3, artist = "Artist A", album = "Greatest Hits")
-        )
+        val tracks =
+            listOf(
+                track(1, artist = "Artist A", album = "Greatest Hits"),
+                track(2, artist = "Artist B", album = "Greatest Hits"),
+                track(3, artist = "Artist A", album = "Greatest Hits"),
+            )
 
         val albums = LibraryBrowseAggregator.aggregateAlbums(tracks)
 
@@ -78,10 +81,11 @@ class LibraryBrowseAggregatorTest {
 
     @Test
     fun `aggregateAlbums unique title does not require artist key`() {
-        val tracks = listOf(
-            track(1, artist = "Artist A", album = "Unique Album"),
-            track(2, artist = "Artist A", album = "Unique Album")
-        )
+        val tracks =
+            listOf(
+                track(1, artist = "Artist A", album = "Unique Album"),
+                track(2, artist = "Artist A", album = "Unique Album"),
+            )
 
         val albums = LibraryBrowseAggregator.aggregateAlbums(tracks)
 
@@ -92,16 +96,18 @@ class LibraryBrowseAggregatorTest {
 
     @Test
     fun `tracksForAlbum filters homonym by artist`() {
-        val tracks = listOf(
-            track(1, artist = "Artist A", album = "Greatest Hits", title = "One"),
-            track(2, artist = "Artist B", album = "Greatest Hits", title = "Two")
-        )
+        val tracks =
+            listOf(
+                track(1, artist = "Artist A", album = "Greatest Hits", title = "One"),
+                track(2, artist = "Artist B", album = "Greatest Hits", title = "Two"),
+            )
 
-        val result = LibraryBrowseAggregator.tracksForAlbum(
-            tracks = tracks,
-            normalizedTitle = "greatest hits",
-            normalizedArtist = "artist a"
-        )
+        val result =
+            LibraryBrowseAggregator.tracksForAlbum(
+                tracks = tracks,
+                normalizedTitle = "greatest hits",
+                normalizedArtist = "artist a",
+            )
 
         assertEquals(1, result.size)
         assertEquals("One", result.first().title)
@@ -109,29 +115,32 @@ class LibraryBrowseAggregatorTest {
 
     @Test
     fun `tracksForAlbum unique title ignores artist key`() {
-        val tracks = listOf(
-            track(1, artist = "Artist A", album = "Solo Album", title = "One"),
-            track(2, artist = "Artist A", album = "Solo Album", title = "Two")
-        )
+        val tracks =
+            listOf(
+                track(1, artist = "Artist A", album = "Solo Album", title = "One"),
+                track(2, artist = "Artist A", album = "Solo Album", title = "Two"),
+            )
 
         val albums = LibraryBrowseAggregator.aggregateAlbums(tracks)
         val solo = albums.single()
 
-        val result = LibraryBrowseAggregator.tracksForAlbum(
-            tracks = tracks,
-            normalizedTitle = solo.normalizedTitle,
-            normalizedArtist = solo.normalizedArtist
-        )
+        val result =
+            LibraryBrowseAggregator.tracksForAlbum(
+                tracks = tracks,
+                normalizedTitle = solo.normalizedTitle,
+                normalizedArtist = solo.normalizedArtist,
+            )
 
         assertEquals(2, result.size)
     }
 
     @Test
     fun `tracksForArtist is case-insensitive`() {
-        val tracks = listOf(
-            track(1, artist = "Beatles", title = "A"),
-            track(2, artist = "BEATLES", title = "B")
-        )
+        val tracks =
+            listOf(
+                track(1, artist = "Beatles", title = "A"),
+                track(2, artist = "BEATLES", title = "B"),
+            )
 
         val result = LibraryBrowseAggregator.tracksForArtist(tracks, "beatles")
 
@@ -141,11 +150,12 @@ class LibraryBrowseAggregatorTest {
 
     @Test
     fun `aggregateAlbums sorts by title then artist`() {
-        val tracks = listOf(
-            track(1, artist = "B Artist", album = "Beta"),
-            track(2, artist = "A Artist", album = "Alpha"),
-            track(3, artist = "A Artist", album = "Beta")
-        )
+        val tracks =
+            listOf(
+                track(1, artist = "B Artist", album = "Beta"),
+                track(2, artist = "A Artist", album = "Alpha"),
+                track(3, artist = "A Artist", album = "Beta"),
+            )
 
         val albums = LibraryBrowseAggregator.aggregateAlbums(tracks)
 
@@ -156,44 +166,47 @@ class LibraryBrowseAggregatorTest {
 
     @Test
     fun `aggregateAlbums picks first valid artwork by track id`() {
-        val tracks = listOf(
-            track(2, album = "Album", albumId = 20L),
-            track(1, album = "Album", albumId = null),
-            track(3, album = "Album", albumId = 30L)
-        )
+        val tracks =
+            listOf(
+                track(2, album = "Album", albumId = 20L),
+                track(1, album = "Album", albumId = null),
+                track(3, album = "Album", albumId = 30L),
+            )
 
         val albums = LibraryBrowseAggregator.aggregateAlbums(tracks)
 
         assertEquals(1, albums.size)
         assertEquals(
             "content://media/external/audio/albumart/20",
-            albums.first().artworkUri.toString()
+            albums.first().artworkUri.toString(),
         )
     }
 
     @Test
     fun `aggregateArtists skips missing covers and picks deterministic art`() {
-        val tracks = listOf(
-            track(2, artist = "Solo", albumId = null),
-            track(1, artist = "Solo", albumId = 11L),
-            track(3, artist = "Solo", albumId = 33L)
-        )
+        val tracks =
+            listOf(
+                track(2, artist = "Solo", albumId = null),
+                track(1, artist = "Solo", albumId = 11L),
+                track(3, artist = "Solo", albumId = 33L),
+            )
 
         val artists = LibraryBrowseAggregator.aggregateArtists(tracks)
 
         assertEquals(1, artists.size)
         assertEquals(
             "content://media/external/audio/albumart/11",
-            artists.first().artworkUri.toString()
+            artists.first().artworkUri.toString(),
         )
     }
 
     @Test
     fun `aggregateAlbums falls back to artist cover when album has no art`() {
-        val tracks = listOf(
-            track(1, artist = "Solo", album = "With Art", albumId = 11L),
-            track(2, artist = "Solo", album = "No Art", albumId = null)
-        )
+        val tracks =
+            listOf(
+                track(1, artist = "Solo", album = "With Art", albumId = 11L),
+                track(2, artist = "Solo", album = "No Art", albumId = null),
+            )
 
         val albums = LibraryBrowseAggregator.aggregateAlbums(tracks)
         val bare = albums.first { it.displayTitle == "No Art" }
@@ -201,20 +214,21 @@ class LibraryBrowseAggregatorTest {
 
         assertEquals(
             "content://media/external/audio/albumart/11",
-            covered.artworkUri.toString()
+            covered.artworkUri.toString(),
         )
         assertEquals(
             "content://media/external/audio/albumart/11",
-            bare.artworkUri.toString()
+            bare.artworkUri.toString(),
         )
     }
 
     @Test
     fun `aggregateArtists leaves artwork null when no covers exist`() {
-        val tracks = listOf(
-            track(1, artist = "Bare", albumId = null),
-            track(2, artist = "Bare", albumId = 0L)
-        )
+        val tracks =
+            listOf(
+                track(1, artist = "Bare", albumId = null),
+                track(2, artist = "Bare", albumId = 0L),
+            )
 
         val artists = LibraryBrowseAggregator.aggregateArtists(tracks)
 
@@ -226,7 +240,7 @@ class LibraryBrowseAggregatorTest {
         title: String = "Song $id",
         artist: String = "Artist",
         album: String = "Album",
-        albumId: Long? = null
+        albumId: Long? = null,
     ): TrackInfo {
         return TrackInfo(
             uri = Uri.parse("content://media/external/audio/media/$id"),
@@ -234,7 +248,7 @@ class LibraryBrowseAggregatorTest {
             artist = artist,
             album = album,
             duration = 180_000L,
-            albumId = albumId
+            albumId = albumId,
         )
     }
 }

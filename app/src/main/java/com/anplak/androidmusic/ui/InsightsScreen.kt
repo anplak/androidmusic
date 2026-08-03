@@ -1,4 +1,5 @@
 @file:Suppress("ktlint:standard:function-naming", "FunctionName")
+
 package com.anplak.androidmusic.ui
 
 import androidx.compose.foundation.clickable
@@ -35,8 +36,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -50,7 +51,7 @@ import com.anplak.androidmusic.player.TrackInfo
 fun InsightsScreen(
     onTrackSelected: (List<TrackInfo>, Int) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: InsightsViewModel = viewModel()
+    viewModel: InsightsViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -58,18 +59,20 @@ fun InsightsScreen(
         topBar = {
             TopAppBar(
                 title = { Text(text = stringResource(R.string.insights)) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
             )
         },
-        modifier = modifier
+        modifier = modifier,
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
         ) {
             when {
                 uiState.isLoading -> {
@@ -83,7 +86,7 @@ fun InsightsScreen(
                         state = uiState,
                         onTrackClick = { track ->
                             onTrackSelected(listOf(track), 0)
-                        }
+                        },
                     )
                 }
             }
@@ -98,16 +101,17 @@ fun InsightsScreen(
 fun InsightsSection(
     onTrackSelected: (List<TrackInfo>, Int) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: InsightsViewModel = viewModel()
+    viewModel: InsightsViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     if (uiState.isLoading) {
         Box(
-            modifier = modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            contentAlignment = Alignment.Center
+            modifier =
+                modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+            contentAlignment = Alignment.Center,
         ) {
             CircularProgressIndicator()
         }
@@ -118,7 +122,7 @@ fun InsightsSection(
                 PlayTimeCard(
                     title = stringResource(R.string.today),
                     playTime = uiState.todayPlayTime,
-                    modifier = Modifier.testTag("insights_today_time")
+                    modifier = Modifier.testTag("insights_today_time"),
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }
@@ -128,7 +132,7 @@ fun InsightsSection(
                 PlayTimeCard(
                     title = stringResource(R.string.this_week),
                     playTime = uiState.weekPlayTime,
-                    modifier = Modifier.testTag("insights_week_time")
+                    modifier = Modifier.testTag("insights_week_time"),
                 )
             }
         }
@@ -138,10 +142,11 @@ fun InsightsSection(
 @Composable
 private fun InsightsLoadingState() {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("insights_loading"),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("insights_loading"),
+        contentAlignment = Alignment.Center,
     ) {
         CircularProgressIndicator()
     }
@@ -150,31 +155,32 @@ private fun InsightsLoadingState() {
 @Composable
 private fun InsightsEmptyState() {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("insights_empty"),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("insights_empty"),
+        contentAlignment = Alignment.Center,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(32.dp)
+            modifier = Modifier.padding(32.dp),
         ) {
             Icon(
                 imageVector = Icons.Default.Insights,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier.padding(bottom = 8.dp),
             )
             Text(
                 text = stringResource(R.string.no_insights),
                 style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = stringResource(R.string.no_insights_description),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -183,29 +189,30 @@ private fun InsightsEmptyState() {
 @Composable
 private fun InsightsContent(
     state: InsightsUiState,
-    onTrackClick: (TrackInfo) -> Unit
+    onTrackClick: (TrackInfo) -> Unit,
 ) {
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("insights_content"),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("insights_content"),
         contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         // Today section
         item {
             Text(
                 text = stringResource(R.string.today),
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
             )
         }
 
         item {
             PlayTimeCard(
-title = stringResource(R.string.total_play_time),
+                title = stringResource(R.string.total_play_time),
                 playTime = state.todayPlayTime,
-                modifier = Modifier.testTag("insights_today_time")
+                modifier = Modifier.testTag("insights_today_time"),
             )
         }
 
@@ -213,18 +220,18 @@ title = stringResource(R.string.total_play_time),
             item {
                 SectionHeader(
                     title = stringResource(R.string.top_tracks),
-                    icon = Icons.Default.MusicNote
+                    icon = Icons.Default.MusicNote,
                 )
             }
 
             items(
                 items = state.todayTopTracks,
-                key = { "today_track_${it.track.id}" }
+                key = { "today_track_${it.track.id}" },
             ) { trackWithCount ->
                 TopTrackItem(
                     track = trackWithCount.track,
                     playCount = trackWithCount.playCount,
-                    onClick = { onTrackClick(trackWithCount.track) }
+                    onClick = { onTrackClick(trackWithCount.track) },
                 )
             }
         }
@@ -233,13 +240,13 @@ title = stringResource(R.string.total_play_time),
             item {
                 SectionHeader(
                     title = stringResource(R.string.top_artists),
-                    icon = Icons.Default.Person
+                    icon = Icons.Default.Person,
                 )
             }
 
             items(
                 items = state.todayTopArtists,
-                key = { "today_artist_${it.artist}" }
+                key = { "today_artist_${it.artist}" },
             ) { artistCount ->
                 TopArtistItem(artistCount = artistCount)
             }
@@ -251,7 +258,7 @@ title = stringResource(R.string.total_play_time),
             Text(
                 text = stringResource(R.string.this_week),
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
             )
         }
 
@@ -259,7 +266,7 @@ title = stringResource(R.string.total_play_time),
             PlayTimeCard(
                 title = stringResource(R.string.total_play_time),
                 playTime = state.weekPlayTime,
-                modifier = Modifier.testTag("insights_week_time")
+                modifier = Modifier.testTag("insights_week_time"),
             )
         }
 
@@ -268,18 +275,18 @@ title = stringResource(R.string.total_play_time),
                 SectionHeader(
                     title = stringResource(R.string.top_tracks),
                     icon = Icons.Default.MusicNote,
-                    modifier = Modifier.testTag("insights_top_tracks")
+                    modifier = Modifier.testTag("insights_top_tracks"),
                 )
             }
 
             items(
                 items = state.weekTopTracks,
-                key = { "week_track_${it.track.id}" }
+                key = { "week_track_${it.track.id}" },
             ) { trackWithCount ->
                 TopTrackItem(
                     track = trackWithCount.track,
                     playCount = trackWithCount.playCount,
-                    onClick = { onTrackClick(trackWithCount.track) }
+                    onClick = { onTrackClick(trackWithCount.track) },
                 )
             }
         }
@@ -289,13 +296,13 @@ title = stringResource(R.string.total_play_time),
                 SectionHeader(
                     title = stringResource(R.string.top_artists),
                     icon = Icons.Default.Person,
-                    modifier = Modifier.testTag("insights_top_artists")
+                    modifier = Modifier.testTag("insights_top_artists"),
                 )
             }
 
             items(
                 items = state.weekTopArtists,
-                key = { "week_artist_${it.artist}" }
+                key = { "week_artist_${it.artist}" },
             ) { artistCount ->
                 TopArtistItem(artistCount = artistCount)
             }
@@ -307,27 +314,28 @@ title = stringResource(R.string.total_play_time),
 private fun PlayTimeCard(
     title: String,
     playTime: Long,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            ),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
                 text = TimeFormatter.formatTotalPlayTime(playTime),
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
     }
@@ -337,22 +345,22 @@ private fun PlayTimeCard(
 private fun SectionHeader(
     title: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Row(
         modifier = modifier.padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary
+            tint = MaterialTheme.colorScheme.primary,
         )
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Medium
+            fontWeight = FontWeight.Medium,
         )
     }
 }
@@ -361,14 +369,14 @@ private fun SectionHeader(
 private fun TopTrackItem(
     track: TrackInfo,
     playCount: Int,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     ListItem(
         headlineContent = {
             Text(
                 text = track.title,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
         },
         supportingContent = {
@@ -376,41 +384,40 @@ private fun TopTrackItem(
                 text = track.artist,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         },
         trailingContent = {
             Text(
-text = pluralStringResource(R.plurals.play_count, playCount, playCount),
+                text = pluralStringResource(R.plurals.play_count, playCount, playCount),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         },
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick),
     )
 }
 
 @Composable
-private fun TopArtistItem(
-    artistCount: ArtistPlayCount
-) {
+private fun TopArtistItem(artistCount: ArtistPlayCount) {
     ListItem(
         headlineContent = {
             Text(
                 text = artistCount.artist,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
         },
         trailingContent = {
             Text(
-text = pluralStringResource(R.plurals.play_count, artistCount.playCount, artistCount.playCount),
+                text = pluralStringResource(R.plurals.play_count, artistCount.playCount, artistCount.playCount),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         },
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     )
 }

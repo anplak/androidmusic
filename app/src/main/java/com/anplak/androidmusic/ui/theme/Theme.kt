@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package com.anplak.androidmusic.ui.theme
 
 import android.app.Activity
@@ -13,7 +15,7 @@ import androidx.core.view.WindowCompat
 @Composable
 fun MusicTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val colorScheme = if (darkTheme) DarkMusicColorScheme else LightMusicColorScheme
     val view = LocalView.current
@@ -31,6 +33,6 @@ fun MusicTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = MusicTypography,
-        content = content
+        content = content,
     )
 }

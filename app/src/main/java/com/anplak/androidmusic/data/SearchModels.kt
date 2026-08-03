@@ -7,7 +7,7 @@ enum class SearchResultKind {
     ARTIST,
     ALBUM,
     PLAYLIST,
-    HISTORY
+    HISTORY,
 }
 
 data class SearchResultItem(
@@ -17,21 +17,21 @@ data class SearchResultItem(
     val subtitle: String? = null,
     val trackId: Long? = null,
     val playlistId: Long? = null,
-    val historyId: Long? = null
+    val historyId: Long? = null,
 )
 
 data class SearchSection(
     val header: String,
-    val items: List<SearchResultItem>
+    val items: List<SearchResultItem>,
 )
 
 data class GroupedSearchResults(
     val sections: List<SearchSection>,
-    val totalCount: Int
+    val totalCount: Int,
 )
 
 data class SearchRawResults(
     val tracks: List<TrackInfo>,
     val playlists: List<Playlist>,
-    val history: List<PlayHistoryEntry>
+    val history: List<PlayHistoryEntry>,
 )

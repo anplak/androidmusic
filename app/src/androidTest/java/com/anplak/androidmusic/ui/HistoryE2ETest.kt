@@ -26,16 +26,16 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class HistoryE2ETest {
-
     @get:Rule(order = 0)
-    val permissionRule: GrantPermissionRule = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        GrantPermissionRule.grant(
-            Manifest.permission.READ_MEDIA_AUDIO,
-            Manifest.permission.POST_NOTIFICATIONS
-        )
-    } else {
-        GrantPermissionRule.grant(Manifest.permission.READ_EXTERNAL_STORAGE)
-    }
+    val permissionRule: GrantPermissionRule =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            GrantPermissionRule.grant(
+                Manifest.permission.READ_MEDIA_AUDIO,
+                Manifest.permission.POST_NOTIFICATIONS,
+            )
+        } else {
+            GrantPermissionRule.grant(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
 
     @get:Rule(order = 1)
     val composeTestRule = createAndroidComposeRule<MainActivity>()
@@ -69,14 +69,16 @@ class HistoryE2ETest {
 
         // Wait for history screen to load
         composeTestRule.waitUntil(timeoutMillis = 5_000) {
-            val hasContent = composeTestRule
-                .onAllNodes(hasTestTag("history_list"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            val hasEmpty = composeTestRule
-                .onAllNodes(hasTestTag("history_empty"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
+            val hasContent =
+                composeTestRule
+                    .onAllNodes(hasTestTag("history_list"))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            val hasEmpty =
+                composeTestRule
+                    .onAllNodes(hasTestTag("history_empty"))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
             hasContent || hasEmpty
         }
 
@@ -178,5 +180,4 @@ class HistoryE2ETest {
             .onNodeWithTag("now_playing_screen")
             .assertIsDisplayed()
     }
-
 }

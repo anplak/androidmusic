@@ -17,20 +17,25 @@ import kotlinx.coroutines.sync.withLock
 
 sealed interface LibrarySyncState {
     data object Idle : LibrarySyncState
+
     data object Running : LibrarySyncState
+
     data class Success(val result: LibraryScanResult) : LibrarySyncState
+
     data class Failed(val error: Throwable) : LibrarySyncState
 }
 
 sealed interface LibrarySyncResult {
     data class Completed(val result: LibraryScanResult) : LibrarySyncResult
+
     data class Joined(val result: LibraryScanResult) : LibrarySyncResult
+
     data class Failed(val error: Throwable) : LibrarySyncResult
 }
 
 class LibrarySyncCoordinator(
     private val repository: MusicLibraryRepository,
-    private val scope: CoroutineScope
+    private val scope: CoroutineScope,
 ) {
     private val syncMutex = Mutex()
     private var inFlight: Deferred<Result<LibraryScanResult>>? = null
@@ -42,30 +47,33 @@ class LibrarySyncCoordinator(
 
     fun scheduleSync(debounceMs: Long = 300L) {
         debounceJob?.cancel()
-        debounceJob = scope.launch {
-            delay(debounceMs)
-            syncNow()
-        }
+        debounceJob =
+            scope.launch {
+                delay(debounceMs)
+                syncNow()
+            }
     }
 
     suspend fun syncNow(): LibrarySyncResult {
-        val (deferred, joined) = syncMutex.withLock {
-            inFlight?.takeIf { it.isActive }?.let { active ->
-                return@withLock Pair(active, true)
-            }
-            _syncState.value = LibrarySyncState.Running
-            val newDeferred = scope.async {
-                runCatching {
-                    if (!hasScannedDirectories) {
-                        repository.scanMusicDirectories()
-                        hasScannedDirectories = true
-                    }
-                    repository.syncLibrary()
+        val (deferred, joined) =
+            syncMutex.withLock {
+                inFlight?.takeIf { it.isActive }?.let { active ->
+                    return@withLock Pair(active, true)
                 }
+                _syncState.value = LibrarySyncState.Running
+                val newDeferred =
+                    scope.async {
+                        runCatching {
+                            if (!hasScannedDirectories) {
+                                repository.scanMusicDirectories()
+                                hasScannedDirectories = true
+                            }
+                            repository.syncLibrary()
+                        }
+                    }
+                inFlight = newDeferred
+                Pair(newDeferred, false)
             }
-            inFlight = newDeferred
-            Pair(newDeferred, false)
-        }
 
         val outcome = deferred.await()
         return try {
@@ -81,7 +89,7 @@ class LibrarySyncCoordinator(
                 onFailure = { error ->
                     _syncState.value = LibrarySyncState.Failed(error)
                     LibrarySyncResult.Failed(error)
-                }
+                },
             )
         } finally {
             syncMutex.withLock {
@@ -101,7 +109,7 @@ object LibrarySyncCoordinatorFactory {
         instance ?: synchronized(this) {
             instance ?: LibrarySyncCoordinator(
                 repository = MusicLibraryRepositoryFactory.create(context),
-                scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+                scope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
             ).also { instance = it }
         }
 

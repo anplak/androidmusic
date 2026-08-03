@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package com.anplak.androidmusic
 
 import android.Manifest
@@ -45,27 +47,29 @@ class MainActivity : ComponentActivity() {
 fun MusicPlayerAppWithPermissionCheck() {
     val context = LocalContext.current
 
-    val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        Manifest.permission.READ_MEDIA_AUDIO
-    } else {
-        Manifest.permission.READ_EXTERNAL_STORAGE
-    }
+    val permission =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            Manifest.permission.READ_MEDIA_AUDIO
+        } else {
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        }
 
     var hasPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
                 context,
-                permission
-            ) == PackageManager.PERMISSION_GRANTED
+                permission,
+            ) == PackageManager.PERMISSION_GRANTED,
         )
     }
 
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-        onResult = { isGranted ->
-            hasPermission = isGranted
-        }
-    )
+    val launcher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+            onResult = { isGranted ->
+                hasPermission = isGranted
+            },
+        )
 
     LaunchedEffect(key1 = hasPermission) {
         if (!hasPermission) {
@@ -85,19 +89,20 @@ fun MusicPlayerAppWithPermissionCheck() {
 @Composable
 fun PermissionRequestScreen(onRequestPermission: () -> Unit) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("permission_request"),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("permission_request"),
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
             text = "Storage permission is required to play music.",
-            color = MaterialTheme.colorScheme.onBackground
+            color = MaterialTheme.colorScheme.onBackground,
         )
         Button(
             onClick = onRequestPermission,
-            modifier = Modifier.testTag("permission_request_grant")
+            modifier = Modifier.testTag("permission_request_grant"),
         ) {
             Text("Grant Permission")
         }

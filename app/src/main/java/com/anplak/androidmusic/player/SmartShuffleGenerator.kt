@@ -17,7 +17,7 @@ class SmartShuffleGenerator(
     private val favoritesRepository: FavoritesRepository,
     private val statsRepository: TrackStatsRepository,
     private val clock: RankingClock = SystemRankingClock,
-    private val random: Random = Random.Default
+    private val random: Random = Random.Default,
 ) {
     /**
      * Generates a shuffled queue from the given tracks.
@@ -29,29 +29,32 @@ class SmartShuffleGenerator(
     suspend fun generateShuffledQueue(
         tracks: List<TrackInfo>,
         recentlyPlayedIds: Set<Long> = emptySet(),
-        random: Random = this.random
+        random: Random = this.random,
     ): List<TrackInfo> {
         if (tracks.isEmpty()) return emptyList()
         if (tracks.size == 1) return tracks
 
-        val statsById = statsRepository.getAllStatsOrderedByPlayCount()
-            .associateBy { it.trackId }
+        val statsById =
+            statsRepository.getAllStatsOrderedByPlayCount()
+                .associateBy { it.trackId }
         val favoriteTimes = favoritesRepository.getFavoriteTimestamps().first()
         val nowMs = clock.nowMs()
 
-        val weightedTracks = tracks.map { track ->
-            val stats = statsById[track.id]
-            val weight = TrackRankingWeights.effectiveWeight(
-                RankingInputs(
-                    playCount = stats?.playCount ?: 0,
-                    skipCount = stats?.skipCount ?: 0,
-                    isFavorite = track.id in favoriteTimes,
-                    favoritedAt = favoriteTimes[track.id],
-                    nowMs = nowMs
-                )
-            )
-            WeightedTrack(track, weight)
-        }
+        val weightedTracks =
+            tracks.map { track ->
+                val stats = statsById[track.id]
+                val weight =
+                    TrackRankingWeights.effectiveWeight(
+                        RankingInputs(
+                            playCount = stats?.playCount ?: 0,
+                            skipCount = stats?.skipCount ?: 0,
+                            isFavorite = track.id in favoriteTimes,
+                            favoritedAt = favoriteTimes[track.id],
+                            nowMs = nowMs,
+                        ),
+                    )
+                WeightedTrack(track, weight)
+            }
 
         return weightedShuffle(weightedTracks, recentlyPlayedIds, random)
     }
@@ -63,7 +66,7 @@ class SmartShuffleGenerator(
     private fun weightedShuffle(
         weightedTracks: List<WeightedTrack>,
         recentlyPlayedIds: Set<Long>,
-        random: Random
+        random: Random,
     ): List<TrackInfo> {
         val result = mutableListOf<TrackInfo>()
         val remaining = weightedTracks.toMutableList()
@@ -83,7 +86,10 @@ class SmartShuffleGenerator(
         return result
     }
 
-    private fun selectWeightedRandom(weighted: List<WeightedTrack>, random: Random): WeightedTrack {
+    private fun selectWeightedRandom(
+        weighted: List<WeightedTrack>,
+        random: Random,
+    ): WeightedTrack {
         val totalWeight = weighted.sumOf { it.weight }
         var randomValue = random.nextDouble() * totalWeight
 
@@ -99,6 +105,6 @@ class SmartShuffleGenerator(
 
     private data class WeightedTrack(
         val track: TrackInfo,
-        val weight: Double
+        val weight: Double,
     )
 }

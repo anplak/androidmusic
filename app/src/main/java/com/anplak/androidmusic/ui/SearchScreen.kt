@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package com.anplak.androidmusic.ui
 
 import androidx.compose.foundation.clickable
@@ -52,7 +54,7 @@ fun SearchScreen(
     onPlaylistSelected: (Long) -> Unit,
     onNavigateToLibrary: (String) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: SearchViewModel = viewModel()
+    viewModel: SearchViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var queryText by remember { mutableStateOf("") }
@@ -63,11 +65,11 @@ fun SearchScreen(
                 navigationIcon = {
                     IconButton(
                         onClick = onBackClick,
-                        modifier = Modifier.testTag("search_back")
+                        modifier = Modifier.testTag("search_back"),
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.search_back)
+                            contentDescription = stringResource(R.string.search_back),
                         )
                     }
                 },
@@ -80,51 +82,56 @@ fun SearchScreen(
                         },
                         placeholder = { Text(stringResource(R.string.search_hint)) },
                         singleLine = true,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("search_field")
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .testTag("search_field"),
                     )
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
             )
         },
-        modifier = modifier
+        modifier = modifier,
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
         ) {
             when (val state = uiState) {
-                is SearchUiState.Idle -> SearchIdleContent(
-                    recentQueries = state.recentQueries,
-                    suggestions = state.suggestions,
-                    onRecentClick = { suggestion ->
-                        queryText = suggestion
-                        viewModel.onSuggestionClicked(suggestion)
-                    },
-                    onSuggestionClick = { suggestion ->
-                        queryText = suggestion
-                        viewModel.onSuggestionClicked(suggestion)
-                    }
-                )
+                is SearchUiState.Idle ->
+                    SearchIdleContent(
+                        recentQueries = state.recentQueries,
+                        suggestions = state.suggestions,
+                        onRecentClick = { suggestion ->
+                            queryText = suggestion
+                            viewModel.onSuggestionClicked(suggestion)
+                        },
+                        onSuggestionClick = { suggestion ->
+                            queryText = suggestion
+                            viewModel.onSuggestionClicked(suggestion)
+                        },
+                    )
                 is SearchUiState.Searching -> SearchLoadingState()
-                is SearchUiState.Results -> SearchResultsContent(
-                    sections = state.grouped.sections,
-                    onItemClick = { item ->
-                        viewModel.onSubmit(queryText)
-                        handleSearchResultClick(
-                            item = item,
-                            viewModel = viewModel,
-                            onTrackSelected = onTrackSelected,
-                            onPlaylistSelected = onPlaylistSelected,
-                            onNavigateToLibrary = onNavigateToLibrary
-                        )
-                    }
-                )
+                is SearchUiState.Results ->
+                    SearchResultsContent(
+                        sections = state.grouped.sections,
+                        onItemClick = { item ->
+                            viewModel.onSubmit(queryText)
+                            handleSearchResultClick(
+                                item = item,
+                                viewModel = viewModel,
+                                onTrackSelected = onTrackSelected,
+                                onPlaylistSelected = onPlaylistSelected,
+                                onNavigateToLibrary = onNavigateToLibrary,
+                            )
+                        },
+                    )
                 is SearchUiState.NoResults -> SearchNoResultsState()
                 is SearchUiState.Error -> SearchErrorState(message = state.message)
             }
@@ -137,11 +144,12 @@ private fun handleSearchResultClick(
     viewModel: SearchViewModel,
     onTrackSelected: (List<TrackInfo>, Int) -> Unit,
     onPlaylistSelected: (Long) -> Unit,
-    onNavigateToLibrary: (String) -> Unit
+    onNavigateToLibrary: (String) -> Unit,
 ) {
     when (item.kind) {
         SearchResultKind.TRACK,
-        SearchResultKind.HISTORY -> {
+        SearchResultKind.HISTORY,
+        -> {
             val track = viewModel.resolveTrack(item) ?: return
             onTrackSelected(listOf(track), 0)
         }
@@ -149,7 +157,8 @@ private fun handleSearchResultClick(
             item.playlistId?.let(onPlaylistSelected)
         }
         SearchResultKind.ARTIST,
-        SearchResultKind.ALBUM -> {
+        SearchResultKind.ALBUM,
+        -> {
             viewModel.libraryQueryForItem(item)?.let(onNavigateToLibrary)
         }
     }
@@ -160,27 +169,28 @@ private fun SearchIdleContent(
     recentQueries: List<String>,
     suggestions: List<String>,
     onRecentClick: (String) -> Unit,
-    onSuggestionClick: (String) -> Unit
+    onSuggestionClick: (String) -> Unit,
 ) {
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("search_idle"),
-        contentPadding = PaddingValues(vertical = 8.dp)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("search_idle"),
+        contentPadding = PaddingValues(vertical = 8.dp),
     ) {
         if (recentQueries.isNotEmpty()) {
             item {
                 Text(
                     text = stringResource(R.string.search_recent),
                     style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 )
             }
             items(recentQueries, key = { "recent:$it" }) { query ->
                 SearchSuggestionRow(
                     label = query,
                     onClick = { onRecentClick(query) },
-                    testTag = "search_recent_item"
+                    testTag = "search_recent_item",
                 )
             }
         }
@@ -189,14 +199,14 @@ private fun SearchIdleContent(
                 Text(
                     text = stringResource(R.string.search_suggestions),
                     style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 )
             }
             items(suggestions, key = { "suggestion:$it" }) { artist ->
                 SearchSuggestionRow(
                     label = artist,
                     onClick = { onSuggestionClick(artist) },
-                    testTag = "search_suggestion_item"
+                    testTag = "search_suggestion_item",
                 )
             }
         }
@@ -207,7 +217,7 @@ private fun SearchIdleContent(
 private fun SearchSuggestionRow(
     label: String,
     onClick: () -> Unit,
-    testTag: String
+    testTag: String,
 ) {
     ListItem(
         headlineContent = { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
@@ -215,23 +225,25 @@ private fun SearchSuggestionRow(
             Icon(
                 imageVector = Icons.Default.Search,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         },
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .testTag(testTag)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .testTag(testTag),
     )
 }
 
 @Composable
 private fun SearchLoadingState() {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("search_loading"),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("search_loading"),
+        contentAlignment = Alignment.Center,
     ) {
         CircularProgressIndicator()
     }
@@ -240,20 +252,21 @@ private fun SearchLoadingState() {
 @Composable
 private fun SearchResultsContent(
     sections: List<SearchSection>,
-    onItemClick: (SearchResultItem) -> Unit
+    onItemClick: (SearchResultItem) -> Unit,
 ) {
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("search_results"),
-        contentPadding = PaddingValues(vertical = 8.dp)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("search_results"),
+        contentPadding = PaddingValues(vertical = 8.dp),
     ) {
         sections.forEach { section ->
             item(key = "header:${section.header}") {
                 Text(
                     text = localizedSectionHeader(section.header),
                     style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 )
             }
             items(section.items, key = { it.id }) { item ->
@@ -261,27 +274,29 @@ private fun SearchResultsContent(
                     headlineContent = {
                         Text(item.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     },
-                    supportingContent = item.subtitle?.let { subtitle ->
-                        {
-                            Text(
-                                text = subtitle,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onItemClick(item) }
-                        .testTag(
-                            when (item.kind) {
-                                SearchResultKind.TRACK -> "search_result_track"
-                                SearchResultKind.HISTORY -> "search_result_history"
-                                SearchResultKind.PLAYLIST -> "search_result_playlist"
-                                else -> "search_result_${item.id}"
+                    supportingContent =
+                        item.subtitle?.let { subtitle ->
+                            {
+                                Text(
+                                    text = subtitle,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
                             }
-                        )
+                        },
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable { onItemClick(item) }
+                            .testTag(
+                                when (item.kind) {
+                                    SearchResultKind.TRACK -> "search_result_track"
+                                    SearchResultKind.HISTORY -> "search_result_history"
+                                    SearchResultKind.PLAYLIST -> "search_result_playlist"
+                                    else -> "search_result_${item.id}"
+                                },
+                            ),
                 )
             }
         }
@@ -303,24 +318,25 @@ private fun localizedSectionHeader(header: String): String {
 @Composable
 private fun SearchNoResultsState() {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("search_no_results"),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("search_no_results"),
+        contentAlignment = Alignment.Center,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(32.dp)
+            modifier = Modifier.padding(32.dp),
         ) {
             Text(
                 text = stringResource(R.string.no_search_results),
-                style = MaterialTheme.typography.headlineSmall
+                style = MaterialTheme.typography.headlineSmall,
             )
             Text(
                 text = stringResource(R.string.no_search_results_description),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -329,15 +345,16 @@ private fun SearchNoResultsState() {
 @Composable
 private fun SearchErrorState(message: String) {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("search_error"),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("search_error"),
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             text = message,
             color = MaterialTheme.colorScheme.error,
-            modifier = Modifier.padding(32.dp)
+            modifier = Modifier.padding(32.dp),
         )
     }
 }

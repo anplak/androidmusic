@@ -6,7 +6,6 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
@@ -26,16 +25,16 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class SmartPlaylistsE2ETest {
-
     @get:Rule(order = 0)
-    val permissionRule: GrantPermissionRule = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        GrantPermissionRule.grant(
-            Manifest.permission.READ_MEDIA_AUDIO,
-            Manifest.permission.POST_NOTIFICATIONS
-        )
-    } else {
-        GrantPermissionRule.grant(Manifest.permission.READ_EXTERNAL_STORAGE)
-    }
+    val permissionRule: GrantPermissionRule =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            GrantPermissionRule.grant(
+                Manifest.permission.READ_MEDIA_AUDIO,
+                Manifest.permission.POST_NOTIFICATIONS,
+            )
+        } else {
+            GrantPermissionRule.grant(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
 
     @get:Rule(order = 1)
     val composeTestRule = createAndroidComposeRule<MainActivity>()
@@ -87,18 +86,21 @@ class SmartPlaylistsE2ETest {
 
         // Wait for detail screen to load
         composeTestRule.waitUntil(timeoutMillis = 5_000) {
-            val hasContent = composeTestRule
-                .onAllNodes(hasTestTag("smart_playlist_track_list"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            val hasEmpty = composeTestRule
-                .onAllNodes(hasTestTag("smart_playlist_empty_state"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            val hasLoading = composeTestRule
-                .onAllNodes(hasTestTag("smart_playlist_loading_state"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
+            val hasContent =
+                composeTestRule
+                    .onAllNodes(hasTestTag("smart_playlist_track_list"))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            val hasEmpty =
+                composeTestRule
+                    .onAllNodes(hasTestTag("smart_playlist_empty_state"))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            val hasLoading =
+                composeTestRule
+                    .onAllNodes(hasTestTag("smart_playlist_loading_state"))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
             hasContent || hasEmpty || hasLoading
         }
 
@@ -237,4 +239,3 @@ class SmartPlaylistsE2ETest {
             .assertIsDisplayed()
     }
 }
-

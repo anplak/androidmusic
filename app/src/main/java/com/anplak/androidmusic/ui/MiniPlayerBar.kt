@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package com.anplak.androidmusic.ui
 
 import android.net.Uri
@@ -43,41 +45,44 @@ fun MiniPlayerBar(
     onPlayPauseClick: () -> Unit,
     onToggleFavorite: () -> Unit,
     artworkUri: Uri? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .testTag("mini_player_bar")
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .testTag("mini_player_bar"),
     ) {
         HorizontalDivider()
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(Dimens.miniPlayerHeight)
-                .background(MaterialTheme.colorScheme.surfaceContainer)
-                .padding(horizontal = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(Dimens.miniPlayerHeight)
+                    .background(MaterialTheme.colorScheme.surfaceContainer)
+                    .padding(horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             MediaArtwork(
                 uri = artworkUri,
                 contentDescription = title,
                 fallbackLabel = title,
-                modifier = Modifier.size(Dimens.miniPlayerArtworkSize)
+                modifier = Modifier.size(Dimens.miniPlayerArtworkSize),
             )
             Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable(onClick = onBarClick)
-                    .padding(horizontal = 8.dp)
-                    .testTag("mini_player_title")
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .clickable(onClick = onBarClick)
+                        .padding(horizontal = 8.dp)
+                        .testTag("mini_player_title"),
             ) {
                 Text(
                     text = title,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 if (!artist.isNullOrBlank()) {
                     Text(
@@ -85,43 +90,47 @@ fun MiniPlayerBar(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
             IconButton(
                 onClick = onToggleFavorite,
-                modifier = Modifier.testTag("mini_player_favorite")
+                modifier = Modifier.testTag("mini_player_favorite"),
             ) {
                 Icon(
-                    imageVector = if (isFavorite) {
-                        Icons.Filled.Favorite
-                    } else {
-                        Icons.Outlined.FavoriteBorder
-                    },
-                    contentDescription = stringResource(
+                    imageVector =
                         if (isFavorite) {
-                            R.string.remove_from_favorites
+                            Icons.Filled.Favorite
                         } else {
-                            R.string.add_to_favorites
-                        }
-                    ),
-                    tint = if (isFavorite) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurface
-                    }
+                            Icons.Outlined.FavoriteBorder
+                        },
+                    contentDescription =
+                        stringResource(
+                            if (isFavorite) {
+                                R.string.remove_from_favorites
+                            } else {
+                                R.string.add_to_favorites
+                            },
+                        ),
+                    tint =
+                        if (isFavorite) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
                 )
             }
             IconButton(
                 onClick = onPlayPauseClick,
-                modifier = Modifier.testTag("mini_player_play_pause")
+                modifier = Modifier.testTag("mini_player_play_pause"),
             ) {
                 Icon(
                     imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                    contentDescription = stringResource(
-                        if (isPlaying) R.string.pause else R.string.play
-                    )
+                    contentDescription =
+                        stringResource(
+                            if (isPlaying) R.string.pause else R.string.play,
+                        ),
                 )
             }
         }

@@ -2,19 +2,16 @@ package com.anplak.androidmusic.ui
 
 import android.Manifest
 import android.os.Build
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
 import com.anplak.androidmusic.MainActivity
@@ -31,16 +28,16 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class PlaylistsE2ETest {
-
     @get:Rule(order = 0)
-    val permissionRule: GrantPermissionRule = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        GrantPermissionRule.grant(
-            Manifest.permission.READ_MEDIA_AUDIO,
-            Manifest.permission.POST_NOTIFICATIONS
-        )
-    } else {
-        GrantPermissionRule.grant(Manifest.permission.READ_EXTERNAL_STORAGE)
-    }
+    val permissionRule: GrantPermissionRule =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            GrantPermissionRule.grant(
+                Manifest.permission.READ_MEDIA_AUDIO,
+                Manifest.permission.POST_NOTIFICATIONS,
+            )
+        } else {
+            GrantPermissionRule.grant(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
 
     @get:Rule(order = 1)
     val composeTestRule = createAndroidComposeRule<MainActivity>()
@@ -72,26 +69,26 @@ class PlaylistsE2ETest {
     fun createPlaylist_showsInList() {
         composeTestRule.preparePlaylistsTab()
         composeTestRule.waitForIdle()
-        
+
         // Click create playlist FAB
         composeTestRule
             .onNodeWithTag("create_playlist_fab")
             .performClick()
-        
+
         composeTestRule.waitForIdle()
-        
+
         // Enter playlist name
         composeTestRule
             .onNodeWithTag("playlist_name_input")
             .performTextInput("My Test Playlist")
-        
+
         // Confirm creation
         composeTestRule
             .onNodeWithTag("create_playlist_confirm")
             .performClick()
-        
+
         composeTestRule.waitForIdle()
-        
+
         // Wait for playlist to appear
         composeTestRule.waitUntil(timeoutMillis = 5_000) {
             composeTestRule
@@ -99,7 +96,7 @@ class PlaylistsE2ETest {
                 .fetchSemanticsNodes()
                 .isNotEmpty()
         }
-        
+
         // Verify playlist appears in list
         composeTestRule
             .onNodeWithText("My Test Playlist")
@@ -113,27 +110,27 @@ class PlaylistsE2ETest {
     fun createPlaylistFab_opensDialog() {
         composeTestRule.preparePlaylistsTab()
         composeTestRule.waitForIdle()
-        
+
         // Click create playlist FAB
         composeTestRule
             .onNodeWithTag("create_playlist_fab")
             .performClick()
-        
+
         composeTestRule.waitForIdle()
-        
+
         // Verify dialog is shown
         composeTestRule
             .onNodeWithTag("create_playlist_dialog")
             .assertIsDisplayed()
-        
+
         composeTestRule
             .onNodeWithTag("playlist_name_input")
             .assertIsDisplayed()
     }
-    
+
     /**
      * Test that creating a new playlist via "Add to Playlist" dialog shows correct track count.
-     * 
+     *
      * Bug fix verification: When creating a new playlist and adding a track via the dialog,
      * the playlist should show "1 track" instead of "0 tracks".
      */
@@ -145,21 +142,21 @@ class PlaylistsE2ETest {
             // No tracks on device - skip test
             return
         }
-        
+
         // Open the more options menu on the first track
         composeTestRule
             .onNodeWithTag("more_button_0")
             .performClick()
-        
+
         composeTestRule.waitForIdle()
-        
+
         // Click "Add to playlist" option
         composeTestRule
             .onNodeWithTag("add_to_playlist_menu_0")
             .performClick()
-        
+
         composeTestRule.waitForIdle()
-        
+
         // Wait for add to playlist dialog
         composeTestRule.waitUntil(timeoutMillis = 5_000) {
             composeTestRule
@@ -167,34 +164,34 @@ class PlaylistsE2ETest {
                 .fetchSemanticsNodes()
                 .isNotEmpty()
         }
-        
+
         // Click "Create new playlist" option
         composeTestRule
             .onNodeWithTag("create_new_playlist_option")
             .performClick()
-        
+
         composeTestRule.waitForIdle()
-        
+
         // Enter playlist name
         val uniquePlaylistName = "TrackCount Test ${System.currentTimeMillis()}"
         composeTestRule
             .onNodeWithTag("new_playlist_name_input")
             .performTextInput(uniquePlaylistName)
-        
+
         // Click create button
         composeTestRule
             .onNodeWithTag("create_and_add_button")
             .performClick()
-        
+
         composeTestRule.waitForIdle()
-        
+
         // Navigate to playlists tab
         composeTestRule
             .onNodeWithTag("nav_playlists")
             .performClick()
-        
+
         composeTestRule.waitForIdle()
-        
+
         // Wait for playlists list to load
         composeTestRule.waitUntil(timeoutMillis = 5_000) {
             composeTestRule
@@ -202,17 +199,16 @@ class PlaylistsE2ETest {
                 .fetchSemanticsNodes()
                 .isNotEmpty()
         }
-        
+
         // Verify the playlist is shown with the correct name
         composeTestRule
             .onNodeWithText(uniquePlaylistName)
             .assertIsDisplayed()
-        
-        // Verify the playlist shows "1 tracks" (not "0 tracks")
-        // The track count is displayed as supporting text in the playlist item
-        // Note: The app uses "%d tracks" format which doesn't handle singular form
+
+        // Verify the playlist shows the correct pluralized track count (handles singular/plural)
+val expectedCountText = composeTestRule.activity.resources.getQuantityString(com.anplak.androidmusic.R.plurals.tracks_count, 1, 1)
         composeTestRule
-            .onNodeWithText("1 tracks")
+            .onNodeWithText(expectedCountText)
             .assertIsDisplayed()
     }
 
@@ -231,24 +227,25 @@ class PlaylistsE2ETest {
         // Open menu and click reorder
         composeTestRule.onNodeWithContentDescription("More options").performClick()
         composeTestRule.waitForIdle()
-        
+
         // Verify reorder menu item exists
         val hasReorderMenu = composeTestRule.onAllNodes(hasText("Reorder tracks")).fetchSemanticsNodes().isNotEmpty()
         if (!hasReorderMenu) return
-        
+
         composeTestRule.onNodeWithText("Reorder tracks").performClick()
         composeTestRule.waitForIdle()
 
         // In reorder mode, the save/cancel icons should appear
         composeTestRule.waitUntil(timeoutMillis = 5_000) {
             composeTestRule.onAllNodes(hasTestTag("playlist_reorder_list")).fetchSemanticsNodes().isNotEmpty() ||
-            composeTestRule.onAllNodes(hasTestTag("playlist_drag_handle_0")).fetchSemanticsNodes().isNotEmpty()
+                composeTestRule.onAllNodes(hasTestTag("playlist_drag_handle_0")).fetchSemanticsNodes().isNotEmpty()
         }
-        
+
         // Cancel to exit reorder mode
-        val hasCancelIcon = composeTestRule.onAllNodes(
-            androidx.compose.ui.test.hasContentDescription("Cancel reorder")
-        ).fetchSemanticsNodes().isNotEmpty()
+        val hasCancelIcon =
+            composeTestRule.onAllNodes(
+                androidx.compose.ui.test.hasContentDescription("Cancel reorder"),
+            ).fetchSemanticsNodes().isNotEmpty()
         if (hasCancelIcon) {
             composeTestRule.onNodeWithContentDescription("Cancel reorder").performClick()
         }
@@ -268,11 +265,11 @@ class PlaylistsE2ETest {
 
         composeTestRule.onNodeWithContentDescription("More options").performClick()
         composeTestRule.waitForIdle()
-        
+
         // Verify select tracks menu item exists
         val hasSelectMenu = composeTestRule.onAllNodes(hasText("Select tracks")).fetchSemanticsNodes().isNotEmpty()
         if (!hasSelectMenu) return
-        
+
         composeTestRule.onNodeWithText("Select tracks").performClick()
         composeTestRule.waitForIdle()
 
@@ -281,9 +278,10 @@ class PlaylistsE2ETest {
         composeTestRule.waitForIdle()
 
         // Exit selection mode icon should appear
-        val hasExitSelection = composeTestRule.onAllNodes(
-            androidx.compose.ui.test.hasContentDescription("Exit selection")
-        ).fetchSemanticsNodes().isNotEmpty()
+        val hasExitSelection =
+            composeTestRule.onAllNodes(
+                androidx.compose.ui.test.hasContentDescription("Exit selection"),
+            ).fetchSemanticsNodes().isNotEmpty()
         if (hasExitSelection) {
             composeTestRule.onNodeWithContentDescription("Exit selection").performClick()
         }
@@ -301,11 +299,11 @@ class PlaylistsE2ETest {
 
         composeTestRule.onNodeWithContentDescription("More options").performClick()
         composeTestRule.waitForIdle()
-        
+
         // Verify duplicate menu item exists
         val hasDuplicateMenu = composeTestRule.onAllNodes(hasText("Duplicate")).fetchSemanticsNodes().isNotEmpty()
         if (!hasDuplicateMenu) return
-        
+
         composeTestRule.onNodeWithText("Duplicate").performClick()
         composeTestRule.waitForIdle()
 
@@ -314,7 +312,7 @@ class PlaylistsE2ETest {
             composeTestRule.onAllNodes(hasText("Duplicate playlist")).fetchSemanticsNodes().isNotEmpty()
         }
         composeTestRule.onNodeWithText("Duplicate playlist").assertIsDisplayed()
-        
+
         // Dismiss the dialog
         composeTestRule.onNodeWithText("Cancel").performClick()
     }
@@ -330,11 +328,11 @@ class PlaylistsE2ETest {
 
         composeTestRule.onNodeWithContentDescription("More options").performClick()
         composeTestRule.waitForIdle()
-        
+
         // Verify generate mix menu item exists
         val hasGenerateMix = composeTestRule.onAllNodes(hasText("Generate mix")).fetchSemanticsNodes().isNotEmpty()
         assert(hasGenerateMix) { "Generate mix menu item should be available" }
-        
+
         // Dismiss the menu
         composeTestRule.onNodeWithContentDescription("More options").performClick()
     }
@@ -350,11 +348,11 @@ class PlaylistsE2ETest {
 
         composeTestRule.onNodeWithContentDescription("More options").performClick()
         composeTestRule.waitForIdle()
-        
+
         // Verify smart shuffle menu item exists
         val hasSmartShuffle = composeTestRule.onAllNodes(hasText("Smart shuffle play")).fetchSemanticsNodes().isNotEmpty()
         assert(hasSmartShuffle) { "Smart shuffle play menu item should be available" }
-        
+
         // Dismiss the menu
         composeTestRule.onNodeWithContentDescription("More options").performClick()
     }
@@ -379,7 +377,10 @@ class PlaylistsE2ETest {
         return textList.joinToString(" ") { it.text }
     }
 
-    private fun createPlaylistWithTrack(playlistName: String, trackIndex: Int) {
+    private fun createPlaylistWithTrack(
+        playlistName: String,
+        trackIndex: Int,
+    ) {
         composeTestRule.onNodeWithTag("more_button_$trackIndex").performClick()
         composeTestRule.onNodeWithTag("add_to_playlist_menu_$trackIndex").performClick()
         composeTestRule.waitForIdle()
@@ -389,7 +390,10 @@ class PlaylistsE2ETest {
         composeTestRule.waitForIdle()
     }
 
-    private fun addTrackToExistingPlaylist(playlistName: String, trackIndex: Int) {
+    private fun addTrackToExistingPlaylist(
+        playlistName: String,
+        trackIndex: Int,
+    ) {
         composeTestRule.onNodeWithTag("more_button_$trackIndex").performClick()
         composeTestRule.onNodeWithTag("add_to_playlist_menu_$trackIndex").performClick()
         composeTestRule.waitForIdle()
@@ -407,4 +411,3 @@ class PlaylistsE2ETest {
         composeTestRule.waitForIdle()
     }
 }
-

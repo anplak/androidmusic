@@ -7,5 +7,5 @@ import androidx.room.PrimaryKey
 data class IndexFolderRuleEntity(
     @PrimaryKey
     val path: String,
-    val mode: String
+    val mode: String,
 )

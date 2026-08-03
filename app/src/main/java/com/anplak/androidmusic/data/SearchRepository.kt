@@ -1,7 +1,7 @@
 package com.anplak.androidmusic.data
 
-import com.anplak.androidmusic.data.db.PlaylistDao
 import com.anplak.androidmusic.data.db.PlayHistoryDao
+import com.anplak.androidmusic.data.db.PlaylistDao
 import com.anplak.androidmusic.data.db.TrackDao
 import com.anplak.androidmusic.player.TrackInfo
 import kotlinx.coroutines.async
@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.first
 
 interface SearchRepository {
     suspend fun searchAll(query: String): SearchRawResults
+
     suspend fun getSuggestions(): List<String>
 }
 
@@ -17,38 +18,41 @@ class SearchRepositoryImpl(
     private val trackDao: TrackDao,
     private val playlistDao: PlaylistDao,
     private val playHistoryDao: PlayHistoryDao,
-    private val playHistoryRepository: PlayHistoryRepository
+    private val playHistoryRepository: PlayHistoryRepository,
 ) : SearchRepository {
-
-    override suspend fun searchAll(query: String): SearchRawResults = coroutineScope {
-        val trimmed = query.trim()
-        if (trimmed.isEmpty()) {
-            return@coroutineScope SearchRawResults(emptyList(), emptyList(), emptyList())
-        }
-
-        val tracksDeferred = async {
-            trackDao.searchTracks(trimmed, TRACK_LIMIT).map { it.toTrackInfo() }
-        }
-        val playlistsDeferred = async {
-            playlistDao.searchPlaylists(trimmed, PLAYLIST_LIMIT).map { entity ->
-                Playlist(
-                    id = entity.id,
-                    name = entity.name,
-                    createdAt = entity.createdAt,
-                    trackCount = entity.trackCount
-                )
+    override suspend fun searchAll(query: String): SearchRawResults =
+        coroutineScope {
+            val trimmed = query.trim()
+            if (trimmed.isEmpty()) {
+                return@coroutineScope SearchRawResults(emptyList(), emptyList(), emptyList())
             }
-        }
-        val historyDeferred = async {
-            playHistoryDao.searchHistory(trimmed, HISTORY_LIMIT).map { it.toPlayHistoryEntry() }
-        }
 
-        SearchRawResults(
-            tracks = tracksDeferred.await(),
-            playlists = playlistsDeferred.await(),
-            history = historyDeferred.await()
-        )
-    }
+            val tracksDeferred =
+                async {
+                    trackDao.searchTracks(trimmed, TRACK_LIMIT).map { it.toTrackInfo() }
+                }
+            val playlistsDeferred =
+                async {
+                    playlistDao.searchPlaylists(trimmed, PLAYLIST_LIMIT).map { entity ->
+                        Playlist(
+                            id = entity.id,
+                            name = entity.name,
+                            createdAt = entity.createdAt,
+                            trackCount = entity.trackCount,
+                        )
+                    }
+                }
+            val historyDeferred =
+                async {
+                    playHistoryDao.searchHistory(trimmed, HISTORY_LIMIT).map { it.toPlayHistoryEntry() }
+                }
+
+            SearchRawResults(
+                tracks = tracksDeferred.await(),
+                playlists = playlistsDeferred.await(),
+                history = historyDeferred.await(),
+            )
+        }
 
     override suspend fun getSuggestions(): List<String> {
         val since30d = System.currentTimeMillis() - THIRTY_DAYS_MS
@@ -74,12 +78,13 @@ private fun com.anplak.androidmusic.data.db.PlayHistoryWithTrack.toPlayHistoryEn
         playedAt = playedAt,
         duration = duration,
         sessionId = sessionId,
-        track = TrackInfo(
-            uri = TrackInfo.uriFromId(trackId),
-            title = title,
-            artist = artist,
-            album = album,
-            duration = trackDuration
-        )
+        track =
+            TrackInfo(
+                uri = TrackInfo.uriFromId(trackId),
+                title = title,
+                artist = artist,
+                album = album,
+                duration = trackDuration,
+            ),
     )
 }

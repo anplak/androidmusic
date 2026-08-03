@@ -5,13 +5,13 @@ import com.anplak.androidmusic.player.TrackInfo
 data class LibraryFilter(
     val favoritesOnly: Boolean = false,
     val recentlyAdded: Boolean = false,
-    val durationBucket: DurationBucket? = null
+    val durationBucket: DurationBucket? = null,
 )
 
 enum class DurationBucket {
     SHORT,
     MEDIUM,
-    LONG
+    LONG,
 }
 
 object LibraryFilterEngine {
@@ -22,7 +22,7 @@ object LibraryFilterEngine {
         tracks: List<TrackInfo>,
         filter: LibraryFilter,
         favoriteIds: Set<Long>,
-        recentlyAddedIds: Set<Long>
+        recentlyAddedIds: Set<Long>,
     ): List<TrackInfo> {
         return tracks.filter { track ->
             (!filter.favoritesOnly || track.id in favoriteIds) &&
@@ -31,7 +31,10 @@ object LibraryFilterEngine {
         }
     }
 
-    fun matchesLocalQuery(track: TrackInfo, query: String): Boolean {
+    fun matchesLocalQuery(
+        track: TrackInfo,
+        query: String,
+    ): Boolean {
         val q = query.trim()
         if (q.isEmpty()) return true
         return track.title.contains(q, ignoreCase = true) ||

@@ -6,21 +6,21 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TrackRankingWeightsTest {
-
     private val nowMs = 1_700_000_000_000L
     private val dayMs = 24L * 60 * 60 * 1000
 
     @Test
     fun `effectiveWeight returns base weight for track with no signals`() {
-        val weight = TrackRankingWeights.effectiveWeight(
-            RankingInputs(
-                playCount = 0,
-                skipCount = 0,
-                isFavorite = false,
-                favoritedAt = null,
-                nowMs = nowMs
+        val weight =
+            TrackRankingWeights.effectiveWeight(
+                RankingInputs(
+                    playCount = 0,
+                    skipCount = 0,
+                    isFavorite = false,
+                    favoritedAt = null,
+                    nowMs = nowMs,
+                ),
             )
-        )
 
         assertEquals(1.0, weight, 0.001)
     }
@@ -43,18 +43,20 @@ class TrackRankingWeightsTest {
 
     @Test
     fun `recent favorite outranks stale favorite at equal play count`() {
-        val recent = TrackRankingWeights.effectiveWeight(
-            baseInputs(
-                isFavorite = true,
-                favoritedAt = nowMs - dayMs
+        val recent =
+            TrackRankingWeights.effectiveWeight(
+                baseInputs(
+                    isFavorite = true,
+                    favoritedAt = nowMs - dayMs,
+                ),
             )
-        )
-        val stale = TrackRankingWeights.effectiveWeight(
-            baseInputs(
-                isFavorite = true,
-                favoritedAt = nowMs - (730L * dayMs)
+        val stale =
+            TrackRankingWeights.effectiveWeight(
+                baseInputs(
+                    isFavorite = true,
+                    favoritedAt = nowMs - (730L * dayMs),
+                ),
             )
-        )
 
         assertTrue(recent > stale)
     }
@@ -76,9 +78,10 @@ class TrackRankingWeightsTest {
 
     @Test
     fun `effectiveWeight respects minimum floor`() {
-        val weight = TrackRankingWeights.effectiveWeight(
-            baseInputs(playCount = 0, skipCount = 50)
-        )
+        val weight =
+            TrackRankingWeights.effectiveWeight(
+                baseInputs(playCount = 0, skipCount = 50),
+            )
 
         assertEquals(RankingConfig.MIN_WEIGHT, weight, 0.001)
     }
@@ -87,12 +90,12 @@ class TrackRankingWeightsTest {
         playCount: Int = 5,
         skipCount: Int = 0,
         isFavorite: Boolean = false,
-        favoritedAt: Long? = null
+        favoritedAt: Long? = null,
     ) = RankingInputs(
         playCount = playCount,
         skipCount = skipCount,
         isFavorite = isFavorite,
         favoritedAt = favoritedAt,
-        nowMs = nowMs
+        nowMs = nowMs,
     )
 }

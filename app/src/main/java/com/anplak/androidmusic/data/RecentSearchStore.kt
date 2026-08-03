@@ -8,14 +8,14 @@ import kotlinx.coroutines.flow.asStateFlow
 
 interface RecentSearchStore {
     fun recentQueries(): Flow<List<String>>
+
     suspend fun addRecentQuery(query: String)
 }
 
 class SharedPreferencesRecentSearchStore(context: Context) : RecentSearchStore {
-
     private val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    private val _queries = MutableStateFlow(readQueries())
-    private val queries: Flow<List<String>> = _queries.asStateFlow()
+    private val queriesState = MutableStateFlow(readQueries())
+    private val queries: Flow<List<String>> = queriesState.asStateFlow()
 
     override fun recentQueries(): Flow<List<String>> = queries
 
@@ -23,12 +23,13 @@ class SharedPreferencesRecentSearchStore(context: Context) : RecentSearchStore {
         val trimmed = query.trim()
         if (trimmed.isEmpty()) return
 
-        val updated = (listOf(trimmed) + readQueries().filter { !it.equals(trimmed, ignoreCase = true) })
-            .take(MAX_RECENT)
+        val updated =
+            (listOf(trimmed) + readQueries().filter { !it.equals(trimmed, ignoreCase = true) })
+                .take(MAX_RECENT)
         prefs.edit {
             putString(KEY_QUERIES, updated.joinToString(DELIMITER))
         }
-        _queries.value = updated
+        queriesState.value = updated
     }
 
     private fun readQueries(): List<String> {

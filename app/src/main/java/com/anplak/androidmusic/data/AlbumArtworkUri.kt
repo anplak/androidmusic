@@ -2,6 +2,7 @@ package com.anplak.androidmusic.data
 
 import android.content.ContentUris
 import android.net.Uri
+import androidx.core.net.toUri
 import com.anplak.androidmusic.player.TrackInfo
 
 /**
@@ -9,7 +10,7 @@ import com.anplak.androidmusic.player.TrackInfo
  * Does not open or decode bitmaps — display layers load asynchronously.
  */
 object AlbumArtworkUri {
-    private val baseUri: Uri = Uri.parse("content://media/external/audio/albumart")
+    private val baseUri: Uri = "content://media/external/audio/albumart".toUri()
 
     fun forAlbumId(albumId: Long?): Uri? =
         albumId
@@ -23,17 +24,19 @@ object AlbumArtworkUri {
     fun withArtistFallbacks(tracks: List<TrackInfo>): List<TrackInfo> {
         if (tracks.isEmpty()) return tracks
 
-        val artistArtwork = tracks
-            .groupBy { artistKey(it.artist) }
-            .mapNotNull { (key, group) ->
-                val uri = group
-                    .sortedBy { it.id }
-                    .asSequence()
-                    .mapNotNull { forAlbumId(it.albumId) }
-                    .firstOrNull()
-                uri?.let { key to it }
-            }
-            .toMap()
+        val artistArtwork =
+            tracks
+                .groupBy { artistKey(it.artist) }
+                .mapNotNull { (key, group) ->
+                    val uri =
+                        group
+                            .sortedBy { it.id }
+                            .asSequence()
+                            .mapNotNull { forAlbumId(it.albumId) }
+                            .firstOrNull()
+                    uri?.let { key to it }
+                }
+                .toMap()
 
         if (artistArtwork.isEmpty()) return tracks
 
@@ -53,6 +56,6 @@ object AlbumArtworkUri {
 
     private fun artistKey(artist: String): String =
         LibraryIndexFilter.normalizeArtist(
-            artist.ifBlank { LibraryIndexSuggestions.UNKNOWN_ARTIST_LABEL }
+            artist.ifBlank { LibraryIndexSuggestions.UNKNOWN_ARTIST_LABEL },
         )
 }

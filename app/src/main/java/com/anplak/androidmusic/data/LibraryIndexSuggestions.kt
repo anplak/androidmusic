@@ -3,7 +3,6 @@ package com.anplak.androidmusic.data
 import java.io.File
 
 object LibraryIndexSuggestions {
-
     const val UNKNOWN_ARTIST_LABEL = "Unknown Artist"
 
     /**
@@ -12,7 +11,7 @@ object LibraryIndexSuggestions {
      */
     fun discoverFoldersFromTracks(
         trackPaths: List<String>,
-        existingRulePaths: Set<String> = emptySet()
+        existingRulePaths: Set<String> = emptySet(),
     ): List<String> {
         val excluded = existingRulePaths.map { LibraryIndexFilter.normalizePath(it) }.toSet()
         return trackPaths
@@ -43,7 +42,7 @@ object LibraryIndexSuggestions {
         fromTracks: List<String>,
         subfolders: List<String>,
         presetRoots: List<String>,
-        existingRulePaths: Set<String> = emptySet()
+        existingRulePaths: Set<String> = emptySet(),
     ): List<String> {
         val excluded = existingRulePaths.map { LibraryIndexFilter.normalizePath(it) }.toSet()
         return (fromTracks + subfolders + presetRoots)

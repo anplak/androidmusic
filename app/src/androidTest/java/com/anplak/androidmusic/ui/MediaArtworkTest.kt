@@ -19,7 +19,6 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class MediaArtworkTest {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
@@ -31,7 +30,7 @@ class MediaArtworkTest {
                     uri = null,
                     contentDescription = "Album",
                     fallbackLabel = "Neon",
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier.size(48.dp),
                 )
             }
         }
@@ -49,7 +48,7 @@ class MediaArtworkTest {
                     uri = Uri.parse("content://media/external/audio/albumart/999999"),
                     contentDescription = "Missing art",
                     fallbackLabel = "Ghost",
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier.size(48.dp),
                 )
             }
         }
@@ -67,7 +66,7 @@ class MediaArtworkTest {
                     uri = null,
                     contentDescription = null,
                     fallbackLabel = "   ",
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(40.dp),
                 )
             }
         }

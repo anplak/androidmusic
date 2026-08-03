@@ -1,7 +1,8 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package com.anplak.androidmusic.ui
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -12,13 +13,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.LibraryAdd
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
@@ -40,8 +40,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anplak.androidmusic.R
@@ -54,7 +54,7 @@ fun PlaylistsScreen(
     onSmartPlaylistSelected: (SmartPlaylistType) -> Unit = {},
     onOpenSearch: () -> Unit = {},
     modifier: Modifier = Modifier,
-    viewModel: PlaylistsViewModel = viewModel()
+    viewModel: PlaylistsViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.playlistSearchQuery.collectAsState()
@@ -66,11 +66,11 @@ fun PlaylistsScreen(
             CompactTabActions {
                 IconButton(
                     onClick = onOpenSearch,
-                    modifier = Modifier.testTag("open_search")
+                    modifier = Modifier.testTag("open_search"),
                 ) {
                     Icon(
                         imageVector = Icons.Default.Search,
-                        contentDescription = stringResource(R.string.search)
+                        contentDescription = stringResource(R.string.search),
                     )
                 }
             }
@@ -78,51 +78,56 @@ fun PlaylistsScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showCreateDialog = true },
-                modifier = Modifier.testTag("create_playlist_fab")
+                modifier = Modifier.testTag("create_playlist_fab"),
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
-                    contentDescription = stringResource(R.string.create_playlist)
+                    contentDescription = stringResource(R.string.create_playlist),
                 )
             }
         },
-        modifier = modifier
+        modifier = modifier,
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
         ) {
             when (val state = uiState) {
                 is PlaylistsUiState.Loading -> {
                     LoadingState()
                 }
                 is PlaylistsUiState.Empty,
-                is PlaylistsUiState.Content -> {
-                    val playlists = when (state) {
-                        is PlaylistsUiState.Content -> state.playlists
-                        else -> emptyList()
-                    }
-                    val filtered = playlists.filter { playlist ->
-                        searchQuery.isBlank() ||
-                            playlist.name.contains(searchQuery, ignoreCase = true)
-                    }
+                is PlaylistsUiState.Content,
+                -> {
+                    val playlists =
+                        when (state) {
+                            is PlaylistsUiState.Content -> state.playlists
+                            else -> emptyList()
+                        }
+                    val filtered =
+                        playlists.filter { playlist ->
+                            searchQuery.isBlank() ||
+                                playlist.name.contains(searchQuery, ignoreCase = true)
+                        }
                     Column(modifier = Modifier.fillMaxSize()) {
                         OutlinedTextField(
                             value = searchQuery,
                             onValueChange = viewModel::setPlaylistSearchQuery,
                             placeholder = { Text(stringResource(R.string.search_playlists_hint)) },
                             singleLine = true,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
-                                .testTag("playlists_search_field")
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                                    .testTag("playlists_search_field"),
                         )
                         PlaylistListWithSmartPlaylists(
                             playlists = filtered,
                             onPlaylistSelected = onPlaylistSelected,
                             onSmartPlaylistSelected = onSmartPlaylistSelected,
-                            onDeletePlaylist = { viewModel.deletePlaylist(it) }
+                            onDeletePlaylist = { viewModel.deletePlaylist(it) },
                         )
                     }
                 }
@@ -136,7 +141,7 @@ fun PlaylistsScreen(
             onCreate = { name ->
                 viewModel.createPlaylist(name)
                 showCreateDialog = false
-            }
+            },
         )
     }
 }
@@ -144,10 +149,11 @@ fun PlaylistsScreen(
 @Composable
 private fun LoadingState() {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("playlists_loading_state"),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("playlists_loading_state"),
+        contentAlignment = Alignment.Center,
     ) {
         CircularProgressIndicator()
     }
@@ -158,22 +164,23 @@ private fun PlaylistListWithSmartPlaylists(
     playlists: List<Playlist>,
     onPlaylistSelected: (Long) -> Unit,
     onSmartPlaylistSelected: (SmartPlaylistType) -> Unit,
-    onDeletePlaylist: (Long) -> Unit
+    onDeletePlaylist: (Long) -> Unit,
 ) {
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("playlists_list"),
-        contentPadding = PaddingValues(vertical = 8.dp)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("playlists_list"),
+        contentPadding = PaddingValues(vertical = 8.dp),
     ) {
         // Smart Playlists Section Header
         item {
             SectionHeader(
                 title = stringResource(R.string.smart_playlists),
-                modifier = Modifier.testTag("smart_playlists_header")
+                modifier = Modifier.testTag("smart_playlists_header"),
             )
         }
-        
+
         // Smart Playlist Items
         item {
             SmartPlaylistItem(
@@ -181,7 +188,7 @@ private fun PlaylistListWithSmartPlaylists(
                 description = stringResource(R.string.smart_playlist_description),
                 icon = Icons.AutoMirrored.Filled.TrendingUp,
                 onClick = { onSmartPlaylistSelected(SmartPlaylistType.MOST_PLAYED) },
-                testTag = "smart_playlist_most_played"
+                testTag = "smart_playlist_most_played",
             )
         }
         item {
@@ -190,7 +197,7 @@ private fun PlaylistListWithSmartPlaylists(
                 description = stringResource(R.string.smart_playlist_description),
                 icon = Icons.Default.History,
                 onClick = { onSmartPlaylistSelected(SmartPlaylistType.RECENTLY_PLAYED) },
-                testTag = "smart_playlist_recently_played"
+                testTag = "smart_playlist_recently_played",
             )
         }
         item {
@@ -199,31 +206,32 @@ private fun PlaylistListWithSmartPlaylists(
                 description = stringResource(R.string.smart_playlist_description),
                 icon = Icons.Default.LibraryAdd,
                 onClick = { onSmartPlaylistSelected(SmartPlaylistType.RECENTLY_ADDED) },
-                testTag = "smart_playlist_recently_added"
+                testTag = "smart_playlist_recently_added",
             )
         }
-        
+
         // User Playlists Section Header (only if there are playlists)
         if (playlists.isNotEmpty()) {
             item {
                 SectionHeader(
                     title = stringResource(R.string.your_playlists),
-                    modifier = Modifier
-                        .padding(top = 16.dp)
-                        .testTag("user_playlists_header")
+                    modifier =
+                        Modifier
+                            .padding(top = 16.dp)
+                            .testTag("user_playlists_header"),
                 )
             }
-            
+
             items(
                 items = playlists,
-                key = { it.id }
+                key = { it.id },
             ) { playlist ->
                 val index = playlists.indexOf(playlist)
                 PlaylistItem(
                     playlist = playlist,
                     index = index,
                     onClick = { onPlaylistSelected(playlist.id) },
-                    onDelete = { onDeletePlaylist(playlist.id) }
+                    onDelete = { onDeletePlaylist(playlist.id) },
                 )
             }
         }
@@ -233,15 +241,16 @@ private fun PlaylistListWithSmartPlaylists(
 @Composable
 private fun SectionHeader(
     title: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Text(
         text = title.uppercase(),
         style = MaterialTheme.typography.labelMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
     )
 }
 
@@ -251,32 +260,33 @@ private fun SmartPlaylistItem(
     description: String,
     icon: ImageVector,
     onClick: () -> Unit,
-    testTag: String
+    testTag: String,
 ) {
     ListItem(
         headlineContent = {
             Text(
                 text = title,
-                maxLines = 1
+                maxLines = 1,
             )
         },
         supportingContent = {
             Text(
                 text = description,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         },
         leadingContent = {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary
+                tint = MaterialTheme.colorScheme.primary,
             )
         },
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .testTag(testTag)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .testTag(testTag),
     )
 }
 
@@ -285,44 +295,45 @@ private fun PlaylistItem(
     playlist: Playlist,
     index: Int,
     onClick: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
 ) {
     ListItem(
         headlineContent = {
             Text(
                 text = playlist.name,
-                maxLines = 1
+                maxLines = 1,
             )
         },
         supportingContent = {
             Text(
-text = pluralStringResource(R.plurals.tracks_count, playlist.trackCount, playlist.trackCount),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                text = pluralStringResource(R.plurals.tracks_count, playlist.trackCount, playlist.trackCount),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         },
         trailingContent = {
             IconButton(
                 onClick = onDelete,
-                modifier = Modifier.testTag("delete_playlist_button_$index")
+                modifier = Modifier.testTag("delete_playlist_button_$index"),
             ) {
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = stringResource(R.string.delete_playlist),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         },
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .testTag("playlist_item_$index")
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .testTag("playlist_item_$index"),
     )
 }
 
 @Composable
 private fun CreatePlaylistDialog(
     onDismiss: () -> Unit,
-    onCreate: (String) -> Unit
+    onCreate: (String) -> Unit,
 ) {
     var playlistName by remember { mutableStateOf("") }
 
@@ -337,16 +348,17 @@ private fun CreatePlaylistDialog(
                 onValueChange = { playlistName = it },
                 label = { Text(stringResource(R.string.playlist_name)) },
                 singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("playlist_name_input")
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .testTag("playlist_name_input"),
             )
         },
         confirmButton = {
             TextButton(
                 onClick = { onCreate(playlistName) },
                 enabled = playlistName.isNotBlank(),
-                modifier = Modifier.testTag("create_playlist_confirm")
+                modifier = Modifier.testTag("create_playlist_confirm"),
             ) {
                 Text(stringResource(R.string.create))
             }
@@ -354,12 +366,11 @@ private fun CreatePlaylistDialog(
         dismissButton = {
             TextButton(
                 onClick = onDismiss,
-                modifier = Modifier.testTag("create_playlist_cancel")
+                modifier = Modifier.testTag("create_playlist_cancel"),
             ) {
                 Text(stringResource(R.string.cancel))
             }
         },
-        modifier = Modifier.testTag("create_playlist_dialog")
+        modifier = Modifier.testTag("create_playlist_dialog"),
     )
 }
-

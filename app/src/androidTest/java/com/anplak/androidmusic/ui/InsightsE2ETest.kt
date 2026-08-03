@@ -22,23 +22,23 @@ import org.junit.runner.RunWith
  *
  * Note: These tests require audio files on the device and existing play history.
  * Tests will skip gracefully if no audio is present.
- * 
- * Insights can be accessed via the InsightsScreen which is integrated as a 
+ *
+ * Insights can be accessed via the InsightsScreen which is integrated as a
  * standalone feature. For this app, insights data is based on play history,
  * so meaningful tests require prior playback sessions.
  */
 @RunWith(AndroidJUnit4::class)
 class InsightsE2ETest {
-
     @get:Rule(order = 0)
-    val permissionRule: GrantPermissionRule = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        GrantPermissionRule.grant(
-            Manifest.permission.READ_MEDIA_AUDIO,
-            Manifest.permission.POST_NOTIFICATIONS
-        )
-    } else {
-        GrantPermissionRule.grant(Manifest.permission.READ_EXTERNAL_STORAGE)
-    }
+    val permissionRule: GrantPermissionRule =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            GrantPermissionRule.grant(
+                Manifest.permission.READ_MEDIA_AUDIO,
+                Manifest.permission.POST_NOTIFICATIONS,
+            )
+        } else {
+            GrantPermissionRule.grant(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
 
     @get:Rule(order = 1)
     val composeTestRule = createAndroidComposeRule<MainActivity>()
@@ -82,14 +82,16 @@ class InsightsE2ETest {
 
         // Verify history screen is displayed (which contains insights data)
         composeTestRule.waitUntil(timeoutMillis = 5_000) {
-            val hasContent = composeTestRule
-                .onAllNodes(hasTestTag("history_list"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            val hasEmpty = composeTestRule
-                .onAllNodes(hasTestTag("history_empty"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
+            val hasContent =
+                composeTestRule
+                    .onAllNodes(hasTestTag("history_list"))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            val hasEmpty =
+                composeTestRule
+                    .onAllNodes(hasTestTag("history_empty"))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
             hasContent || hasEmpty
         }
 
@@ -160,22 +162,25 @@ class InsightsE2ETest {
 
         // Verify history has entries or is empty
         composeTestRule.waitUntil(timeoutMillis = 5_000) {
-            val hasContent = composeTestRule
-                .onAllNodes(hasTestTag("history_list"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            val hasEmpty = composeTestRule
-                .onAllNodes(hasTestTag("history_empty"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
+            val hasContent =
+                composeTestRule
+                    .onAllNodes(hasTestTag("history_list"))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            val hasEmpty =
+                composeTestRule
+                    .onAllNodes(hasTestTag("history_empty"))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
             hasContent || hasEmpty
         }
 
         // Check if history was recorded
-        val hasHistory = composeTestRule
-            .onAllNodes(hasTestTag("history_list"))
-            .fetchSemanticsNodes()
-            .isNotEmpty()
+        val hasHistory =
+            composeTestRule
+                .onAllNodes(hasTestTag("history_list"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
 
         if (hasHistory) {
             composeTestRule

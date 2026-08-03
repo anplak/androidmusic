@@ -24,82 +24,93 @@ import kotlinx.coroutines.launch
 
 sealed interface ForYouUiState {
     data object Loading : ForYouUiState
+
     data class Content(val rows: List<RecommendationRow>) : ForYouUiState
+
     data object Empty : ForYouUiState
+
     data class Error(val message: String) : ForYouUiState
 }
 
-class DiscoveryViewModel @JvmOverloads constructor(
-    application: Application,
-    private val recommendationRepository: RecommendationRepository? = null,
-    private val recommendationEngine: RecommendationEngine? = null
-) : AndroidViewModel(application) {
+class DiscoveryViewModel
+    @JvmOverloads
+    constructor(
+        application: Application,
+        private val recommendationRepository: RecommendationRepository? = null,
+        private val recommendationEngine: RecommendationEngine? = null,
+    ) : AndroidViewModel(application) {
+        private val db = AppDatabase.getInstance(application)
+        private val musicLibraryRepository: MusicLibraryRepository =
+            MusicLibraryRepositoryFactory.create(application)
+        private val repository: RecommendationRepository =
+            recommendationRepository ?: run {
+                val favoritesRepository = FavoritesRepositoryImpl(db.favoriteDao(), db.trackDao())
+                RecommendationRepositoryImpl(
+                    musicLibraryRepository = musicLibraryRepository,
+                    favoritesRepository = favoritesRepository,
+                    playHistoryRepository = PlayHistoryRepositoryImpl(db.playHistoryDao()),
+                    playlistRepository = PlaylistRepositoryImpl(db.playlistDao()),
+                )
+            }
+        private val engine: RecommendationEngine =
+            recommendationEngine ?: RecommendationEngine(
+                AutoMixGenerator(
+                    SmartShuffleGenerator(
+                        FavoritesRepositoryImpl(db.favoriteDao(), db.trackDao()),
+                        TrackStatsRepositoryImpl(db.trackStatsDao()),
+                    ),
+                ),
+            )
 
-    private val db = AppDatabase.getInstance(application)
-    private val musicLibraryRepository: MusicLibraryRepository =
-        MusicLibraryRepositoryFactory.create(application)
-    private val repository: RecommendationRepository = recommendationRepository ?: run {
-        val favoritesRepository = FavoritesRepositoryImpl(db.favoriteDao(), db.trackDao())
-        RecommendationRepositoryImpl(
-            musicLibraryRepository = musicLibraryRepository,
-            favoritesRepository = favoritesRepository,
-            playHistoryRepository = PlayHistoryRepositoryImpl(db.playHistoryDao()),
-            playlistRepository = PlaylistRepositoryImpl(db.playlistDao())
-        )
-    }
-    private val engine: RecommendationEngine = recommendationEngine ?: RecommendationEngine(
-        AutoMixGenerator(SmartShuffleGenerator(
-            FavoritesRepositoryImpl(db.favoriteDao(), db.trackDao()),
-            TrackStatsRepositoryImpl(db.trackStatsDao())
-        ))
-    )
+        private val _uiState = MutableStateFlow<ForYouUiState>(ForYouUiState.Loading)
+        val uiState: StateFlow<ForYouUiState> = _uiState.asStateFlow()
 
-    private val _uiState = MutableStateFlow<ForYouUiState>(ForYouUiState.Loading)
-    val uiState: StateFlow<ForYouUiState> = _uiState.asStateFlow()
+        private var refreshJob: Job? = null
+        private var cachedRows: List<RecommendationRow> = emptyList()
+        private var lastRefreshedLibrarySize: Int = -1
 
-    private var refreshJob: Job? = null
-    private var cachedRows: List<RecommendationRow> = emptyList()
-    private var lastRefreshedLibrarySize: Int = -1
+        init {
+            viewModelScope.launch {
+                musicLibraryRepository.observeCachedTracks().collect { tracks ->
+                    if (tracks.size != lastRefreshedLibrarySize) {
+                        refresh()
+                    }
+                }
+            }
+        }
 
-    init {
-        viewModelScope.launch {
-            musicLibraryRepository.observeCachedTracks().collect { tracks ->
-                if (tracks.size != lastRefreshedLibrarySize) {
+        fun getRow(rowId: String): RecommendationRow? = cachedRows.find { it.id == rowId }
+
+        /** Refreshes when the cached library changed since the last successful build. */
+        fun onForYouVisible() {
+            viewModelScope.launch {
+                if (musicLibraryRepository.getCachedTracks().size != lastRefreshedLibrarySize) {
                     refresh()
                 }
             }
         }
-    }
 
-    fun getRow(rowId: String): RecommendationRow? = cachedRows.find { it.id == rowId }
-
-    /** Refreshes when the cached library changed since the last successful build. */
-    fun onForYouVisible() {
-        viewModelScope.launch {
-            if (musicLibraryRepository.getCachedTracks().size != lastRefreshedLibrarySize) {
-                refresh()
-            }
-        }
-    }
-
-    fun refresh() {
-        refreshJob?.cancel()
-        refreshJob = viewModelScope.launch {
-            _uiState.value = ForYouUiState.Loading
-            runCatching {
-                val inputs = repository.loadInputs()
-                val rows = engine.buildRows(inputs)
-                cachedRows = rows
-                lastRefreshedLibrarySize = inputs.library.size
-                _uiState.value = when {
-                    rows.isEmpty() -> ForYouUiState.Empty
-                    else -> ForYouUiState.Content(rows)
+        fun refresh() {
+            refreshJob?.cancel()
+            refreshJob =
+                viewModelScope.launch {
+                    _uiState.value = ForYouUiState.Loading
+                    runCatching {
+                        val inputs = repository.loadInputs()
+                        val rows = engine.buildRows(inputs)
+                        cachedRows = rows
+                        lastRefreshedLibrarySize = inputs.library.size
+                        _uiState.value =
+                            when {
+                                rows.isEmpty() -> ForYouUiState.Empty
+                                else -> ForYouUiState.Content(rows)
+                            }
+                    }.onFailure { error ->
+                        _uiState.value =
+                            ForYouUiState.Error(
+                                error.message ?: "Failed to load recommendations",
+                            )
+                    }
                 }
-            }.onFailure { error ->
-                _uiState.value = ForYouUiState.Error(
-                    error.message ?: "Failed to load recommendations"
-                )
-            }
         }
     }
-}
