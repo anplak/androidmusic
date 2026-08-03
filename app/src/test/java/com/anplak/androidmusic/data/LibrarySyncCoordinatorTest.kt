@@ -18,81 +18,86 @@ import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class LibrarySyncCoordinatorTest {
+    @Test
+    fun `syncNow coalesces concurrent callers into one sync`() =
+        runTest {
+            val fakeRepository = FakeSyncRepository()
+            val coordinator = LibrarySyncCoordinator(fakeRepository, CoroutineScope(coroutineContext))
+
+            val first = async { coordinator.syncNow() }
+            val second = async { coordinator.syncNow() }
+            advanceUntilIdle()
+
+            val firstResult = first.await()
+            val secondResult = second.await()
+
+            assertEquals(1, fakeRepository.syncLibraryCallCount)
+            assertTrue(firstResult is LibrarySyncResult.Completed || firstResult is LibrarySyncResult.Joined)
+            assertTrue(secondResult is LibrarySyncResult.Joined || secondResult is LibrarySyncResult.Completed)
+        }
 
     @Test
-    fun `syncNow coalesces concurrent callers into one sync`() = runTest {
-        val fakeRepository = FakeSyncRepository()
-        val coordinator = LibrarySyncCoordinator(fakeRepository, CoroutineScope(coroutineContext))
+    fun `scheduleSync debounces rapid requests`() =
+        runTest {
+            val fakeRepository = FakeSyncRepository()
+            val coordinator = LibrarySyncCoordinator(fakeRepository, CoroutineScope(coroutineContext))
 
-        val first = async { coordinator.syncNow() }
-        val second = async { coordinator.syncNow() }
-        advanceUntilIdle()
+            coordinator.scheduleSync(debounceMs = 300L)
+            coordinator.scheduleSync(debounceMs = 300L)
+            coordinator.scheduleSync(debounceMs = 300L)
+            advanceTimeBy(300L)
+            advanceUntilIdle()
 
-        val firstResult = first.await()
-        val secondResult = second.await()
-
-        assertEquals(1, fakeRepository.syncLibraryCallCount)
-        assertTrue(firstResult is LibrarySyncResult.Completed || firstResult is LibrarySyncResult.Joined)
-        assertTrue(secondResult is LibrarySyncResult.Joined || secondResult is LibrarySyncResult.Completed)
-    }
+            assertEquals(1, fakeRepository.syncLibraryCallCount)
+        }
 
     @Test
-    fun `scheduleSync debounces rapid requests`() = runTest {
-        val fakeRepository = FakeSyncRepository()
-        val coordinator = LibrarySyncCoordinator(fakeRepository, CoroutineScope(coroutineContext))
+    fun `syncNow scans directories only once per coordinator`() =
+        runTest {
+            val fakeRepository = FakeSyncRepository()
+            val coordinator = LibrarySyncCoordinator(fakeRepository, CoroutineScope(coroutineContext))
 
-        coordinator.scheduleSync(debounceMs = 300L)
-        coordinator.scheduleSync(debounceMs = 300L)
-        coordinator.scheduleSync(debounceMs = 300L)
-        advanceTimeBy(300L)
-        advanceUntilIdle()
+            coordinator.syncNow()
+            advanceUntilIdle()
+            coordinator.syncNow()
+            advanceUntilIdle()
 
-        assertEquals(1, fakeRepository.syncLibraryCallCount)
-    }
-
-    @Test
-    fun `syncNow scans directories only once per coordinator`() = runTest {
-        val fakeRepository = FakeSyncRepository()
-        val coordinator = LibrarySyncCoordinator(fakeRepository, CoroutineScope(coroutineContext))
-
-        coordinator.syncNow()
-        advanceUntilIdle()
-        coordinator.syncNow()
-        advanceUntilIdle()
-
-        assertEquals(2, fakeRepository.syncLibraryCallCount)
-        assertEquals(1, fakeRepository.scanMusicDirectoriesCallCount)
-    }
+            assertEquals(2, fakeRepository.syncLibraryCallCount)
+            assertEquals(1, fakeRepository.scanMusicDirectoriesCallCount)
+        }
 
     @Test
-    fun `syncNow emits Running then Success states`() = runTest {
-        val fakeRepository = FakeSyncRepository()
-        val coordinator = LibrarySyncCoordinator(fakeRepository, CoroutineScope(coroutineContext))
+    fun `syncNow emits Running then Success states`() =
+        runTest {
+            val fakeRepository = FakeSyncRepository()
+            val coordinator = LibrarySyncCoordinator(fakeRepository, CoroutineScope(coroutineContext))
 
-        val job = launch { coordinator.syncNow() }
-        advanceUntilIdle()
-        job.join()
+            val job = launch { coordinator.syncNow() }
+            advanceUntilIdle()
+            job.join()
 
-        assertTrue(coordinator.syncState.value is LibrarySyncState.Success)
-    }
+            assertTrue(coordinator.syncState.value is LibrarySyncState.Success)
+        }
 
     @Test
-    fun `syncNow emits Failed state when repository throws`() = runTest {
-        val fakeRepository = FakeSyncRepository(shouldFail = true)
-        val coordinator = LibrarySyncCoordinator(
-            fakeRepository,
-            CoroutineScope(SupervisorJob() + coroutineContext)
-        )
+    fun `syncNow emits Failed state when repository throws`() =
+        runTest {
+            val fakeRepository = FakeSyncRepository(shouldFail = true)
+            val coordinator =
+                LibrarySyncCoordinator(
+                    fakeRepository,
+                    CoroutineScope(SupervisorJob() + coroutineContext),
+                )
 
-        val result = coordinator.syncNow()
-        advanceUntilIdle()
+            val result = coordinator.syncNow()
+            advanceUntilIdle()
 
-        assertTrue(result is LibrarySyncResult.Failed)
-        assertTrue(coordinator.syncState.value is LibrarySyncState.Failed)
-    }
+            assertTrue(result is LibrarySyncResult.Failed)
+            assertTrue(coordinator.syncState.value is LibrarySyncState.Failed)
+        }
 
     private class FakeSyncRepository(
-        private val shouldFail: Boolean = false
+        private val shouldFail: Boolean = false,
     ) : MusicLibraryRepository {
         private val cacheFlow = MutableStateFlow<List<TrackInfo>>(emptyList())
 

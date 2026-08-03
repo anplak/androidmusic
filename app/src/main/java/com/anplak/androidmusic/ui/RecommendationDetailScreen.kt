@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package com.anplak.androidmusic.ui
 
 import androidx.compose.foundation.clickable
@@ -48,7 +50,7 @@ fun RecommendationDetailScreen(
     onBackClick: () -> Unit,
     onPlayAll: (List<TrackInfo>, Int) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: DiscoveryViewModel
+    viewModel: DiscoveryViewModel,
 ) {
     var row by remember { mutableStateOf<RecommendationRow?>(null) }
 
@@ -66,50 +68,54 @@ fun RecommendationDetailScreen(
                     Text(
                         text = title,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
                     )
                 },
                 navigationIcon = {
                     IconButton(
                         onClick = onBackClick,
-                        modifier = Modifier.testTag("recommendation_detail_back")
+                        modifier = Modifier.testTag("recommendation_detail_back"),
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.previous)
+                            contentDescription = stringResource(R.string.previous),
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
             )
         },
-        modifier = modifier
+        modifier = modifier,
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
         ) {
             when {
                 row == null -> {
                     Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .testTag("recommendation_detail_loading"),
-                        contentAlignment = Alignment.Center
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .testTag("recommendation_detail_loading"),
+                        contentAlignment = Alignment.Center,
                     ) {
                         CircularProgressIndicator()
                     }
                 }
                 tracks.isEmpty() -> {
                     Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .testTag("recommendation_detail_empty"),
-                        contentAlignment = Alignment.Center
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .testTag("recommendation_detail_empty"),
+                        contentAlignment = Alignment.Center,
                     ) {
                         Text(text = stringResource(R.string.for_you_empty_description))
                     }
@@ -118,7 +124,7 @@ fun RecommendationDetailScreen(
                     RecommendationDetailContent(
                         tracks = tracks,
                         onTrackClick = { index -> onPlayAll(tracks, index) },
-                        onPlayAll = { onPlayAll(tracks, 0) }
+                        onPlayAll = { onPlayAll(tracks, 0) },
                     )
                 }
             }
@@ -130,57 +136,60 @@ fun RecommendationDetailScreen(
 private fun RecommendationDetailContent(
     tracks: List<TrackInfo>,
     onTrackClick: (Int) -> Unit,
-    onPlayAll: () -> Unit
+    onPlayAll: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.End
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.End,
         ) {
             FilledTonalButton(
                 onClick = onPlayAll,
-                modifier = Modifier.testTag("recommendation_detail_play_all")
+                modifier = Modifier.testTag("recommendation_detail_play_all"),
             ) {
                 Icon(
                     imageVector = Icons.Default.PlayArrow,
                     contentDescription = null,
-                    modifier = Modifier.padding(end = 4.dp)
+                    modifier = Modifier.padding(end = 4.dp),
                 )
                 Text(text = stringResource(R.string.play_all))
             }
         }
 
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .testTag("recommendation_detail_track_list"),
-            contentPadding = PaddingValues(vertical = 8.dp)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .testTag("recommendation_detail_track_list"),
+            contentPadding = PaddingValues(vertical = 8.dp),
         ) {
             itemsIndexed(
                 items = tracks,
-                key = { _, track -> track.id }
+                key = { _, track -> track.id },
             ) { index, track ->
                 ListItem(
                     headlineContent = {
                         Text(
                             text = track.title,
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
                         )
                     },
                     supportingContent = {
                         Text(
                             text = track.artist.ifBlank { stringResource(R.string.unknown_artist) },
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
                         )
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onTrackClick(index) }
-                        .testTag("recommendation_detail_track_$index")
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable { onTrackClick(index) }
+                            .testTag("recommendation_detail_track_$index"),
                 )
             }
         }

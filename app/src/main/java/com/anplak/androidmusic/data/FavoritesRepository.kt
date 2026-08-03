@@ -2,7 +2,6 @@ package com.anplak.androidmusic.data
 
 import com.anplak.androidmusic.data.db.FavoriteDao
 import com.anplak.androidmusic.data.db.FavoriteEntity
-import com.anplak.androidmusic.data.db.FavoriteTimestamp
 import com.anplak.androidmusic.data.db.TrackDao
 import com.anplak.androidmusic.data.db.TrackEntity
 import com.anplak.androidmusic.player.TrackInfo
@@ -11,18 +10,22 @@ import kotlinx.coroutines.flow.map
 
 interface FavoritesRepository {
     suspend fun toggleFavorite(track: TrackInfo)
+
     suspend fun toggleFavorite(trackId: Long)
+
     fun isFavorite(trackId: Long): Flow<Boolean>
+
     fun getAllFavorites(): Flow<List<TrackInfo>>
+
     fun getAllFavoriteIds(): Flow<Set<Long>>
+
     fun getFavoriteTimestamps(): Flow<Map<Long, Long>>
 }
 
 class FavoritesRepositoryImpl(
     private val favoriteDao: FavoriteDao,
-    private val trackDao: TrackDao
+    private val trackDao: TrackDao,
 ) : FavoritesRepository {
-
     override suspend fun toggleFavorite(track: TrackInfo) {
         trackDao.insert(track.toEntity())
         toggleFavoriteInternal(track.id)
@@ -81,7 +84,7 @@ fun TrackEntity.toTrackInfo(): TrackInfo {
         path = path,
         year = year,
         dateAddedSec = dateAddedSec ?: (firstSeenAt / 1000).takeIf { firstSeenAt > 0 },
-        albumId = albumId
+        albumId = albumId,
     )
 }
 
@@ -98,7 +101,6 @@ fun TrackInfo.toEntity(filePath: String = path): TrackEntity {
         path = filePath.ifBlank { path },
         year = year,
         dateAddedSec = dateAddedSec,
-        albumId = albumId
+        albumId = albumId,
     )
 }
-

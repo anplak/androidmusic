@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.spotless)
+    alias(libs.plugins.detekt)
 }
 
 android {
@@ -27,7 +29,7 @@ android {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
         }
     }
@@ -60,6 +62,15 @@ android {
         unitTests {
             isIncludeAndroidResources = true
         }
+    }
+
+    lint {
+        // Fail the build on any lint error or warning
+        abortOnError = true
+        warningsAsErrors = true
+        checkReleaseBuilds = true
+        // Use a baseline file to suppress historical lint findings; new issues will still fail the build
+        baseline = file("config/lint-baseline.xml")
     }
 }
 
@@ -110,3 +121,46 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
 
+spotless {
+    kotlin {
+        target("**/*.kt")
+        targetExclude("**/build/**")
+        // Pin ktlint engine version for consistency
+        ktlint("1.2.1")
+        trimTrailingWhitespace()
+        endWithNewline()
+        indentWithSpaces(4)
+    }
+    kotlinGradle {
+        target("**/*.kts")
+        ktlint("1.2.1")
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}
+
+detekt {
+    buildUponDefaultConfig = true
+    allRules = false
+    autoCorrect = false
+    // Detekt should not fail on historical issues: use baseline file
+    ignoreFailures = false
+    baseline = file("config/detekt/detekt-baseline.xml")
+    // Use root project relative path for Detekt config
+    config.setFrom(rootProject.files("config/detekt/detekt.yml"))
+}
+
+// Configure Detekt report formats (HTML for local viewing)
+tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
+    reports {
+        html.required.set(true)
+        sarif.required.set(false)
+        txt.required.set(false)
+        xml.required.set(false)
+    }
+}
+
+// Ensure static analysis runs as part of the verification lifecycle
+tasks.named("check").configure {
+    dependsOn("spotlessCheck", "detekt", "lint")
+}

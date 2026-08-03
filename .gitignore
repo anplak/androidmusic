@@ -3,6 +3,7 @@
 .gradle-home/
 /local.properties
 /.idea/
+/.kilo/
 .DS_Store
 /build
 /captures

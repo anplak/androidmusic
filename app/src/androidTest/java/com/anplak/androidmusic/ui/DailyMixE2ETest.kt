@@ -34,16 +34,16 @@ import org.junit.runners.MethodSorters
 @RunWith(AndroidJUnit4::class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 class DailyMixE2ETest {
-
     @get:Rule(order = 0)
-    val permissionRule: GrantPermissionRule = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        GrantPermissionRule.grant(
-            Manifest.permission.READ_MEDIA_AUDIO,
-            Manifest.permission.POST_NOTIFICATIONS
-        )
-    } else {
-        GrantPermissionRule.grant(Manifest.permission.READ_EXTERNAL_STORAGE)
-    }
+    val permissionRule: GrantPermissionRule =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            GrantPermissionRule.grant(
+                Manifest.permission.READ_MEDIA_AUDIO,
+                Manifest.permission.POST_NOTIFICATIONS,
+            )
+        } else {
+            GrantPermissionRule.grant(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
 
     @get:Rule(order = 1)
     val composeTestRule = createAndroidComposeRule<MainActivity>()
@@ -67,7 +67,7 @@ class DailyMixE2ETest {
 
         composeTestRule.scrollToForYouRowTagPrefix("for_you_row_daily_mix_")
         assertTrue(
-            composeTestRule.countForYouRowsWithTagPrefix("for_you_row_daily_mix_") >= 1
+            composeTestRule.countForYouRowsWithTagPrefix("for_you_row_daily_mix_") >= 1,
         )
         composeTestRule.onNodeWithTag("for_you_title_${expected.first().id}").assertExists()
     }
@@ -89,15 +89,16 @@ class DailyMixE2ETest {
         val numberedTitles = dailyMixes.map { it.title }.toSet()
         assertTrue(
             "Daily Mix titles should be numbered",
-            numberedTitles.all { it.startsWith("Daily Mix ") }
+            numberedTitles.all { it.startsWith("Daily Mix ") },
         )
 
-        val themedSubtitle = dailyMixes.any { mix ->
-            val subtitle = mix.subtitle.orEmpty()
-            subtitle.contains("gems") ||
-                subtitle.contains("Added this month") ||
-                subtitle.isNotBlank()
-        }
+        val themedSubtitle =
+            dailyMixes.any { mix ->
+                val subtitle = mix.subtitle.orEmpty()
+                subtitle.contains("gems") ||
+                    subtitle.contains("Added this month") ||
+                    subtitle.isNotBlank()
+            }
         assertTrue("Daily Mix subtitles should describe the active theme", themedSubtitle)
     }
 
@@ -115,7 +116,7 @@ class DailyMixE2ETest {
         assertEquals(before.map { it.title }, after.map { it.title })
         assertEquals(
             before.map { row -> row.tracks.map { it.id }.toSet() },
-            after.map { row -> row.tracks.map { it.id }.toSet() }
+            after.map { row -> row.tracks.map { it.id }.toSet() },
         )
     }
 
@@ -133,7 +134,7 @@ class DailyMixE2ETest {
         if (totalTracks <= uniqueTracks + dailyMixes.size) {
             assertFalse(
                 "Daily Mix slots should not reuse tracks when the library has alternatives",
-                overlap
+                overlap,
             )
         }
     }
@@ -145,17 +146,19 @@ class DailyMixE2ETest {
         val dailyMixes = E2ETestRecommendations.dailyMixRows(context)
         if (dailyMixes.isEmpty()) return
 
-        val hasYearMeta = E2ETestRecommendations.tracksWithYearMetadata(context) >=
-            DailyMixConfig.MIN_TRACKS_PER_THEME
-        val hasDateMeta = E2ETestRecommendations.tracksWithDateAddedMetadata(context) >=
-            DailyMixConfig.MIN_TRACKS_PER_THEME
+        val hasYearMeta =
+            E2ETestRecommendations.tracksWithYearMetadata(context) >=
+                DailyMixConfig.MIN_TRACKS_PER_THEME
+        val hasDateMeta =
+            E2ETestRecommendations.tracksWithDateAddedMetadata(context) >=
+                DailyMixConfig.MIN_TRACKS_PER_THEME
 
         if (hasYearMeta && hasDateMeta &&
             E2ETestDatabase.cachedTrackCount(context) >= DailyMixConfig.MIN_TRACKS_PER_THEME * 3
         ) {
             assertTrue(
                 "Rich library should surface multiple Daily Mix slots",
-                dailyMixes.size >= 2
+                dailyMixes.size >= 2,
             )
         }
 

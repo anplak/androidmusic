@@ -1,0 +1,291 @@
+- description: "Global Android Kotlin pet-project guidelines"
+  priority: 1
+  where:
+    - file: "**/*"
+  value: |
+    General principles:
+    - Prefer **Kotlin** for all app source code.
+    - Optimize for **clarity and learning** over premature optimization.
+    - Keep the codebase small, consistent, and easy to navigate.
+    - Keep documentation minimal and focused. The only allowed place for documentation is the README.md file. 
+    - After each major feature or refactoring, review the README.md file to avoid duplicates and inconsistancy.
+    
+    Architecture:
+    - Default to a **single-module** app unless there is a clear need to split modules.
+    - Use **MVVM + unidirectional data flow** with Jetpack components (ViewModel, StateFlow/LiveData).
+    - Keep `Activity`/`Fragment` and composables as thin as possible; push business logic to ViewModels and use-cases.
+    - Isolate side effects (network, storage, system services) behind interfaces and simple data sources/repositories.
+    
+    UI:
+    - Prefer **Jetpack Compose** for new UI. Only use XML if necessary or interacting with legacy components.
+    - Strive for simple, accessible UIs; minimize unnecessary complexity or over-animating.
+    - Hoist UI state whenever reasonable. Avoid deep stateful composable trees.
+    - Avoid leaking `Context` into long-lived objects; use `Application` or DI for what truly needs it.
+    
+    Coroutines & concurrency:
+    - Use **Kotlin Coroutines** for async work (no RxJava unless the project already relies on it).
+    - Always launch coroutines in a clear scope (`viewModelScope`, `lifecycleScope`, or structured child scopes).
+    - Avoid `GlobalScope`. Avoid fire-and-forget coroutines unless clearly justified and documented.
+    - Prefer `suspend` functions with explicit dispatchers over manually creating threads.
+
+    Data & network:
+    - Prefer plain data classes for models. Keep them immutable where possible.
+    - Use clear boundaries between network DTOs and domain models; avoid leaking DTOs across layers.
+    - Handle errors explicitly (sealed result types, `Result`, or similar) instead of swallowing exceptions.
+    - Use KSP (Kotlin Symbol Processing) for code generation with Room for improved build performance.
+    - Use `@kotlinx.atomicfu.Atomic` or similar for thread-safe data structures when needed.
+    - Consider using `NoLiveDataObserve` pattern for testing Flow-based UI state in Jetpack Compose.
+
+    Media3 (ExoPlayer) best practices:
+    - Use Media3 for all media playback, session management, and notification controls.
+    - Keep media service implementations focused and avoid business logic in the service layer.
+    - Use MediaSession for handling playback commands and keeping UI in sync.
+    - Use MediaNotification.Listener to handle notification actions like play/pause, skip.
+    - Keep Media3 Exoplayer configuration centralized and reusable.
+    - Use MediaPlayer.prepare() and MediaPlayer.release() appropriately to manage resources.
+    - Handle media errors gracefully with appropriate error states and user feedback.
+    - Use foreground service with FOREGROUND_SERVICE_MEDIA_PLAYBACK type for background audio.
+
+    Jetpack Compose-specific best practices:
+    - Use ViewModel with `viewModelScope` for managing state and side effects.
+    - Prefer StateFlow for UI state that needs to be observed by multiple composables.
+    - Keep composable functions small and focused on UI rendering only.
+    - Use `remember` for persisting state across recomposition without recalculation.
+    - Use `LaunchedEffect` for side effects that need to be triggered by state changes.
+    - Use `DerivedStateOf` for optimizing recomposition when dealing with complex state dependencies.
+    - Keep theme and styling centralized in a theme file with proper default values.
+    - Use Material 3 design system for consistent UI across the application.
+    - Use `producedState` judiciously for expensive state calculations that can be optimized.
+    - Use `rememberSaveable` for state that needs to survive configuration changes.
+    - Prefer `Flow` over `LiveData` in Compose and use `collectAsState()` for conversion.
+
+    State management best practices:
+    - Keep UI state immutable and clearly separated from business logic.
+    - Use unidirectional data flow from ViewModel to UI components.
+    - Use MVI (Model-View-Intent) pattern for complex state management scenarios.
+    - Keep side effects (events) separated from state using sealed classes or interfaces.
+    - Use `State` and `MutableState` for simple state management within composables.
+    - Use `StateFlow` and `SharedFlow` for ViewModel state that needs to be observed by the UI.
+
+    Architecture layering best practices:
+    - Data layer: Contains repositories, data sources, and mappers for data transformation.
+    - Domain layer: Contains use cases, domain models, and business logic.
+    - Presentation layer: Contains ViewModels, composables, and UI state management.
+    - Keep layer boundaries clear and avoid leaking implementation details across layers.
+    - Use constructor injection for dependencies and DI frameworks sparingly.
+
+    MediaStore integration best practices:
+    - Use MediaStore for discovering local audio files and their metadata.
+    - Handle MediaStore permissions appropriately for different Android versions.
+    - Use Android 13+ (API 33+) permissions like `READ_MEDIA_AUDIO` when targeting newer versions.
+    - Query MediaStore efficiently with proper projections and selection criteria.
+    - Handle MediaStore URI changes gracefully across different Android versions.
+    - Use MediaStore content providers for accessing media files instead of direct file I/O.
+    - Cache MediaStore query results to avoid frequent content resolver queries.
+    - Handle MediaStore changes through listeners or periodic syncs rather than constant polling.
+    - Implement data backup and restore strategies for MediaStore-based features.
+
+    Comment and documentation guidelines:
+    - Use /** */ documentation comments only for public API surfaces.
+    - Prefer clear, descriptive code over comments whenever possible.
+    - Use TODOs sparingly and include issue/feature references when possible.
+    - Use `FIXME` comments for known issues that need immediate attention.
+
+    Logical component naming conventions:
+    - Use clear, descriptive names for UI components that indicate their purpose.
+    - Name repository implementations by appending `Impl` to distinguish from interfaces.
+    - Use `Entity` suffix for Room database entities.
+    - Use `Dao` suffix for Room database access objects.
+    - Name test files with `Test` suffix and place in appropriate test directories.
+    - Use clear, behavior-focused names for test methods (backticks for readability).
+
+    Performance optimization guidelines:
+    - Use lazy initialization for heavy objects and dependencies.
+    - Avoid unnecessary recomposition in Jetpack Compose by using proper keys.
+    - Use `derivedStateOf` for expensive calculations that depend on multiple state variables.
+    - Use `remember` and `rememberSaveable` appropriately for state management.
+    - Profile UI performance using Android Studio Layout Inspector and Performance Profiler.
+    - Use coroutines with appropriate dispatchers (default, IO, main) for concurrent operations.
+    - Avoid blocking calls on main thread; use suspend functions and proper dispatchers.
+    - Use categorized logging for performance-sensitive operations and debugging.
+
+    Maintainability practices:
+    - Keep components small, focused, and single-responsibility.
+    - Favor composition over inheritance in UI components.
+    - Use clear, consistent naming conventions throughout the codebase.
+    - Keep features orthogonal and avoid tight coupling between components.
+    - Use Kotlin features judiciously (extension functions, DSLs, operator overloading).
+    - Document architectural decisions in README or companion documentation.
+    - Keep dependencies cleanly separated and use interface segregation principle.
+    - Use Git for version control with clean, atomic commits and descriptive messages.
+
+    Continuous integration and delivery:
+    - Automate testing, building, and deployment processes through CI/CD pipelines.
+    - Use GitHub Actions or similar tools for running tests and builds on push/pull requests.
+    - Use GitHub dependency graph to monitor and update dependencies proactively.
+    - Implement code quality checks (linting, format checks) in CI/CD pipelines.
+    - Use branch protection rules to maintain code quality standards.
+    - Consider using pre-commit hooks and build checks to enforce code quality.
+    - Usecięšla doğrulatma şeması for versioning to communicate API stability and backwards compatibility.
+
+    Project structure organization:
+    - Group files by feature or functionality rather than by type to improve cohesion.
+    - Create clear module boundaries for large projects with well-defined responsibilities.
+    - Keep build files organized and well-commented for easier maintenance.
+    - Use feature-flag mechanisms for experimental features that may change frequently.
+    - Group related test resources and test utilities in appropriate test source sets.
+
+    Development lifecycle practices:
+    - Use feature branches and pull requests for code review and discussion.
+    - Break down epic features into smaller, reviewable chunks for easier integration.
+    - Use trunk-based development practices to keep the main branch stable and releasable.
+    - Write clear commit messages that explain the "why" behind changes.
+    - Implement automated testing at multiple levels (unit, integration, UI) for coverage.
+    - Use pull requests as overviews of implementation with discussion of tradeoffs.
+
+    Code review process:
+    - Focus on functionality, readability, and maintainability in code reviews.
+    - Keep review comments constructive and actionable for easy implementation.
+    - Suggest improvements while acknowledging the author's implementation approach.
+    - Use proactive measurement to inform performance optimization discussions.
+    - Keep code reviews focused on objective quality metrics rather than subjective preferences.
+
+    Sprint and iteration management:
+    - Break work into manageable story sizes that can be completed in short iterations.
+    - Use story points or similar estimation techniques for planning and prioritization.
+    - Focus on iterative refinement of features rather than perfection upfront.
+    - Experiment with frequency and mechanisms needed to deliver incremental value.
+    - Keep iterations short and focused to maintain momentum and visibility.
+
+    Quality assurance best practices:
+    - Implement automated testing at all levels to ensure comprehensive coverage.
+    - Use test-driven development (TDD) when beneficial, but don't enforce dogmatically.
+    - Focus on testing behavior and expected outcomes rather than implementation details.
+    - Keep unit tests fast, isolated, and deterministic for reliable CI/CD execution.
+    - Use mocking libraries judiciously to create focused, isolated test scenarios.
+    - Test error cases and boundary conditions in addition to happy paths.
+
+    Internationalization (i18n) considerations:
+    - Keep strings in string resources for easy translation and localization.
+    - Use string format patterns to handle different pluralization rules.
+    - Consider locale-specific formatting for dates, numbers, and measurements.
+    - Keep UI flexible enough to accommodate different text lengths and orientations.
+
+    Accessibility (a11y) guidelines:
+    - Use appropriate content descriptions for images and icons.
+    - Ensure sufficient color contrast for readability.
+    - Use accessible touch targets with minimum recommended dimensions.
+    - Implement keyboard navigation and focus management.
+    - Test with different accessibility services (screen readers, magnifiers, etc.).
+
+    Analytics and telemetry practices:
+    - Use analytics to understand user behavior and usage patterns.
+    - Implement performance monitoring to identify bottlenecks and regressions.
+    - Keep analytics events focused on business goals and user objectives.
+
+    Security best practices:
+    - Implement least privilege principle for app permissions.
+    - Use Android's security features appropriately (SafetyNet, Play Integrity, etc.).
+    - Protect user data and prevent unauthorized access.
+    - Use secure storage for sensitive user information when needed.
+
+    Release management approach:
+    - Use calibration incremental rollouts or staged releases for major changes.
+    - Adapt approach based on user base size and feedback needs.
+    - Maintain app stability and user trust through quality releases.
+
+    Support and maintenance workflows:
+    - Implement issue triage processes to prioritize bugs and feature requests.
+    - Use GitHub or similar platforms for issue tracking and project management.
+    - Maintain compatibility with target Android versions and device configurations.
+    - Document known issues and limitations in product documentation.
+
+    Technology specific best practices:
+
+    Kotlin Coroutines:
+    - Use coroutine scopes (`viewModelScope`, `lifecycleScope`) for structured concurrency.
+    - Use `runTest` with `StandardTestDispatcher` for deterministic coroutine testing.
+    - Use `advanceUntilIdle()` to simplify testing of coroutine-based logic.
+    - Use coroutine builders (`launch`, `async`, `runTest`) appropriately.
+    - Use coroutine contexts and dispatchers to control thread execution.
+    - Use `suspend` functions for long-running operations that may block.
+
+    Room Persistence Library:
+    - Use appropriate DAO methods (`@Query`, `@Insert`, `@Update`, `@Delete`).
+    - Use KSP for code generation to improve build Performance.
+    - Use `Flow` return types for observable database queries.
+    - Create fake DAO implementations for isolated unit testing.
+
+    Jetpack Navigation:
+    - Use good navigation patterns and state restoration support.
+
+    WorkManager:
+    - Use WorkManager for background tasks that require reliable execution.
+
+    Hilt (Dependency Injection):
+    - Use Hilt as a recommended DI framework for Android applications.
+
+    Coil (Image Loading):
+    - Use Coil for efficient image loading and caching in Jetpack Compose.
+    - Use `rememberImagePainter` for loading images in composables.
+
+- description: "Rules for Gradle build logic"
+  priority: 2
+  where:
+    - file: "**/build.gradle"
+    - file: "**/build.gradle.kts"
+    - file: "gradle/libs.versions.toml"
+  value: |
+    For Gradle and dependency management:
+    - Prefer the **Kotlin DSL** (`build.gradle.kts`) for any new build files.
+    - Keep version management centralized (e.g., `libs.versions.toml`).
+    - Avoid complex Gradle plugins and custom tasks unless they significantly simplify the project.
+    - Keep build scripts readable; comment any non-obvious configuration briefly.
+
+- description: "Rules for tests"
+  priority: 2
+  where:
+    - file: "**/src/test/**"
+    - file: "**/src/androidTest/**"
+  value: |
+    Testing guidelines:
+    - Follow the **testing pyramid** distribution: ~70–80% unit tests, ~15–20% integration tests, <10% UI/end-to-end tests.
+    - **Unit tests** (`src/test/`): Focus on ViewModels, use-cases, repositories, and pure business logic. These should form the bulk of the test suite.
+    - **Integration tests**: Test interactions between components (e.g., repository + data source). Keep these targeted.
+    - **UI/E2E tests** (`src/androidTest/`): Reserve for critical user flows only; they are slow and brittle.
+    - Favor clear, descriptive test names.
+    - Use fakes or simple test doubles instead of heavy mocking where possible.
+    - Test key ViewModel branches, use-cases, and data transformations.
+    - Avoid fragile UI tests that depend heavily on implementation details unless necessary.
+
+    Unit testing best practices:
+    - Use `@OptIn(ExperimentalCoroutinesApi::class)` and `runTest` for coroutine testing.
+    - Use `StandardTestDispatcher` for predictable test execution order.
+    - Test coroutine behavior with `advanceUntilIdle()` instead of delays.
+    - Use Mockito for mocking dependencies when needed.`
+    - Create fake implementations of DAOs and repositories for isolated testing.
+    - Test both success and error cases for repository methods.
+    - Use `@Before` for setup and `@After` for cleanup in test classes.
+
+    Integration testing best practices:
+    - Use `AndroidJUnit4` runner for tests requiring Android framework.
+    - Use `InstrumentationRegistry` to access application context when needed.
+    - Consider runtime permissions for tests accessing device resources.
+    - Use `GrantPermissionRule` to handle permission requirements programmatically.
+    - Write diagnostics methods in tests to help with troubleshooting on real devices.
+
+    Testing architecture:
+    - Test ViewModel state changes and side effects through mocked dependencies.
+    - Create test helper functions to generate test data (e.g., `createTestTracks()`).
+    - Keep tests independent and deterministic; avoid shared state between tests.
+    - Use descriptive test names that clearly indicate what behavior is being tested.
+
+    Media3-specific testing:
+    - For media playback testing, ensure proper permission handling in tests.
+    - Test media discovery through MediaStore with appropriate query parameters.
+    - Use `adanceUntilIdle()` to handle coroutine-based operations in tests.
+
+    Test coverage approach:
+    - Focus on critical business logic coverage rather than achieving arbitrary metrics.
+    - Test edge cases and error conditions in addition to happy paths.
+    - Write tests that document expected behavior and serve as living documentation.

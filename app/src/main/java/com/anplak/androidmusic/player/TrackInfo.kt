@@ -19,7 +19,7 @@ data class TrackInfo(
      * Display-only cover when this track has no MediaStore album art
      * (e.g. another album by the same artist). Never persisted.
      */
-    val artworkUriOverride: Uri? = null
+    val artworkUriOverride: Uri? = null,
 ) {
     /**
      * Extracts the MediaStore ID from the content URI.
@@ -35,9 +35,10 @@ data class TrackInfo(
         /**
          * Creates a content URI from a MediaStore ID.
          */
-        fun uriFromId(id: Long): Uri = ContentUris.withAppendedId(
-            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-            id
-        )
+        fun uriFromId(id: Long): Uri =
+            ContentUris.withAppendedId(
+                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                id,
+            )
     }
 }

@@ -5,21 +5,21 @@ package com.anplak.androidmusic.player
  */
 data class PlaybackQueue(
     val tracks: List<TrackInfo>,
-    val currentIndex: Int = 0
+    val currentIndex: Int = 0,
 ) {
     val currentTrack: TrackInfo?
         get() = tracks.getOrNull(currentIndex)
-    
+
     val size: Int
         get() = tracks.size
-    
+
     val isEmpty: Boolean
         get() = tracks.isEmpty()
-    
+
     fun hasNext(): Boolean = currentIndex < tracks.lastIndex
-    
+
     fun hasPrevious(): Boolean = currentIndex > 0
-    
+
     fun next(): PlaybackQueue {
         return if (hasNext()) {
             copy(currentIndex = currentIndex + 1)
@@ -27,7 +27,7 @@ data class PlaybackQueue(
             this
         }
     }
-    
+
     fun previous(): PlaybackQueue {
         return if (hasPrevious()) {
             copy(currentIndex = currentIndex - 1)
@@ -35,7 +35,7 @@ data class PlaybackQueue(
             this
         }
     }
-    
+
     fun jumpTo(index: Int): PlaybackQueue {
         return if (index in tracks.indices) {
             copy(currentIndex = index)
@@ -43,15 +43,18 @@ data class PlaybackQueue(
             this
         }
     }
-    
+
     companion object {
         val EMPTY = PlaybackQueue(emptyList(), 0)
-        
+
         /**
          * Creates a queue from a library list, starting at the selected track.
          * The queue contains all tracks from the selected position onward.
          */
-        fun fromLibrary(tracks: List<TrackInfo>, startIndex: Int): PlaybackQueue {
+        fun fromLibrary(
+            tracks: List<TrackInfo>,
+            startIndex: Int,
+        ): PlaybackQueue {
             if (tracks.isEmpty() || startIndex !in tracks.indices) {
                 return EMPTY
             }
@@ -59,4 +62,3 @@ data class PlaybackQueue(
         }
     }
 }
-

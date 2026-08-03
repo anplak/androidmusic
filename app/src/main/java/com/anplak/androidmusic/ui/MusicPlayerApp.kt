@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming", "FunctionName")
+
 package com.anplak.androidmusic.ui
 
 import androidx.compose.animation.AnimatedVisibility
@@ -46,22 +48,31 @@ enum class NavigationTab(val icon: ImageVector, val labelResId: Int) {
     Library(Icons.Default.LibraryMusic, R.string.library),
     Favorites(Icons.Default.Favorite, R.string.favorites),
     Playlists(Icons.AutoMirrored.Filled.QueueMusic, R.string.playlists),
-    History(Icons.Default.History, R.string.history)
+    History(Icons.Default.History, R.string.history),
 }
 
 sealed class AppScreen {
     data object MainTabs : AppScreen()
+
     data object NowPlaying : AppScreen()
+
     data class PlaylistDetail(val playlistId: Long) : AppScreen()
+
     data class SmartPlaylistDetail(val type: SmartPlaylistType) : AppScreen()
+
     data class RecommendationDetail(val rowId: String) : AppScreen()
+
     data object Insights : AppScreen()
+
     data object Search : AppScreen()
+
     data object LibraryIndex : AppScreen()
+
     data class LibraryArtistDetail(
         val artistKey: String,
-        val displayName: String
+        val displayName: String,
     ) : AppScreen()
+
     data class LibraryAlbumDetail(val album: AlbumSummary) : AppScreen()
 }
 
@@ -72,7 +83,7 @@ fun MusicPlayerApp(
     discoveryViewModel: DiscoveryViewModel = viewModel(),
     searchViewModel: SearchViewModel = viewModel(),
     libraryViewModel: LibraryViewModel = viewModel(),
-    libraryIndexViewModel: LibraryIndexViewModel = viewModel()
+    libraryIndexViewModel: LibraryIndexViewModel = viewModel(),
 ) {
     val uiState by playbackViewModel.uiState.collectAsState()
     val permissionState = rememberAudioPermissionState()
@@ -95,259 +106,260 @@ fun MusicPlayerApp(
             uiState = uiState,
             onOpenNowPlaying = { openNowPlaying() },
             onPlayPause = playbackViewModel::onPlayPause,
-            onToggleFavorite = playbackViewModel::toggleFavorite
+            onToggleFavorite = playbackViewModel::toggleFavorite,
         )
     }
     val showMiniPlayer = uiState.selectedTrack != null
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+        color = MaterialTheme.colorScheme.background,
     ) {
         when {
             !permissionState.isGranted -> {
                 PermissionRationaleScreen(
                     onGrantPermissionClick = {
                         permissionState.requestPermission()
-                    }
+                    },
                 )
             }
 
             currentScreen is AppScreen.NowPlaying && uiState.selectedTrack != null -> {
                 NowPlayingScreen(
-                        trackTitle = uiState.selectedTrack?.title ?: "",
-                        artistName = uiState.selectedTrack?.artist ?: "",
-                        isPlaying = uiState.isPlaying,
-                        currentPosition = uiState.currentPosition,
-                        duration = uiState.duration,
-                        error = uiState.error,
-                        queuePosition = uiState.queuePosition,
-                        queueSize = uiState.queueSize,
-                        hasNext = uiState.hasNext,
-                        hasPrevious = uiState.hasPrevious,
-                        isFavorite = uiState.isFavorite,
-                        onPlayPauseClick = playbackViewModel::onPlayPause,
-                        onNextClick = playbackViewModel::onNext,
-                        onPreviousClick = playbackViewModel::onPrevious,
-                        onSeek = playbackViewModel::onSeek,
-                        onErrorDismiss = playbackViewModel::onErrorDismissed,
-                        onBackClick = { currentScreen = screenBeforeNowPlaying },
-                        onToggleFavorite = playbackViewModel::toggleFavorite,
-                        onAddToPlaylist = {
-                            uiState.selectedTrack?.let { trackForPlaylistDialog = it }
+                    trackTitle = uiState.selectedTrack?.title ?: "",
+                    artistName = uiState.selectedTrack?.artist ?: "",
+                    isPlaying = uiState.isPlaying,
+                    currentPosition = uiState.currentPosition,
+                    duration = uiState.duration,
+                    error = uiState.error,
+                    queuePosition = uiState.queuePosition,
+                    queueSize = uiState.queueSize,
+                    hasNext = uiState.hasNext,
+                    hasPrevious = uiState.hasPrevious,
+                    isFavorite = uiState.isFavorite,
+                    onPlayPauseClick = playbackViewModel::onPlayPause,
+                    onNextClick = playbackViewModel::onNext,
+                    onPreviousClick = playbackViewModel::onPrevious,
+                    onSeek = playbackViewModel::onSeek,
+                    onErrorDismiss = playbackViewModel::onErrorDismissed,
+                    onBackClick = { currentScreen = screenBeforeNowPlaying },
+                    onToggleFavorite = playbackViewModel::toggleFavorite,
+                    onAddToPlaylist = {
+                        uiState.selectedTrack?.let { trackForPlaylistDialog = it }
+                    },
+                    onSmartShuffle = playbackViewModel::startSmartShuffle,
+                    artworkUri = uiState.selectedTrack?.artworkUri,
+                )
+            }
+
+            currentScreen is AppScreen.PlaylistDetail -> {
+                val playlistId = (currentScreen as AppScreen.PlaylistDetail).playlistId
+                MiniPlayerOverlayHost(
+                    showMiniPlayer = showMiniPlayer,
+                    miniPlayer = miniPlayerSlot,
+                ) {
+                    PlaylistDetailScreen(
+                        playlistId = playlistId,
+                        onBackClick = { currentScreen = AppScreen.MainTabs },
+                        onPlayAll = { tracks, index ->
+                            playbackViewModel.onTrackSelected(tracks, index)
+                            openNowPlaying()
                         },
-                        onSmartShuffle = playbackViewModel::startSmartShuffle,
-                        artworkUri = uiState.selectedTrack?.artworkUri
+                        onSmartShufflePlay = { tracks ->
+                            playbackViewModel.startSmartShuffleFromPlaylist(tracks)
+                            openNowPlaying()
+                        },
+                        viewModel = playlistsViewModel,
                     )
                 }
+            }
 
-                currentScreen is AppScreen.PlaylistDetail -> {
-                    val playlistId = (currentScreen as AppScreen.PlaylistDetail).playlistId
-                    MiniPlayerOverlayHost(
-                        showMiniPlayer = showMiniPlayer,
-                        miniPlayer = miniPlayerSlot
-                    ) {
-                        PlaylistDetailScreen(
-                            playlistId = playlistId,
-                            onBackClick = { currentScreen = AppScreen.MainTabs },
-                            onPlayAll = { tracks, index ->
-                                playbackViewModel.onTrackSelected(tracks, index)
-                                openNowPlaying()
-                            },
-                            onSmartShufflePlay = { tracks ->
-                                playbackViewModel.startSmartShuffleFromPlaylist(tracks)
-                                openNowPlaying()
-                            },
-                            viewModel = playlistsViewModel
-                        )
-                    }
+            currentScreen is AppScreen.SmartPlaylistDetail -> {
+                val type = (currentScreen as AppScreen.SmartPlaylistDetail).type
+                MiniPlayerOverlayHost(
+                    showMiniPlayer = showMiniPlayer,
+                    miniPlayer = miniPlayerSlot,
+                ) {
+                    SmartPlaylistDetailScreen(
+                        type = type,
+                        onBackClick = { currentScreen = AppScreen.MainTabs },
+                        onPlayAll = { tracks, index ->
+                            playbackViewModel.onTrackSelected(tracks, index)
+                            openNowPlaying()
+                        },
+                    )
                 }
+            }
 
-                currentScreen is AppScreen.SmartPlaylistDetail -> {
-                    val type = (currentScreen as AppScreen.SmartPlaylistDetail).type
-                    MiniPlayerOverlayHost(
-                        showMiniPlayer = showMiniPlayer,
-                        miniPlayer = miniPlayerSlot
-                    ) {
-                        SmartPlaylistDetailScreen(
-                            type = type,
-                            onBackClick = { currentScreen = AppScreen.MainTabs },
-                            onPlayAll = { tracks, index ->
-                                playbackViewModel.onTrackSelected(tracks, index)
-                                openNowPlaying()
-                            }
-                        )
-                    }
+            currentScreen is AppScreen.RecommendationDetail -> {
+                val rowId = (currentScreen as AppScreen.RecommendationDetail).rowId
+                MiniPlayerOverlayHost(
+                    showMiniPlayer = showMiniPlayer,
+                    miniPlayer = miniPlayerSlot,
+                ) {
+                    RecommendationDetailScreen(
+                        rowId = rowId,
+                        onBackClick = { currentScreen = AppScreen.MainTabs },
+                        onPlayAll = { tracks, index ->
+                            playbackViewModel.onTrackSelected(tracks, index)
+                            openNowPlaying()
+                        },
+                        viewModel = discoveryViewModel,
+                    )
                 }
+            }
 
-                currentScreen is AppScreen.RecommendationDetail -> {
-                    val rowId = (currentScreen as AppScreen.RecommendationDetail).rowId
-                    MiniPlayerOverlayHost(
-                        showMiniPlayer = showMiniPlayer,
-                        miniPlayer = miniPlayerSlot
-                    ) {
-                        RecommendationDetailScreen(
-                            rowId = rowId,
-                            onBackClick = { currentScreen = AppScreen.MainTabs },
-                            onPlayAll = { tracks, index ->
-                                playbackViewModel.onTrackSelected(tracks, index)
-                                openNowPlaying()
-                            },
-                            viewModel = discoveryViewModel
-                        )
-                    }
-                }
-
-                currentScreen is AppScreen.Search -> {
-                    MiniPlayerOverlayHost(
-                        showMiniPlayer = showMiniPlayer,
-                        miniPlayer = miniPlayerSlot
-                    ) {
-                        SearchScreen(
-                            onBackClick = { currentScreen = AppScreen.MainTabs },
-                            onTrackSelected = { tracks, index ->
-                                playbackViewModel.onTrackSelected(tracks, index)
-                                openNowPlaying()
-                            },
-                            onPlaylistSelected = { playlistId ->
-                                currentScreen = AppScreen.PlaylistDetail(playlistId)
-                            },
-                            onNavigateToLibrary = { query ->
-                                librarySearchHint = query
-                                currentTab = NavigationTab.Library
-                                currentScreen = AppScreen.MainTabs
-                            },
-                            viewModel = searchViewModel
-                        )
-                    }
-                }
-
-                currentScreen is AppScreen.LibraryIndex -> {
-                    MiniPlayerOverlayHost(
-                        showMiniPlayer = showMiniPlayer,
-                        miniPlayer = miniPlayerSlot
-                    ) {
-                        LibraryIndexScreen(
-                            onBackClick = {
-                                if (libraryIndexViewModel.consumeRulesChanged()) {
-                                    libraryViewModel.refresh()
-                                }
-                                currentScreen = AppScreen.MainTabs
-                            },
-                            viewModel = libraryIndexViewModel
-                        )
-                    }
-                }
-
-                currentScreen is AppScreen.LibraryArtistDetail -> {
-                    val args = currentScreen as AppScreen.LibraryArtistDetail
-                    MiniPlayerOverlayHost(
-                        showMiniPlayer = showMiniPlayer,
-                        miniPlayer = miniPlayerSlot
-                    ) {
-                        LibraryArtistDetailScreen(
-                            artistKey = args.artistKey,
-                            displayName = args.displayName,
-                            onBackClick = { currentScreen = AppScreen.MainTabs },
-                            onPlayAll = { tracks, index ->
-                                playbackViewModel.onTrackSelected(tracks, index)
-                                openNowPlaying()
-                            },
-                            onAddToPlaylist = { track ->
-                                trackForPlaylistDialog = track
-                            },
-                            onExcludeArtist = { artistName ->
-                                libraryIndexViewModel.addArtistRule(artistName)
-                                libraryViewModel.refresh()
-                                currentScreen = AppScreen.MainTabs
-                            },
-                            viewModel = libraryViewModel
-                        )
-                    }
-                }
-
-                currentScreen is AppScreen.LibraryAlbumDetail -> {
-                    val args = currentScreen as AppScreen.LibraryAlbumDetail
-                    MiniPlayerOverlayHost(
-                        showMiniPlayer = showMiniPlayer,
-                        miniPlayer = miniPlayerSlot
-                    ) {
-                        LibraryAlbumDetailScreen(
-                            album = args.album,
-                            onBackClick = { currentScreen = AppScreen.MainTabs },
-                            onPlayAll = { tracks, index ->
-                                playbackViewModel.onTrackSelected(tracks, index)
-                                openNowPlaying()
-                            },
-                            onAddToPlaylist = { track ->
-                                trackForPlaylistDialog = track
-                            },
-                            viewModel = libraryViewModel
-                        )
-                    }
-                }
-
-                else -> {
-                    MainTabsContent(
-                        currentTab = currentTab,
-                        onTabSelected = { currentTab = it },
+            currentScreen is AppScreen.Search -> {
+                MiniPlayerOverlayHost(
+                    showMiniPlayer = showMiniPlayer,
+                    miniPlayer = miniPlayerSlot,
+                ) {
+                    SearchScreen(
+                        onBackClick = { currentScreen = AppScreen.MainTabs },
                         onTrackSelected = { tracks, index ->
+                            playbackViewModel.onTrackSelected(tracks, index)
+                            openNowPlaying()
+                        },
+                        onPlaylistSelected = { playlistId ->
+                            currentScreen = AppScreen.PlaylistDetail(playlistId)
+                        },
+                        onNavigateToLibrary = { query ->
+                            librarySearchHint = query
+                            currentTab = NavigationTab.Library
+                            currentScreen = AppScreen.MainTabs
+                        },
+                        viewModel = searchViewModel,
+                    )
+                }
+            }
+
+            currentScreen is AppScreen.LibraryIndex -> {
+                MiniPlayerOverlayHost(
+                    showMiniPlayer = showMiniPlayer,
+                    miniPlayer = miniPlayerSlot,
+                ) {
+                    LibraryIndexScreen(
+                        onBackClick = {
+                            if (libraryIndexViewModel.consumeRulesChanged()) {
+                                libraryViewModel.refresh()
+                            }
+                            currentScreen = AppScreen.MainTabs
+                        },
+                        viewModel = libraryIndexViewModel,
+                    )
+                }
+            }
+
+            currentScreen is AppScreen.LibraryArtistDetail -> {
+                val args = currentScreen as AppScreen.LibraryArtistDetail
+                MiniPlayerOverlayHost(
+                    showMiniPlayer = showMiniPlayer,
+                    miniPlayer = miniPlayerSlot,
+                ) {
+                    LibraryArtistDetailScreen(
+                        artistKey = args.artistKey,
+                        displayName = args.displayName,
+                        onBackClick = { currentScreen = AppScreen.MainTabs },
+                        onPlayAll = { tracks, index ->
                             playbackViewModel.onTrackSelected(tracks, index)
                             openNowPlaying()
                         },
                         onAddToPlaylist = { track ->
                             trackForPlaylistDialog = track
                         },
-                        onPlaylistSelected = { playlistId ->
-                            currentScreen = AppScreen.PlaylistDetail(playlistId)
+                        onExcludeArtist = { artistName ->
+                            libraryIndexViewModel.addArtistRule(artistName)
+                            libraryViewModel.refresh()
+                            currentScreen = AppScreen.MainTabs
                         },
-                        onSmartPlaylistSelected = { type ->
-                            currentScreen = AppScreen.SmartPlaylistDetail(type)
-                        },
-                        onRecommendationRowSelected = { row ->
-                            currentScreen = AppScreen.RecommendationDetail(row.id)
-                        },
-                        onPlayRecommendationRow = { row ->
-                            playbackViewModel.startSmartShuffleFromPlaylist(row.tracks)
-                            openNowPlaying()
-                        },
-                        onOpenSearch = { currentScreen = AppScreen.Search },
-                        onOpenLibraryIndex = { currentScreen = AppScreen.LibraryIndex },
-                        onArtistClick = { artist ->
-                            currentScreen = AppScreen.LibraryArtistDetail(
-                                artistKey = artist.normalizedKey,
-                                displayName = artist.displayName
-                            )
-                        },
-                        onAlbumClick = { album ->
-                            currentScreen = AppScreen.LibraryAlbumDetail(album)
-                        },
-                        librarySearchHint = librarySearchHint,
-                        onConsumeLibraryHint = { librarySearchHint = null },
-                        playlistsViewModel = playlistsViewModel,
-                        discoveryViewModel = discoveryViewModel,
-                        libraryViewModel = libraryViewModel,
-                        playbackUiState = uiState,
-                        onOpenNowPlaying = { openNowPlaying() },
-                        onPlayPause = playbackViewModel::onPlayPause,
-                        onToggleFavorite = playbackViewModel::toggleFavorite
+                        viewModel = libraryViewModel,
                     )
                 }
             }
 
-            trackForPlaylistDialog?.let { track ->
-                AddToPlaylistDialog(
-                    track = track,
-                    onDismiss = { trackForPlaylistDialog = null },
-                    onPlaylistSelected = { playlistId, trackId ->
-                        playlistsViewModel.addTrackToPlaylist(playlistId, trackId)
+            currentScreen is AppScreen.LibraryAlbumDetail -> {
+                val args = currentScreen as AppScreen.LibraryAlbumDetail
+                MiniPlayerOverlayHost(
+                    showMiniPlayer = showMiniPlayer,
+                    miniPlayer = miniPlayerSlot,
+                ) {
+                    LibraryAlbumDetailScreen(
+                        album = args.album,
+                        onBackClick = { currentScreen = AppScreen.MainTabs },
+                        onPlayAll = { tracks, index ->
+                            playbackViewModel.onTrackSelected(tracks, index)
+                            openNowPlaying()
+                        },
+                        onAddToPlaylist = { track ->
+                            trackForPlaylistDialog = track
+                        },
+                        viewModel = libraryViewModel,
+                    )
+                }
+            }
+
+            else -> {
+                MainTabsContent(
+                    currentTab = currentTab,
+                    onTabSelected = { currentTab = it },
+                    onTrackSelected = { tracks, index ->
+                        playbackViewModel.onTrackSelected(tracks, index)
+                        openNowPlaying()
                     },
-                    onCreatePlaylist = { name, trackId ->
-                        playlistsViewModel.createPlaylistAndAddTrack(name, trackId)
+                    onAddToPlaylist = { track ->
+                        trackForPlaylistDialog = track
                     },
-                    viewModel = playlistsViewModel
+                    onPlaylistSelected = { playlistId ->
+                        currentScreen = AppScreen.PlaylistDetail(playlistId)
+                    },
+                    onSmartPlaylistSelected = { type ->
+                        currentScreen = AppScreen.SmartPlaylistDetail(type)
+                    },
+                    onRecommendationRowSelected = { row ->
+                        currentScreen = AppScreen.RecommendationDetail(row.id)
+                    },
+                    onPlayRecommendationRow = { row ->
+                        playbackViewModel.startSmartShuffleFromPlaylist(row.tracks)
+                        openNowPlaying()
+                    },
+                    onOpenSearch = { currentScreen = AppScreen.Search },
+                    onOpenLibraryIndex = { currentScreen = AppScreen.LibraryIndex },
+                    onArtistClick = { artist ->
+                        currentScreen =
+                            AppScreen.LibraryArtistDetail(
+                                artistKey = artist.normalizedKey,
+                                displayName = artist.displayName,
+                            )
+                    },
+                    onAlbumClick = { album ->
+                        currentScreen = AppScreen.LibraryAlbumDetail(album)
+                    },
+                    librarySearchHint = librarySearchHint,
+                    onConsumeLibraryHint = { librarySearchHint = null },
+                    playlistsViewModel = playlistsViewModel,
+                    discoveryViewModel = discoveryViewModel,
+                    libraryViewModel = libraryViewModel,
+                    playbackUiState = uiState,
+                    onOpenNowPlaying = { openNowPlaying() },
+                    onPlayPause = playbackViewModel::onPlayPause,
+                    onToggleFavorite = playbackViewModel::toggleFavorite,
                 )
             }
+        }
+
+        trackForPlaylistDialog?.let { track ->
+            AddToPlaylistDialog(
+                track = track,
+                onDismiss = { trackForPlaylistDialog = null },
+                onPlaylistSelected = { playlistId, trackId ->
+                    playlistsViewModel.addTrackToPlaylist(playlistId, trackId)
+                },
+                onCreatePlaylist = { name, trackId ->
+                    playlistsViewModel.createPlaylistAndAddTrack(name, trackId)
+                },
+                viewModel = playlistsViewModel,
+            )
+        }
     }
 }
 
@@ -356,7 +368,7 @@ private fun BoundMiniPlayerBar(
     uiState: PlaybackUiState,
     onOpenNowPlaying: () -> Unit,
     onPlayPause: () -> Unit,
-    onToggleFavorite: () -> Unit
+    onToggleFavorite: () -> Unit,
 ) {
     val track = uiState.selectedTrack ?: return
     MiniPlayerBar(
@@ -367,7 +379,7 @@ private fun BoundMiniPlayerBar(
         isFavorite = uiState.isFavorite,
         onBarClick = onOpenNowPlaying,
         onPlayPauseClick = onPlayPause,
-        onToggleFavorite = onToggleFavorite
+        onToggleFavorite = onToggleFavorite,
     )
 }
 
@@ -375,7 +387,7 @@ private fun BoundMiniPlayerBar(
 private fun MiniPlayerOverlayHost(
     showMiniPlayer: Boolean,
     miniPlayer: @Composable () -> Unit,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Scaffold(
         bottomBar = {
@@ -383,12 +395,13 @@ private fun MiniPlayerOverlayHost(
                 miniPlayer()
             }
         },
-        contentWindowInsets = WindowInsets(0, 0, 0, 0)
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
     ) { padding ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding),
         ) {
             content()
         }
@@ -417,7 +430,7 @@ private fun MainTabsContent(
     playbackUiState: PlaybackUiState,
     onOpenNowPlaying: () -> Unit,
     onPlayPause: () -> Unit,
-    onToggleFavorite: () -> Unit
+    onToggleFavorite: () -> Unit,
 ) {
     val showMiniPlayer = playbackUiState.selectedTrack != null
 
@@ -427,13 +440,13 @@ private fun MainTabsContent(
                 AnimatedVisibility(
                     visible = showMiniPlayer,
                     enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                    exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+                    exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
                 ) {
                     BoundMiniPlayerBar(
                         uiState = playbackUiState,
                         onOpenNowPlaying = onOpenNowPlaying,
                         onPlayPause = onPlayPause,
-                        onToggleFavorite = onToggleFavorite
+                        onToggleFavorite = onToggleFavorite,
                     )
                 }
                 NavigationBar {
@@ -452,17 +465,18 @@ private fun MainTabsContent(
                                     else -> Unit
                                 }
                             },
-                            modifier = Modifier.testTag("nav_${tab.name.lowercase()}")
+                            modifier = Modifier.testTag("nav_${tab.name.lowercase()}"),
                         )
                     }
                 }
             }
-        }
+        },
     ) { paddingValues ->
         Surface(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
         ) {
             when (currentTab) {
                 NavigationTab.ForYou -> {
@@ -470,7 +484,7 @@ private fun MainTabsContent(
                         onRowSelected = onRecommendationRowSelected,
                         onPlayRow = onPlayRecommendationRow,
                         onTrackSelected = onTrackSelected,
-                        viewModel = discoveryViewModel
+                        viewModel = discoveryViewModel,
                     )
                 }
                 NavigationTab.Library -> {
@@ -483,13 +497,13 @@ private fun MainTabsContent(
                         onOpenLibraryIndex = onOpenLibraryIndex,
                         initialLocalQuery = librarySearchHint,
                         onConsumeLibraryHint = onConsumeLibraryHint,
-                        viewModel = libraryViewModel
+                        viewModel = libraryViewModel,
                     )
                 }
                 NavigationTab.Favorites -> {
                     FavoritesScreen(
                         onTrackSelected = onTrackSelected,
-                        onAddToPlaylist = onAddToPlaylist
+                        onAddToPlaylist = onAddToPlaylist,
                     )
                 }
                 NavigationTab.Playlists -> {
@@ -497,12 +511,12 @@ private fun MainTabsContent(
                         onPlaylistSelected = onPlaylistSelected,
                         onSmartPlaylistSelected = onSmartPlaylistSelected,
                         onOpenSearch = onOpenSearch,
-                        viewModel = playlistsViewModel
+                        viewModel = playlistsViewModel,
                     )
                 }
                 NavigationTab.History -> {
                     HistoryScreen(
-                        onTrackSelected = onTrackSelected
+                        onTrackSelected = onTrackSelected,
                     )
                 }
             }

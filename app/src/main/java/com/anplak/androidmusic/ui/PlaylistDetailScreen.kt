@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming", "ktlint:standard:max-line-length", "FunctionName")
+
 package com.anplak.androidmusic.ui
 
 import androidx.compose.foundation.clickable
@@ -17,13 +19,14 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.DragHandle
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SelectAll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -32,13 +35,12 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -69,7 +71,7 @@ fun PlaylistDetailScreen(
     onPlayAll: (List<TrackInfo>, Int) -> Unit,
     onSmartShufflePlay: (List<TrackInfo>) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: PlaylistsViewModel = viewModel()
+    viewModel: PlaylistsViewModel = viewModel(),
 ) {
     val detailState by viewModel.detailState.collectAsState()
     val editState by viewModel.editState.collectAsState()
@@ -96,11 +98,12 @@ fun PlaylistDetailScreen(
             NotFoundState(onBackClick = onBackClick)
         }
         is PlaylistDetailUiState.Content -> {
-            val displayTracks = if (editState.isReorderMode) {
-                editState.reorderedTracks
-            } else {
-                state.tracks
-            }
+            val displayTracks =
+                if (editState.isReorderMode) {
+                    editState.reorderedTracks
+                } else {
+                    state.tracks
+                }
             PlaylistDetailContent(
                 playlistName = state.playlist.name,
                 tracks = displayTracks,
@@ -144,7 +147,7 @@ fun PlaylistDetailScreen(
                 },
                 onToggleMenu = { showMenu = !showMenu },
                 menuExpanded = showMenu,
-                modifier = modifier
+                modifier = modifier,
             )
 
             if (showDuplicateDialog) {
@@ -157,7 +160,7 @@ fun PlaylistDetailScreen(
                             value = playlistName,
                             onValueChange = { playlistName = it },
                             label = { Text(text = "Playlist name") },
-                            singleLine = true
+                            singleLine = true,
                         )
                     },
                     confirmButton = {
@@ -165,7 +168,7 @@ fun PlaylistDetailScreen(
                             onClick = {
                                 viewModel.duplicatePlaylist(state.playlist.id, playlistName)
                                 showDuplicateDialog = false
-                            }
+                            },
                         ) {
                             Text(text = "Duplicate")
                         }
@@ -174,7 +177,7 @@ fun PlaylistDetailScreen(
                         FilledTonalButton(onClick = { showDuplicateDialog = false }) {
                             Text(text = "Cancel")
                         }
-                    }
+                    },
                 )
             }
 
@@ -194,24 +197,26 @@ fun PlaylistDetailScreen(
                             } else {
                                 mergeOptions.forEach { option ->
                                     Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clickable { mergeTargetId = option.id }
-                                            .padding(vertical = 4.dp),
-                                        verticalAlignment = Alignment.CenterVertically
+                                        modifier =
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .clickable { mergeTargetId = option.id }
+                                                .padding(vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.CheckCircle,
                                             contentDescription = null,
-                                            tint = if (mergeTargetId == option.id) {
-                                                MaterialTheme.colorScheme.primary
-                                            } else {
-                                                MaterialTheme.colorScheme.onSurfaceVariant
-                                            }
+                                            tint =
+                                                if (mergeTargetId == option.id) {
+                                                    MaterialTheme.colorScheme.primary
+                                                } else {
+                                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                                },
                                         )
                                         Text(
                                             text = option.name,
-                                            modifier = Modifier.padding(start = 8.dp)
+                                            modifier = Modifier.padding(start = 8.dp),
                                         )
                                     }
                                 }
@@ -220,7 +225,7 @@ fun PlaylistDetailScreen(
                                 value = mergedName,
                                 onValueChange = { mergedName = it },
                                 label = { Text(text = "New playlist name") },
-                                singleLine = true
+                                singleLine = true,
                             )
                         }
                     },
@@ -235,7 +240,7 @@ fun PlaylistDetailScreen(
                                     mergedName = ""
                                 }
                             },
-                            enabled = mergeTargetId != null
+                            enabled = mergeTargetId != null,
                         ) {
                             Text(text = "Merge")
                         }
@@ -246,11 +251,11 @@ fun PlaylistDetailScreen(
                                 showMergeDialog = false
                                 mergeTargetId = null
                                 mergedName = ""
-                            }
+                            },
                         ) {
                             Text(text = "Cancel")
                         }
-                    }
+                    },
                 )
             }
 
@@ -265,11 +270,11 @@ fun PlaylistDetailScreen(
                                 showAutoMixInfo = false
                                 showAutoMixIntroDialog = false
                                 showAutoMixDialog = true
-                            }
+                            },
                         ) {
                             Text(text = "Continue")
                         }
-                    }
+                    },
                 )
             }
 
@@ -281,7 +286,7 @@ fun PlaylistDetailScreen(
                     onSeedSelected = { seed ->
                         viewModel.generateAutoMix(seed)
                         showAutoMixDialog = false
-                    }
+                    },
                 )
             }
 
@@ -303,7 +308,7 @@ fun PlaylistDetailScreen(
                         onSave = {
                             viewModel.saveAutoMixAsPlaylist(mixName)
                             mixName = ""
-                        }
+                        },
                     )
                 }
                 is AutoMixState.Error -> {
@@ -315,7 +320,7 @@ fun PlaylistDetailScreen(
                             FilledTonalButton(onClick = { viewModel.clearAutoMixPreview() }) {
                                 Text(text = "OK")
                             }
-                        }
+                        },
                     )
                 }
                 else -> Unit
@@ -327,10 +332,11 @@ fun PlaylistDetailScreen(
 @Composable
 private fun LoadingState() {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("playlist_detail_loading"),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("playlist_detail_loading"),
+        contentAlignment = Alignment.Center,
     ) {
         CircularProgressIndicator()
     }
@@ -347,23 +353,24 @@ private fun NotFoundState(onBackClick: () -> Unit) {
                     IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = "Back",
                         )
                     }
-                }
+                },
             )
-        }
+        },
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .testTag("playlist_not_found"),
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .testTag("playlist_not_found"),
+            contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = "Playlist not found",
-                style = MaterialTheme.typography.headlineSmall
+                style = MaterialTheme.typography.headlineSmall,
             )
         }
     }
@@ -394,7 +401,7 @@ private fun PlaylistDetailContent(
     onGenerateMix: () -> Unit,
     onToggleMenu: () -> Unit,
     menuExpanded: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Scaffold(
         topBar = {
@@ -403,11 +410,11 @@ private fun PlaylistDetailContent(
                 navigationIcon = {
                     IconButton(
                         onClick = onBackClick,
-                        modifier = Modifier.testTag("playlist_detail_back_button")
+                        modifier = Modifier.testTag("playlist_detail_back_button"),
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = "Back",
                         )
                     }
                 },
@@ -417,13 +424,13 @@ private fun PlaylistDetailContent(
                             IconButton(onClick = onCommitReorder) {
                                 Icon(
                                     imageVector = Icons.Default.Done,
-                                    contentDescription = "Save order"
+                                    contentDescription = "Save order",
                                 )
                             }
                             IconButton(onClick = onCancelReorder) {
                                 Icon(
                                     imageVector = Icons.Default.Close,
-                                    contentDescription = "Cancel reorder"
+                                    contentDescription = "Cancel reorder",
                                 )
                             }
                         }
@@ -431,13 +438,13 @@ private fun PlaylistDetailContent(
                             IconButton(onClick = onRequestRemoveSelected) {
                                 Icon(
                                     imageVector = Icons.Default.Delete,
-                                    contentDescription = "Remove selected"
+                                    contentDescription = "Remove selected",
                                 )
                             }
                             IconButton(onClick = onExitSelectionMode) {
                                 Icon(
                                     imageVector = Icons.Default.Close,
-                                    contentDescription = "Exit selection"
+                                    contentDescription = "Exit selection",
                                 )
                             }
                         }
@@ -445,84 +452,86 @@ private fun PlaylistDetailContent(
                             IconButton(onClick = onToggleMenu) {
                                 Icon(
                                     imageVector = Icons.Default.MoreVert,
-                                    contentDescription = "More options"
+                                    contentDescription = "More options",
                                 )
                             }
                             DropdownMenu(
                                 expanded = menuExpanded,
-                                onDismissRequest = onToggleMenu
+                                onDismissRequest = onToggleMenu,
                             ) {
                                 DropdownMenuItem(
                                     text = { Text(text = "Reorder tracks") },
                                     onClick = {
                                         onToggleMenu()
                                         onStartReorder()
-                                    }
+                                    },
                                 )
                                 DropdownMenuItem(
                                     text = { Text(text = "Select tracks") },
                                     onClick = {
                                         onToggleMenu()
                                         onStartSelectionMode()
-                                    }
+                                    },
                                 )
                                 DropdownMenuItem(
                                     text = { Text(text = "Duplicate") },
                                     onClick = {
                                         onToggleMenu()
                                         onDuplicatePlaylist()
-                                    }
+                                    },
                                 )
                                 DropdownMenuItem(
                                     text = { Text(text = "Merge into new") },
                                     onClick = {
                                         onToggleMenu()
                                         onMergePlaylist()
-                                    }
+                                    },
                                 )
                                 DropdownMenuItem(
                                     text = { Text(text = "Generate mix") },
                                     onClick = {
                                         onToggleMenu()
                                         onGenerateMix()
-                                    }
+                                    },
                                 )
                                 DropdownMenuItem(
                                     text = { Text(text = "Smart shuffle play") },
                                     onClick = {
                                         onToggleMenu()
                                         onSmartShufflePlay()
-                                    }
+                                    },
                                 )
                             }
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
             )
         },
         floatingActionButton = {
             if (tracks.isNotEmpty()) {
                 FloatingActionButton(
                     onClick = onPlayAll,
-                    modifier = Modifier.testTag("play_all_fab")
+                    modifier = Modifier.testTag("play_all_fab"),
                 ) {
                     Icon(
                         imageVector = Icons.Default.PlayArrow,
-                        contentDescription = stringResource(R.string.play_all)
+                        contentDescription = stringResource(R.string.play_all),
                     )
                 }
             }
         },
-        modifier = modifier
+        modifier = modifier,
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
         ) {
             if (tracks.isEmpty()) {
                 EmptyPlaylistState()
@@ -531,7 +540,7 @@ private fun PlaylistDetailContent(
                     ReorderablePlaylistTrackList(
                         tracks = tracks,
                         onTrackSelected = onTrackSelected,
-                        onReorder = onUpdateReorder
+                        onReorder = onUpdateReorder,
                     )
                 } else {
                     PlaylistTrackList(
@@ -540,7 +549,7 @@ private fun PlaylistDetailContent(
                         selectedTrackIds = editState.selectedTrackIds,
                         onTrackSelected = onTrackSelected,
                         onToggleSelected = { onTrackSelected(it) },
-                        onRemoveTrack = onRemoveTrack
+                        onRemoveTrack = onRemoveTrack,
                     )
                 }
             }
@@ -561,7 +570,7 @@ private fun PlaylistDetailContent(
                 FilledTonalButton(onClick = onDismissRemoveConfirm) {
                     Text(text = "Cancel")
                 }
-            }
+            },
         )
     }
 }
@@ -569,25 +578,26 @@ private fun PlaylistDetailContent(
 @Composable
 private fun EmptyPlaylistState() {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("playlist_empty_state"),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("playlist_empty_state"),
+        contentAlignment = Alignment.Center,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(32.dp)
+            modifier = Modifier.padding(32.dp),
         ) {
             Text(
                 text = stringResource(R.string.empty_playlist),
                 style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = stringResource(R.string.empty_playlist_description),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -600,17 +610,18 @@ private fun PlaylistTrackList(
     selectedTrackIds: Set<Long>,
     onTrackSelected: (TrackInfo) -> Unit,
     onToggleSelected: (TrackInfo) -> Unit,
-    onRemoveTrack: (Long) -> Unit
+    onRemoveTrack: (Long) -> Unit,
 ) {
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("playlist_track_list"),
-        contentPadding = PaddingValues(vertical = 8.dp)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("playlist_track_list"),
+        contentPadding = PaddingValues(vertical = 8.dp),
     ) {
         items(
             items = tracks,
-            key = { it.uri.toString() }
+            key = { it.uri.toString() },
         ) { track ->
             val index = tracks.indexOf(track)
             PlaylistTrackItem(
@@ -625,7 +636,7 @@ private fun PlaylistTrackList(
                         onTrackSelected(track)
                     }
                 },
-                onRemove = { onRemoveTrack(track.id) }
+                onRemove = { onRemoveTrack(track.id) },
             )
         }
     }
@@ -635,22 +646,23 @@ private fun PlaylistTrackList(
 private fun ReorderablePlaylistTrackList(
     tracks: List<TrackInfo>,
     onTrackSelected: (TrackInfo) -> Unit,
-    onReorder: (List<TrackInfo>) -> Unit
+    onReorder: (List<TrackInfo>) -> Unit,
 ) {
     val listState = rememberLazyListState()
     var draggingIndex by remember { mutableStateOf<Int?>(null) }
     var dragOffset by remember { mutableStateOf(0f) }
 
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("playlist_reorder_list"),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("playlist_reorder_list"),
         contentPadding = PaddingValues(vertical = 8.dp),
-        state = listState
+        state = listState,
     ) {
         items(
             items = tracks,
-            key = { it.uri.toString() }
+            key = { it.uri.toString() },
         ) { track ->
             val index = tracks.indexOf(track)
             val isDragging = draggingIndex == index
@@ -664,40 +676,42 @@ private fun ReorderablePlaylistTrackList(
                 highlight = isDragging,
                 onClick = { onTrackSelected(track) },
                 onRemove = {},
-                onDragHandle = Modifier.pointerInput(tracks) {
-                    detectDragGesturesAfterLongPress(
-                        onDragStart = {
-                            draggingIndex = index
-                            dragOffset = 0f
-                        },
-                        onDrag = { _, dragAmount ->
-                            val currentIndex = draggingIndex ?: return@detectDragGesturesAfterLongPress
-                            dragOffset += dragAmount.y
-                            val visibleItems = listState.layoutInfo.visibleItemsInfo
-                            val currentItem = visibleItems.firstOrNull { it.index == currentIndex } ?: return@detectDragGesturesAfterLongPress
-                            val currentCenter = currentItem.offset + currentItem.size / 2 + dragOffset
-                            val target = visibleItems.firstOrNull { info ->
-                                currentCenter in info.offset.toFloat()..(info.offset + info.size).toFloat()
-                            }
-                            if (target != null && target.index != currentIndex) {
-                                val updated = tracks.toMutableList()
-                                val item = updated.removeAt(currentIndex)
-                                updated.add(target.index, item)
-                                draggingIndex = target.index
+                onDragHandle =
+                    Modifier.pointerInput(tracks) {
+                        detectDragGesturesAfterLongPress(
+                            onDragStart = {
+                                draggingIndex = index
                                 dragOffset = 0f
-                                onReorder(updated)
-                            }
-                        },
-                        onDragEnd = {
-                            draggingIndex = null
-                            dragOffset = 0f
-                        },
-                        onDragCancel = {
-                            draggingIndex = null
-                            dragOffset = 0f
-                        }
-                    )
-                }
+                            },
+                            onDrag = { _, dragAmount ->
+                                val currentIndex = draggingIndex ?: return@detectDragGesturesAfterLongPress
+                                dragOffset += dragAmount.y
+                                val visibleItems = listState.layoutInfo.visibleItemsInfo
+                                val currentItem = visibleItems.firstOrNull { it.index == currentIndex } ?: return@detectDragGesturesAfterLongPress
+                                val currentCenter = currentItem.offset + currentItem.size / 2 + dragOffset
+                                val target =
+                                    visibleItems.firstOrNull { info ->
+                                        currentCenter in info.offset.toFloat()..(info.offset + info.size).toFloat()
+                                    }
+                                if (target != null && target.index != currentIndex) {
+                                    val updated = tracks.toMutableList()
+                                    val item = updated.removeAt(currentIndex)
+                                    updated.add(target.index, item)
+                                    draggingIndex = target.index
+                                    dragOffset = 0f
+                                    onReorder(updated)
+                                }
+                            },
+                            onDragEnd = {
+                                draggingIndex = null
+                                dragOffset = 0f
+                            },
+                            onDragCancel = {
+                                draggingIndex = null
+                                dragOffset = 0f
+                            },
+                        )
+                    },
             )
         }
     }
@@ -714,14 +728,14 @@ private fun PlaylistTrackItem(
     showDragHandle: Boolean = false,
     highlight: Boolean = false,
     showRemoveButton: Boolean = true,
-    onDragHandle: Modifier = Modifier
+    onDragHandle: Modifier = Modifier,
 ) {
     ListItem(
         headlineContent = {
             Text(
                 text = track.title,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
         },
         supportingContent = {
@@ -729,7 +743,7 @@ private fun PlaylistTrackItem(
                 text = track.artist,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         },
         trailingContent = {
@@ -738,56 +752,61 @@ private fun PlaylistTrackItem(
                     Icon(
                         imageVector = Icons.Default.DragHandle,
                         contentDescription = "Drag to reorder",
-                        modifier = onDragHandle
-                            .padding(end = 8.dp)
-                            .testTag("playlist_drag_handle_$index"),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        modifier =
+                            onDragHandle
+                                .padding(end = 8.dp)
+                                .testTag("playlist_drag_handle_$index"),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 Text(
                     text = formatDuration(track.duration),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 when {
                     selectionMode -> {
                         Icon(
                             imageVector = if (isSelected) Icons.Default.CheckCircle else Icons.Default.SelectAll,
                             contentDescription = "Select track",
-                            tint = if (isSelected) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            },
-                            modifier = Modifier.padding(start = 8.dp)
+                            tint =
+                                if (isSelected) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
+                            modifier = Modifier.padding(start = 8.dp),
                         )
                     }
                     showRemoveButton -> {
                         IconButton(
                             onClick = onRemove,
-                            modifier = Modifier.testTag("remove_from_playlist_button_$index")
+                            modifier = Modifier.testTag("remove_from_playlist_button_$index"),
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
                                 contentDescription = stringResource(R.string.remove_from_playlist),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
                 }
             }
         },
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .testTag("playlist_track_item_$index"),
-        colors = ListItemDefaults.colors(
-            containerColor = if (highlight) {
-                MaterialTheme.colorScheme.surfaceVariant
-            } else {
-                MaterialTheme.colorScheme.surface
-            }
-        )
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .testTag("playlist_track_item_$index"),
+        colors =
+            ListItemDefaults.colors(
+                containerColor =
+                    if (highlight) {
+                        MaterialTheme.colorScheme.surfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.surface
+                    },
+            ),
     )
 }
 
@@ -803,7 +822,7 @@ private fun AutoMixSeedDialog(
     favoriteTracks: List<TrackInfo>,
     favoriteArtists: List<String>,
     onDismiss: () -> Unit,
-    onSeedSelected: (AutoMixSeed) -> Unit
+    onSeedSelected: (AutoMixSeed) -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -816,10 +835,11 @@ private fun AutoMixSeedDialog(
                     favoriteTracks.take(5).forEach { track ->
                         Text(
                             text = "${track.title} • ${track.artist}",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onSeedSelected(AutoMixSeed.FavoriteTrack(track)) }
-                                .padding(vertical = 4.dp)
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onSeedSelected(AutoMixSeed.FavoriteTrack(track)) }
+                                    .padding(vertical = 4.dp),
                         )
                     }
                 }
@@ -828,25 +848,28 @@ private fun AutoMixSeedDialog(
                     favoriteArtists.take(5).forEach { artist ->
                         Text(
                             text = artist,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onSeedSelected(AutoMixSeed.FavoriteArtist(artist)) }
-                                .padding(vertical = 4.dp)
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onSeedSelected(AutoMixSeed.FavoriteArtist(artist)) }
+                                    .padding(vertical = 4.dp),
                         )
                     }
                 }
                 Text(text = "Smart playlists", style = MaterialTheme.typography.titleSmall)
                 SmartPlaylistType.values().forEach { type ->
                     Text(
-                        text = when (type) {
-                            SmartPlaylistType.MOST_PLAYED -> "Most played"
-                            SmartPlaylistType.RECENTLY_PLAYED -> "Recently played"
-                            SmartPlaylistType.RECENTLY_ADDED -> "Recently added"
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onSeedSelected(AutoMixSeed.SmartPlaylist(type)) }
-                            .padding(vertical = 4.dp)
+                        text =
+                            when (type) {
+                                SmartPlaylistType.MOST_PLAYED -> "Most played"
+                                SmartPlaylistType.RECENTLY_PLAYED -> "Recently played"
+                                SmartPlaylistType.RECENTLY_ADDED -> "Recently added"
+                            },
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable { onSeedSelected(AutoMixSeed.SmartPlaylist(type)) }
+                                .padding(vertical = 4.dp),
                     )
                 }
             }
@@ -855,7 +878,7 @@ private fun AutoMixSeedDialog(
             FilledTonalButton(onClick = onDismiss) {
                 Text(text = "Close")
             }
-        }
+        },
     )
 }
 
@@ -866,7 +889,7 @@ private fun AutoMixPreviewDialog(
     mixName: String,
     onMixNameChanged: (String) -> Unit,
     onDismiss: () -> Unit,
-    onSave: () -> Unit
+    onSave: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -877,10 +900,10 @@ private fun AutoMixPreviewDialog(
                     value = mixName,
                     onValueChange = onMixNameChanged,
                     label = { Text(text = "Playlist name") },
-                    singleLine = true
+                    singleLine = true,
                 )
                 LazyColumn(
-                    modifier = Modifier.height(200.dp)
+                    modifier = Modifier.height(200.dp),
                 ) {
                     items(tracks) { track ->
                         Text(
@@ -889,7 +912,7 @@ private fun AutoMixPreviewDialog(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(vertical = 2.dp)
+                            modifier = Modifier.padding(vertical = 2.dp),
                         )
                     }
                 }
@@ -904,7 +927,7 @@ private fun AutoMixPreviewDialog(
             FilledTonalButton(onClick = onDismiss) {
                 Text(text = "Cancel")
             }
-        }
+        },
     )
 }
 
@@ -912,11 +935,11 @@ private fun seedLabel(seed: AutoMixSeed): String {
     return when (seed) {
         is AutoMixSeed.FavoriteTrack -> seed.track.title
         is AutoMixSeed.FavoriteArtist -> seed.artist
-        is AutoMixSeed.SmartPlaylist -> when (seed.type) {
-            SmartPlaylistType.MOST_PLAYED -> "Most played"
-            SmartPlaylistType.RECENTLY_PLAYED -> "Recently played"
-            SmartPlaylistType.RECENTLY_ADDED -> "Recently added"
-        }
+        is AutoMixSeed.SmartPlaylist ->
+            when (seed.type) {
+                SmartPlaylistType.MOST_PLAYED -> "Most played"
+                SmartPlaylistType.RECENTLY_PLAYED -> "Recently played"
+                SmartPlaylistType.RECENTLY_ADDED -> "Recently added"
+            }
     }
 }
-

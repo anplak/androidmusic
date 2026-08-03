@@ -23,16 +23,16 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class MiniPlayerE2ETest {
-
     @get:Rule(order = 0)
-    val permissionRule: GrantPermissionRule = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        GrantPermissionRule.grant(
-            Manifest.permission.READ_MEDIA_AUDIO,
-            Manifest.permission.POST_NOTIFICATIONS
-        )
-    } else {
-        GrantPermissionRule.grant(Manifest.permission.READ_EXTERNAL_STORAGE)
-    }
+    val permissionRule: GrantPermissionRule =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            GrantPermissionRule.grant(
+                Manifest.permission.READ_MEDIA_AUDIO,
+                Manifest.permission.POST_NOTIFICATIONS,
+            )
+        } else {
+            GrantPermissionRule.grant(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
 
     @get:Rule(order = 1)
     val composeTestRule = createAndroidComposeRule<MainActivity>()
@@ -43,7 +43,7 @@ class MiniPlayerE2ETest {
 
         assertFalse(
             "Mini player must be absent before any track is selected (AC6)",
-            composeTestRule.safeHasNodes(hasTestTag("mini_player_bar"))
+            composeTestRule.safeHasNodes(hasTestTag("mini_player_bar")),
         )
         composeTestRule.onNodeWithTag("nav_foryou").assertIsDisplayed()
         composeTestRule.onNodeWithTag("nav_library").assertIsDisplayed()
@@ -53,13 +53,14 @@ class MiniPlayerE2ETest {
     fun activeTrack_miniPlayerVisibleOnAllTabs() {
         if (!startTrackAndReturnToTabs()) return
 
-        val tabs = listOf(
-            "nav_foryou",
-            "nav_library",
-            "nav_favorites",
-            "nav_playlists",
-            "nav_history"
-        )
+        val tabs =
+            listOf(
+                "nav_foryou",
+                "nav_library",
+                "nav_favorites",
+                "nav_playlists",
+                "nav_history",
+            )
         for (tab in tabs) {
             composeTestRule.onNodeWithTag(tab).performClick()
             composeTestRule.waitForIdle()
@@ -107,7 +108,7 @@ class MiniPlayerE2ETest {
         }
         assertFalse(
             "Mini player must not appear on Now Playing (AC7)",
-            composeTestRule.safeHasNodes(hasTestTag("mini_player_bar"))
+            composeTestRule.safeHasNodes(hasTestTag("mini_player_bar")),
         )
 
         composeTestRule.onNodeWithTag("back_button").performClick()

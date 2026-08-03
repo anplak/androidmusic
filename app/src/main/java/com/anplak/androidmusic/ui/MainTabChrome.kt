@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming", "FunctionName")
+
 package com.anplak.androidmusic.ui
 
 import androidx.compose.foundation.layout.Arrangement
@@ -24,21 +26,23 @@ import com.anplak.androidmusic.ui.theme.Dimens
 @Composable
 fun CompactTabActions(
     modifier: Modifier = Modifier,
-    actions: @Composable RowScope.() -> Unit
+    actions: @Composable RowScope.() -> Unit,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .testTag("compact_tab_actions")
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .testTag("compact_tab_actions"),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(Dimens.compactTabActionsHeight)
-                .padding(horizontal = 4.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(Dimens.compactTabActionsHeight)
+                    .padding(horizontal = 4.dp),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,
-            content = actions
+            content = actions,
         )
         HorizontalDivider()
     }

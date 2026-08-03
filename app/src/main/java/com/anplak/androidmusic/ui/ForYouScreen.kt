@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package com.anplak.androidmusic.ui
 
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -49,7 +51,7 @@ fun ForYouScreen(
     onPlayRow: (RecommendationRow) -> Unit,
     onTrackSelected: (List<TrackInfo>, Int) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: DiscoveryViewModel = viewModel()
+    viewModel: DiscoveryViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -59,32 +61,34 @@ fun ForYouScreen(
             CompactTabActions {
                 IconButton(
                     onClick = { viewModel.refresh() },
-                    modifier = Modifier.testTag("for_you_refresh")
+                    modifier = Modifier.testTag("for_you_refresh"),
                 ) {
                     Icon(
                         imageVector = Icons.Default.Refresh,
-                        contentDescription = stringResource(R.string.refresh_recommendations)
+                        contentDescription = stringResource(R.string.refresh_recommendations),
                     )
                 }
             }
         },
-        modifier = modifier
+        modifier = modifier,
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
         ) {
             when (val state = uiState) {
                 is ForYouUiState.Loading -> ForYouLoadingState()
                 is ForYouUiState.Empty -> ForYouEmptyState()
                 is ForYouUiState.Error -> ForYouErrorState(message = state.message)
-                is ForYouUiState.Content -> ForYouContent(
-                    rows = state.rows,
-                    onRowSelected = onRowSelected,
-                    onPlayRow = onPlayRow,
-                    onTrackSelected = onTrackSelected
-                )
+                is ForYouUiState.Content ->
+                    ForYouContent(
+                        rows = state.rows,
+                        onRowSelected = onRowSelected,
+                        onPlayRow = onPlayRow,
+                        onTrackSelected = onTrackSelected,
+                    )
             }
         }
     }
@@ -93,10 +97,11 @@ fun ForYouScreen(
 @Composable
 private fun ForYouLoadingState() {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("for_you_loading"),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("for_you_loading"),
+        contentAlignment = Alignment.Center,
     ) {
         CircularProgressIndicator()
     }
@@ -105,29 +110,30 @@ private fun ForYouLoadingState() {
 @Composable
 private fun ForYouEmptyState() {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("for_you_empty"),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("for_you_empty"),
+        contentAlignment = Alignment.Center,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(32.dp)
+            modifier = Modifier.padding(32.dp),
         ) {
             Icon(
                 imageVector = Icons.Default.Explore,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
                 text = stringResource(R.string.for_you_empty_title),
-                style = MaterialTheme.typography.headlineSmall
+                style = MaterialTheme.typography.headlineSmall,
             )
             Text(
                 text = stringResource(R.string.for_you_empty_description),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -136,16 +142,17 @@ private fun ForYouEmptyState() {
 @Composable
 private fun ForYouErrorState(message: String) {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("for_you_error"),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("for_you_error"),
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             text = message,
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.error,
-            modifier = Modifier.padding(32.dp)
+            modifier = Modifier.padding(32.dp),
         )
     }
 }
@@ -155,14 +162,15 @@ private fun ForYouContent(
     rows: List<RecommendationRow>,
     onRowSelected: (RecommendationRow) -> Unit,
     onPlayRow: (RecommendationRow) -> Unit,
-    onTrackSelected: (List<TrackInfo>, Int) -> Unit
+    onTrackSelected: (List<TrackInfo>, Int) -> Unit,
 ) {
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("for_you_list"),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("for_you_list"),
         contentPadding = PaddingValues(vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         items(items = rows, key = { it.id }) { row ->
             RecommendationRowSection(
@@ -172,7 +180,7 @@ private fun ForYouContent(
                 onTrackClick = { track ->
                     val index = row.tracks.indexOfFirst { it.id == track.id }.coerceAtLeast(0)
                     onTrackSelected(row.tracks, index)
-                }
+                },
             )
         }
     }
@@ -183,19 +191,21 @@ private fun RecommendationRowSection(
     row: RecommendationRow,
     onRowClick: () -> Unit,
     onPlayMix: () -> Unit,
-    onTrackClick: (TrackInfo) -> Unit
+    onTrackClick: (TrackInfo) -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .testTag("for_you_row_${row.id}")
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .testTag("for_you_row_${row.id}"),
     ) {
         Text(
             text = row.title,
             style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier
-                .padding(horizontal = 16.dp)
-                .testTag("for_you_title_${row.id}")
+            modifier =
+                Modifier
+                    .padding(horizontal = 16.dp)
+                    .testTag("for_you_title_${row.id}"),
         )
         row.subtitle?.let { subtitle ->
             Text(
@@ -204,29 +214,30 @@ private fun RecommendationRowSection(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .padding(horizontal = 16.dp, vertical = 2.dp)
-                    .testTag("for_you_subtitle_${row.id}")
+                modifier =
+                    Modifier
+                        .padding(horizontal = 16.dp, vertical = 2.dp)
+                        .testTag("for_you_subtitle_${row.id}"),
             )
         }
         LazyRow(
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             items(
                 items = row.tracks.take(12),
-                key = { it.id }
+                key = { it.id },
             ) { track ->
                 RecommendationTrackCard(
                     track = track,
-                    onClick = { onTrackClick(track) }
+                    onClick = { onTrackClick(track) },
                 )
             }
         }
         RowActions(
             rowId = row.id,
             onSeeAll = onRowClick,
-            onPlayMix = onPlayMix
+            onPlayMix = onPlayMix,
         )
     }
 }
@@ -235,21 +246,21 @@ private fun RecommendationRowSection(
 private fun RowActions(
     rowId: String,
     onSeeAll: () -> Unit,
-    onPlayMix: () -> Unit
+    onPlayMix: () -> Unit,
 ) {
     Row(
         modifier = Modifier.padding(horizontal = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         TextButton(
             onClick = onSeeAll,
-            modifier = Modifier.testTag("for_you_see_all_$rowId")
+            modifier = Modifier.testTag("for_you_see_all_$rowId"),
         ) {
             Text(text = stringResource(R.string.see_all))
         }
         TextButton(
             onClick = onPlayMix,
-            modifier = Modifier.testTag("for_you_play_mix_$rowId")
+            modifier = Modifier.testTag("for_you_play_mix_$rowId"),
         ) {
             Text(text = stringResource(R.string.play_mix))
         }
@@ -260,22 +271,23 @@ private fun RowActions(
 @Composable
 private fun RecommendationTrackCard(
     track: TrackInfo,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     val artistLabel = track.artist.ifBlank { stringResource(R.string.unknown_artist) }
     Column(
-        modifier = Modifier
-            .width(Dimens.forYouTrackCardWidth)
-            .clickable(onClick = onClick)
-            .testTag("for_you_track_${track.id}"),
+        modifier =
+            Modifier
+                .width(Dimens.forYouTrackCardWidth)
+                .clickable(onClick = onClick)
+                .testTag("for_you_track_${track.id}"),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         MediaArtwork(
             uri = track.artworkUri,
             contentDescription = track.title,
             fallbackLabel = track.title,
-            modifier = Modifier.size(Dimens.forYouArtworkSize)
+            modifier = Modifier.size(Dimens.forYouArtworkSize),
         )
         Text(
             text = track.title,
@@ -283,9 +295,10 @@ private fun RecommendationTrackCard(
             maxLines = 1,
             softWrap = false,
             textAlign = TextAlign.Center,
-            modifier = Modifier
-                .fillMaxWidth()
-                .basicMarquee()
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .basicMarquee(),
         )
         Text(
             text = artistLabel,
@@ -294,9 +307,10 @@ private fun RecommendationTrackCard(
             maxLines = 1,
             softWrap = false,
             textAlign = TextAlign.Center,
-            modifier = Modifier
-                .fillMaxWidth()
-                .basicMarquee()
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .basicMarquee(),
         )
     }
 }

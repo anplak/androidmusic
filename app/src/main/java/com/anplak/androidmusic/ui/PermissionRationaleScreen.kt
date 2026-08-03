@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package com.anplak.androidmusic.ui
 
 import androidx.compose.foundation.layout.Arrangement
@@ -21,39 +23,39 @@ import com.anplak.androidmusic.R
 @Composable
 fun PermissionRationaleScreen(
     onGrantPermissionClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .testTag("permission_rationale")
-            .padding(32.dp),
+        modifier =
+            modifier
+                .fillMaxSize()
+                .testTag("permission_rationale")
+                .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
     ) {
         Text(
             text = stringResource(R.string.permission_required),
             style = MaterialTheme.typography.headlineSmall,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
         )
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         Text(
             text = stringResource(R.string.permission_rationale),
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        
+
         Spacer(modifier = Modifier.height(32.dp))
-        
+
         Button(
             onClick = onGrantPermissionClick,
-            modifier = Modifier.testTag("permission_rationale_grant")
+            modifier = Modifier.testTag("permission_rationale_grant"),
         ) {
             Text(text = stringResource(R.string.grant_permission))
         }
     }
 }
-

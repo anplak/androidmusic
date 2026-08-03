@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package com.anplak.androidmusic.ui
 
 import androidx.compose.foundation.clickable
@@ -36,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -51,7 +54,7 @@ import com.anplak.androidmusic.ui.theme.Dimens
 fun LibraryIndexScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: LibraryIndexViewModel = viewModel()
+    viewModel: LibraryIndexViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showAddFolderDialog by remember { mutableStateOf(false) }
@@ -64,52 +67,55 @@ fun LibraryIndexScreen(
                 navigationIcon = {
                     IconButton(
                         onClick = onBackClick,
-                        modifier = Modifier.testTag("library_index_back")
+                        modifier = Modifier.testTag("library_index_back"),
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.search_back)
+                            contentDescription = stringResource(R.string.search_back),
                         )
                     }
                 },
                 actions = {
                     IconButton(
                         onClick = { showAddFolderDialog = true },
-                        modifier = Modifier.testTag("add_folder_rule")
+                        modifier = Modifier.testTag("add_folder_rule"),
                     ) {
                         Icon(
                             imageVector = Icons.Default.Add,
-                            contentDescription = stringResource(R.string.add_folder_rule)
+                            contentDescription = stringResource(R.string.add_folder_rule),
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
             )
         },
-        modifier = modifier.testTag("library_index")
+        modifier = modifier.testTag("library_index"),
     ) { paddingValues ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = Dimens.screenPadding),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(horizontal = Dimens.screenPadding),
             contentPadding = PaddingValues(vertical = Dimens.listVerticalPadding),
-            verticalArrangement = Arrangement.spacedBy(Dimens.trackItemSpacing)
+            verticalArrangement = Arrangement.spacedBy(Dimens.trackItemSpacing),
         ) {
             item {
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.max_track_duration)) },
                     supportingContent = {
                         Text(
-                            stringResource(
-                                R.string.max_track_duration_value,
-                                uiState.maxDurationMinutes
-                            )
+                            pluralStringResource(
+                                R.plurals.max_track_duration_value,
+                                uiState.maxDurationMinutes,
+                                uiState.maxDurationMinutes,
+                            ),
                         )
-                    }
+                    },
                 )
             }
 
@@ -117,7 +123,7 @@ fun LibraryIndexScreen(
                 Text(
                     text = stringResource(R.string.folder_rules),
                     style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(vertical = Dimens.listVerticalPadding)
+                    modifier = Modifier.padding(vertical = Dimens.listVerticalPadding),
                 )
             }
 
@@ -126,38 +132,39 @@ fun LibraryIndexScreen(
                     Text(
                         text = stringResource(R.string.folder_rules_empty),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             } else {
                 items(uiState.includeFolderRules, key = { "include_${it.path}" }) { rule ->
                     FolderRuleItem(
                         rule = rule,
-                        onRemove = { viewModel.removeFolderRule(rule.path) }
+                        onRemove = { viewModel.removeFolderRule(rule.path) },
                     )
                 }
             }
 
             item {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = Dimens.listVerticalPadding),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = Dimens.listVerticalPadding),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         text = stringResource(R.string.excluded_folders),
                         style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.testTag("excluded_folders_section")
+                        modifier = Modifier.testTag("excluded_folders_section"),
                     )
                     IconButton(
                         onClick = { showAddFolderDialog = true },
-                        modifier = Modifier.testTag("add_excluded_folder")
+                        modifier = Modifier.testTag("add_excluded_folder"),
                     ) {
                         Icon(
                             imageVector = Icons.Default.Add,
-                            contentDescription = stringResource(R.string.add_folder_rule)
+                            contentDescription = stringResource(R.string.add_folder_rule),
                         )
                     }
                 }
@@ -169,7 +176,7 @@ fun LibraryIndexScreen(
                         text = stringResource(R.string.no_exclusions),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.testTag("no_exclusions")
+                        modifier = Modifier.testTag("no_exclusions"),
                     )
                 }
             }
@@ -177,30 +184,31 @@ fun LibraryIndexScreen(
             items(uiState.excludedFolders, key = { "exclude_folder_${it.path}" }) { rule ->
                 ExcludedFolderItem(
                     rule = rule,
-                    onRemove = { viewModel.removeFolderRule(rule.path) }
+                    onRemove = { viewModel.removeFolderRule(rule.path) },
                 )
             }
 
             item {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = Dimens.listVerticalPadding),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = Dimens.listVerticalPadding),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         text = stringResource(R.string.excluded_artists),
                         style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.testTag("excluded_artists_section")
+                        modifier = Modifier.testTag("excluded_artists_section"),
                     )
                     IconButton(
                         onClick = { showAddArtistDialog = true },
-                        modifier = Modifier.testTag("add_artist_rule")
+                        modifier = Modifier.testTag("add_artist_rule"),
                     ) {
                         Icon(
                             imageVector = Icons.Default.Add,
-                            contentDescription = stringResource(R.string.add_artist_rule)
+                            contentDescription = stringResource(R.string.add_artist_rule),
                         )
                     }
                 }
@@ -209,7 +217,7 @@ fun LibraryIndexScreen(
             items(uiState.excludedArtists, key = { "artist_${it.name}" }) { rule ->
                 ArtistRuleItem(
                     rule = rule,
-                    onRemove = { viewModel.removeArtistRule(rule.name) }
+                    onRemove = { viewModel.removeArtistRule(rule.name) },
                 )
             }
         }
@@ -223,7 +231,7 @@ fun LibraryIndexScreen(
             onAdd = { path ->
                 viewModel.addFolderRule(path, FolderRuleMode.EXCLUDE)
                 showAddFolderDialog = false
-            }
+            },
         )
     }
 
@@ -234,7 +242,7 @@ fun LibraryIndexScreen(
             onAdd = { name ->
                 viewModel.addArtistRule(name)
                 showAddArtistDialog = false
-            }
+            },
         )
     }
 }
@@ -242,47 +250,48 @@ fun LibraryIndexScreen(
 @Composable
 private fun FolderRuleItem(
     rule: FolderRule,
-    onRemove: () -> Unit
+    onRemove: () -> Unit,
 ) {
     ListItem(
         headlineContent = {
             Text(
                 text = rule.path,
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
         },
         supportingContent = {
             Text(
-                text = when (rule.mode) {
-                    FolderRuleMode.INCLUDE -> stringResource(R.string.folder_rule_include)
-                    FolderRuleMode.EXCLUDE -> stringResource(R.string.folder_rule_exclude)
-                }
+                text =
+                    when (rule.mode) {
+                        FolderRuleMode.INCLUDE -> stringResource(R.string.folder_rule_include)
+                        FolderRuleMode.EXCLUDE -> stringResource(R.string.folder_rule_exclude)
+                    },
             )
         },
         trailingContent = {
             IconButton(onClick = onRemove) {
                 Icon(
                     imageVector = Icons.Default.Delete,
-                    contentDescription = stringResource(R.string.remove_folder_rule)
+                    contentDescription = stringResource(R.string.remove_folder_rule),
                 )
             }
         },
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     )
 }
 
 @Composable
 private fun ExcludedFolderItem(
     rule: FolderRule,
-    onRemove: () -> Unit
+    onRemove: () -> Unit,
 ) {
     ListItem(
         headlineContent = {
             Text(
                 text = rule.path,
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
         },
         supportingContent = {
@@ -291,29 +300,29 @@ private fun ExcludedFolderItem(
         trailingContent = {
             IconButton(
                 onClick = onRemove,
-                modifier = Modifier.testTag("remove_excluded_folder_${rule.path.hashCode()}")
+                modifier = Modifier.testTag("remove_excluded_folder_${rule.path.hashCode()}"),
             ) {
                 Icon(
                     imageVector = Icons.Default.Delete,
-                    contentDescription = stringResource(R.string.remove_folder_rule)
+                    contentDescription = stringResource(R.string.remove_folder_rule),
                 )
             }
         },
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     )
 }
 
 @Composable
 private fun ArtistRuleItem(
     rule: ArtistRule,
-    onRemove: () -> Unit
+    onRemove: () -> Unit,
 ) {
     ListItem(
         headlineContent = {
             Text(
                 text = rule.name,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
         },
         supportingContent = {
@@ -322,17 +331,18 @@ private fun ArtistRuleItem(
         trailingContent = {
             IconButton(
                 onClick = onRemove,
-                modifier = Modifier.testTag("remove_artist_rule_${rule.name.hashCode()}")
+                modifier = Modifier.testTag("remove_artist_rule_${rule.name.hashCode()}"),
             ) {
                 Icon(
                     imageVector = Icons.Default.Delete,
-                    contentDescription = stringResource(R.string.remove_artist_rule)
+                    contentDescription = stringResource(R.string.remove_artist_rule),
                 )
             }
         },
-        modifier = Modifier
-            .fillMaxWidth()
-            .testTag("artist_rule_item_${rule.name.hashCode()}")
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .testTag("artist_rule_item_${rule.name.hashCode()}"),
     )
 }
 
@@ -341,17 +351,18 @@ private fun AddFolderRuleDialog(
     knownFolders: List<String>,
     presetFolders: List<String>,
     onDismiss: () -> Unit,
-    onAdd: (String) -> Unit
+    onAdd: (String) -> Unit,
 ) {
     var query by remember { mutableStateOf("") }
-    val suggestions = remember(query, knownFolders, presetFolders) {
-        val pool = (knownFolders + presetFolders).distinct()
-        if (query.isBlank()) {
-            pool.take(20)
-        } else {
-            pool.filter { it.contains(query, ignoreCase = true) }.take(20)
+    val suggestions =
+        remember(query, knownFolders, presetFolders) {
+            val pool = (knownFolders + presetFolders).distinct()
+            if (query.isBlank()) {
+                pool.take(20)
+            } else {
+                pool.filter { it.contains(query, ignoreCase = true) }.take(20)
+            }
         }
-    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -361,28 +372,30 @@ private fun AddFolderRuleDialog(
             Column(verticalArrangement = Arrangement.spacedBy(Dimens.listVerticalPadding)) {
                 Text(
                     text = stringResource(R.string.add_folder_rule_description),
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
                 )
                 OutlinedTextField(
                     value = query,
                     onValueChange = { query = it },
                     label = { Text(stringResource(R.string.add_folder_rule_hint)) },
                     singleLine = true,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("folder_rule_input")
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .testTag("folder_rule_input"),
                 )
                 suggestions.forEach { path ->
                     FilledTonalButton(
                         onClick = { onAdd(path) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("add_exclude_folder")
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .testTag("add_exclude_folder"),
                     ) {
                         Text(
                             text = stringResource(R.string.exclude_folder, path),
                             maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
                 }
@@ -392,7 +405,7 @@ private fun AddFolderRuleDialog(
             TextButton(
                 onClick = { onAdd(query.trim()) },
                 enabled = query.isNotBlank(),
-                modifier = Modifier.testTag("confirm_add_folder_rule")
+                modifier = Modifier.testTag("confirm_add_folder_rule"),
             ) {
                 Text(stringResource(R.string.add_folder_rule))
             }
@@ -401,7 +414,7 @@ private fun AddFolderRuleDialog(
             TextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.cancel))
             }
-        }
+        },
     )
 }
 
@@ -409,16 +422,17 @@ private fun AddFolderRuleDialog(
 private fun AddArtistRuleDialog(
     knownArtists: List<String>,
     onDismiss: () -> Unit,
-    onAdd: (String) -> Unit
+    onAdd: (String) -> Unit,
 ) {
     var query by remember { mutableStateOf("") }
-    val suggestions = remember(query, knownArtists) {
-        if (query.isBlank()) {
-            knownArtists.take(20)
-        } else {
-            knownArtists.filter { it.contains(query, ignoreCase = true) }.take(20)
+    val suggestions =
+        remember(query, knownArtists) {
+            if (query.isBlank()) {
+                knownArtists.take(20)
+            } else {
+                knownArtists.filter { it.contains(query, ignoreCase = true) }.take(20)
+            }
         }
-    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -428,13 +442,14 @@ private fun AddArtistRuleDialog(
             Column(verticalArrangement = Arrangement.spacedBy(Dimens.listVerticalPadding)) {
                 Text(
                     text = stringResource(R.string.add_artist_rule_description),
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
                 )
                 FilledTonalButton(
                     onClick = { onAdd(LibraryIndexSuggestions.UNKNOWN_ARTIST_LABEL) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("exclude_unknown_artist")
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .testTag("exclude_unknown_artist"),
                 ) {
                     Text(stringResource(R.string.exclude_unknown_artist))
                 }
@@ -443,19 +458,21 @@ private fun AddArtistRuleDialog(
                     onValueChange = { query = it },
                     label = { Text(stringResource(R.string.add_artist_rule_hint)) },
                     singleLine = true,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("artist_rule_input")
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .testTag("artist_rule_input"),
                 )
                 suggestions.forEach { artist ->
                     Text(
                         text = artist,
                         style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { query = artist }
-                            .padding(vertical = Dimens.listVerticalPadding / 2)
-                            .testTag("artist_suggestion_${artist.hashCode()}")
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable { query = artist }
+                                .padding(vertical = Dimens.listVerticalPadding / 2)
+                                .testTag("artist_suggestion_${artist.hashCode()}"),
                     )
                 }
             }
@@ -464,7 +481,7 @@ private fun AddArtistRuleDialog(
             TextButton(
                 onClick = { onAdd(query.trim()) },
                 enabled = query.isNotBlank(),
-                modifier = Modifier.testTag("confirm_add_artist_rule")
+                modifier = Modifier.testTag("confirm_add_artist_rule"),
             ) {
                 Text(stringResource(R.string.add_artist_rule))
             }
@@ -473,6 +490,6 @@ private fun AddArtistRuleDialog(
             TextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.cancel))
             }
-        }
+        },
     )
 }

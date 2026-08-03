@@ -6,7 +6,7 @@ enum class RecommendationRowType {
     BECAUSE_YOU_LISTEN,
     QUICK_MIX,
     DAILY_MIX,
-    CONTINUE_LISTENING
+    CONTINUE_LISTENING,
 }
 
 data class RecommendationRow(
@@ -15,13 +15,13 @@ data class RecommendationRow(
     val title: String,
     val subtitle: String? = null,
     val seedTrack: TrackInfo? = null,
-    val tracks: List<TrackInfo>
+    val tracks: List<TrackInfo>,
 )
 
 data class PlaylistSummary(
     val id: Long,
     val name: String,
-    val trackCount: Int
+    val trackCount: Int,
 )
 
 data class RecommendationInputs(
@@ -32,7 +32,7 @@ data class RecommendationInputs(
     val recentHistory: List<PlayHistoryEntry>,
     val coOccurrenceBySeed: Map<Long, List<Long>>,
     val lastSessionTrackIds: List<Long>,
-    val userPlaylists: List<PlaylistSummary>
+    val userPlaylists: List<PlaylistSummary>,
 )
 
 fun interface RecommendationClock {

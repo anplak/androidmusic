@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming", "FunctionName")
+
 package com.anplak.androidmusic.ui
 
 import androidx.compose.foundation.clickable
@@ -45,18 +47,19 @@ fun FavoritesScreen(
     onTrackSelected: (List<TrackInfo>, Int) -> Unit,
     onAddToPlaylist: (TrackInfo) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: FavoritesViewModel = viewModel()
+    viewModel: FavoritesViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        modifier = modifier
+        modifier = modifier,
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
         ) {
             when (val state = uiState) {
                 is FavoritesUiState.Loading -> {
@@ -75,7 +78,7 @@ fun FavoritesScreen(
                         onToggleFavorite = { track ->
                             viewModel.toggleFavorite(track)
                         },
-                        onAddToPlaylist = onAddToPlaylist
+                        onAddToPlaylist = onAddToPlaylist,
                     )
                 }
             }
@@ -86,10 +89,11 @@ fun FavoritesScreen(
 @Composable
 private fun LoadingState() {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("favorites_loading_state"),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("favorites_loading_state"),
+        contentAlignment = Alignment.Center,
     ) {
         CircularProgressIndicator()
     }
@@ -98,26 +102,27 @@ private fun LoadingState() {
 @Composable
 private fun EmptyFavoritesState() {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("favorites_empty_state"),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("favorites_empty_state"),
+        contentAlignment = Alignment.Center,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(32.dp)
+            modifier = Modifier.padding(32.dp),
         ) {
             Text(
                 text = stringResource(R.string.no_favorites),
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.testTag("favorites_empty_state_title")
+                modifier = Modifier.testTag("favorites_empty_state_title"),
             )
             Text(
                 text = stringResource(R.string.no_favorites_description),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -128,17 +133,18 @@ private fun FavoriteTrackList(
     tracks: List<TrackInfo>,
     onTrackSelected: (TrackInfo) -> Unit,
     onToggleFavorite: (TrackInfo) -> Unit,
-    onAddToPlaylist: (TrackInfo) -> Unit
+    onAddToPlaylist: (TrackInfo) -> Unit,
 ) {
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("favorites_track_list"),
-        contentPadding = PaddingValues(vertical = 8.dp)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("favorites_track_list"),
+        contentPadding = PaddingValues(vertical = 8.dp),
     ) {
         items(
             items = tracks,
-            key = { it.uri.toString() }
+            key = { it.uri.toString() },
         ) { track ->
             val index = tracks.indexOf(track)
             FavoriteTrackItem(
@@ -146,7 +152,7 @@ private fun FavoriteTrackList(
                 index = index,
                 onClick = { onTrackSelected(track) },
                 onToggleFavorite = { onToggleFavorite(track) },
-                onAddToPlaylist = { onAddToPlaylist(track) }
+                onAddToPlaylist = { onAddToPlaylist(track) },
             )
         }
     }
@@ -158,7 +164,7 @@ private fun FavoriteTrackItem(
     index: Int,
     onClick: () -> Unit,
     onToggleFavorite: () -> Unit,
-    onAddToPlaylist: () -> Unit
+    onAddToPlaylist: () -> Unit,
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
@@ -167,7 +173,7 @@ private fun FavoriteTrackItem(
             Text(
                 text = track.title,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
         },
         supportingContent = {
@@ -175,7 +181,7 @@ private fun FavoriteTrackItem(
                 text = track.artist,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         },
         trailingContent = {
@@ -183,48 +189,49 @@ private fun FavoriteTrackItem(
                 Text(
                     text = formatDuration(track.duration),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 IconButton(
                     onClick = onToggleFavorite,
-                    modifier = Modifier.testTag("favorites_remove_button_$index")
+                    modifier = Modifier.testTag("favorites_remove_button_$index"),
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Favorite,
                         contentDescription = stringResource(R.string.remove_from_favorites),
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = MaterialTheme.colorScheme.primary,
                     )
                 }
                 Box {
                     IconButton(
                         onClick = { showMenu = true },
-                        modifier = Modifier.testTag("favorites_more_button_$index")
+                        modifier = Modifier.testTag("favorites_more_button_$index"),
                     ) {
                         Icon(
                             imageVector = Icons.Default.MoreVert,
                             contentDescription = stringResource(R.string.more_options),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     DropdownMenu(
                         expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
+                        onDismissRequest = { showMenu = false },
                     ) {
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.add_to_playlist)) },
                             onClick = {
                                 showMenu = false
                                 onAddToPlaylist()
-                            }
+                            },
                         )
                     }
                 }
             }
         },
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .testTag("favorites_track_item_$index")
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .testTag("favorites_track_item_$index"),
     )
 }
 
@@ -234,4 +241,3 @@ private fun formatDuration(milliseconds: Long): String {
     val seconds = totalSeconds % 60
     return "%d:%02d".format(minutes, seconds)
 }
-

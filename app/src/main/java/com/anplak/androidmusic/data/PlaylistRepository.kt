@@ -15,35 +15,78 @@ data class Playlist(
     val id: Long,
     val name: String,
     val createdAt: Long,
-    val trackCount: Int = 0
+    val trackCount: Int = 0,
 )
 
 interface PlaylistRepository {
     suspend fun createPlaylist(name: String): Long
-    suspend fun createPlaylistWithTracks(name: String, trackIds: List<Long>): Long
+
+    suspend fun createPlaylistWithTracks(
+        name: String,
+        trackIds: List<Long>,
+    ): Long
+
     suspend fun deletePlaylist(playlistId: Long)
-    suspend fun renamePlaylist(playlistId: Long, name: String)
+
+    suspend fun renamePlaylist(
+        playlistId: Long,
+        name: String,
+    )
+
     fun getPlaylists(): Flow<List<Playlist>>
+
     fun getPlaylistById(playlistId: Long): Flow<Playlist?>
-    suspend fun addTrackToPlaylist(playlistId: Long, trackId: Long)
-    suspend fun removeTrackFromPlaylist(playlistId: Long, trackId: Long)
-    suspend fun removeTracksFromPlaylist(playlistId: Long, trackIds: List<Long>)
-    suspend fun reorderPlaylistTracks(playlistId: Long, orderedTrackIds: List<Long>)
-    suspend fun duplicatePlaylist(sourcePlaylistId: Long, name: String): Long
-    suspend fun mergePlaylists(primaryPlaylistId: Long, secondaryPlaylistId: Long, name: String): Long
+
+    suspend fun addTrackToPlaylist(
+        playlistId: Long,
+        trackId: Long,
+    )
+
+    suspend fun removeTrackFromPlaylist(
+        playlistId: Long,
+        trackId: Long,
+    )
+
+    suspend fun removeTracksFromPlaylist(
+        playlistId: Long,
+        trackIds: List<Long>,
+    )
+
+    suspend fun reorderPlaylistTracks(
+        playlistId: Long,
+        orderedTrackIds: List<Long>,
+    )
+
+    suspend fun duplicatePlaylist(
+        sourcePlaylistId: Long,
+        name: String,
+    ): Long
+
+    suspend fun mergePlaylists(
+        primaryPlaylistId: Long,
+        secondaryPlaylistId: Long,
+        name: String,
+    ): Long
+
     fun getPlaylistTracks(playlistId: Long): Flow<List<TrackInfo>>
-    suspend fun isTrackInPlaylist(playlistId: Long, trackId: Long): Boolean
+
+    suspend fun isTrackInPlaylist(
+        playlistId: Long,
+        trackId: Long,
+    ): Boolean
 }
 
 class PlaylistRepositoryImpl(
-    private val playlistDao: PlaylistDao
+    private val playlistDao: PlaylistDao,
 ) : PlaylistRepository {
-
     override suspend fun createPlaylist(name: String): Long {
         return playlistDao.createPlaylist(PlaylistEntity(name = name))
     }
 
-    override suspend fun createPlaylistWithTracks(name: String, trackIds: List<Long>): Long {
+    override suspend fun createPlaylistWithTracks(
+        name: String,
+        trackIds: List<Long>,
+    ): Long {
         val playlistId = playlistDao.createPlaylist(PlaylistEntity(name = name))
         insertTracksAtPositions(playlistId, trackIds, emptyMap())
         return playlistId
@@ -53,7 +96,10 @@ class PlaylistRepositoryImpl(
         playlistDao.deletePlaylist(playlistId)
     }
 
-    override suspend fun renamePlaylist(playlistId: Long, name: String) {
+    override suspend fun renamePlaylist(
+        playlistId: Long,
+        name: String,
+    ) {
         playlistDao.renamePlaylist(playlistId, name)
     }
 
@@ -69,32 +115,47 @@ class PlaylistRepositoryImpl(
         }
     }
 
-    override suspend fun addTrackToPlaylist(playlistId: Long, trackId: Long) {
+    override suspend fun addTrackToPlaylist(
+        playlistId: Long,
+        trackId: Long,
+    ) {
         if (!playlistDao.isTrackInPlaylist(playlistId, trackId)) {
             playlistDao.addTrackToPlaylistAtEnd(playlistId, trackId)
         }
     }
 
-    override suspend fun removeTrackFromPlaylist(playlistId: Long, trackId: Long) {
+    override suspend fun removeTrackFromPlaylist(
+        playlistId: Long,
+        trackId: Long,
+    ) {
         playlistDao.removeTrackFromPlaylist(playlistId, trackId)
     }
 
-    override suspend fun removeTracksFromPlaylist(playlistId: Long, trackIds: List<Long>) {
+    override suspend fun removeTracksFromPlaylist(
+        playlistId: Long,
+        trackIds: List<Long>,
+    ) {
         if (trackIds.isEmpty()) return
         playlistDao.removeTracksFromPlaylist(playlistId, trackIds)
     }
 
-    override suspend fun reorderPlaylistTracks(playlistId: Long, orderedTrackIds: List<Long>) {
+    override suspend fun reorderPlaylistTracks(
+        playlistId: Long,
+        orderedTrackIds: List<Long>,
+    ) {
         playlistDao.replacePlaylistTracks(playlistId, orderedTrackIds)
     }
 
-    override suspend fun duplicatePlaylist(sourcePlaylistId: Long, name: String): Long {
+    override suspend fun duplicatePlaylist(
+        sourcePlaylistId: Long,
+        name: String,
+    ): Long {
         val refs = playlistDao.getPlaylistTrackRefs(sourcePlaylistId)
         val playlistId = playlistDao.createPlaylist(PlaylistEntity(name = name))
         insertTracksAtPositions(
             playlistId = playlistId,
             trackIds = refs.map { it.trackId },
-            addedAtByTrackId = refs.associate { it.trackId to it.addedAt }
+            addedAtByTrackId = refs.associate { it.trackId to it.addedAt },
         )
         return playlistId
     }
@@ -102,7 +163,7 @@ class PlaylistRepositoryImpl(
     override suspend fun mergePlaylists(
         primaryPlaylistId: Long,
         secondaryPlaylistId: Long,
-        name: String
+        name: String,
     ): Long {
         val primaryRefs = playlistDao.getPlaylistTrackRefs(primaryPlaylistId)
         val secondaryRefs = playlistDao.getPlaylistTrackRefs(secondaryPlaylistId)
@@ -116,7 +177,7 @@ class PlaylistRepositoryImpl(
         insertTracksAtPositions(
             playlistId = playlistId,
             trackIds = mergedAddedAt.keys.toList(),
-            addedAtByTrackId = mergedAddedAt
+            addedAtByTrackId = mergedAddedAt,
         )
         return playlistId
     }
@@ -127,25 +188,29 @@ class PlaylistRepositoryImpl(
         }
     }
 
-    override suspend fun isTrackInPlaylist(playlistId: Long, trackId: Long): Boolean {
+    override suspend fun isTrackInPlaylist(
+        playlistId: Long,
+        trackId: Long,
+    ): Boolean {
         return playlistDao.isTrackInPlaylist(playlistId, trackId)
     }
 
     private suspend fun insertTracksAtPositions(
         playlistId: Long,
         trackIds: List<Long>,
-        addedAtByTrackId: Map<Long, Long>
+        addedAtByTrackId: Map<Long, Long>,
     ) {
         if (trackIds.isEmpty()) return
         val now = System.currentTimeMillis()
-        val refs = trackIds.mapIndexed { index, trackId ->
-            PlaylistTrackCrossRef(
-                playlistId = playlistId,
-                trackId = trackId,
-                position = index,
-                addedAt = addedAtByTrackId[trackId] ?: now
-            )
-        }
+        val refs =
+            trackIds.mapIndexed { index, trackId ->
+                PlaylistTrackCrossRef(
+                    playlistId = playlistId,
+                    trackId = trackId,
+                    position = index,
+                    addedAt = addedAtByTrackId[trackId] ?: now,
+                )
+            }
         playlistDao.addTracksToPlaylist(refs)
     }
 }
@@ -155,7 +220,7 @@ private fun PlaylistWithTrackCount.toPlaylist(): Playlist {
         id = id,
         name = name,
         createdAt = createdAt,
-        trackCount = trackCount
+        trackCount = trackCount,
     )
 }
 
@@ -163,6 +228,6 @@ private fun PlaylistEntity.toPlaylist(): Playlist {
     return Playlist(
         id = id,
         name = name,
-        createdAt = createdAt
+        createdAt = createdAt,
     )
 }

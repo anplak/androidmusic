@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.map
 enum class SmartPlaylistType {
     MOST_PLAYED,
     RECENTLY_PLAYED,
-    RECENTLY_ADDED
+    RECENTLY_ADDED,
 }
 
 interface SmartPlaylistRepository {
@@ -20,28 +20,30 @@ interface SmartPlaylistRepository {
      * Gets the most played tracks ordered by play count descending.
      */
     fun getMostPlayed(limit: Int = 25): Flow<List<TrackInfo>>
-    
+
     /**
      * Gets recently played tracks ordered by last played timestamp descending.
      */
     fun getRecentlyPlayed(limit: Int = 25): Flow<List<TrackInfo>>
-    
+
     /**
      * Gets recently added tracks ordered by first seen timestamp descending.
      */
     fun getRecentlyAdded(limit: Int = 25): Flow<List<TrackInfo>>
-    
+
     /**
      * Gets tracks for a specific smart playlist type.
      */
-    fun getTracksForType(type: SmartPlaylistType, limit: Int = 25): Flow<List<TrackInfo>>
+    fun getTracksForType(
+        type: SmartPlaylistType,
+        limit: Int = 25,
+    ): Flow<List<TrackInfo>>
 }
 
 class SmartPlaylistRepositoryImpl(
     private val trackDao: TrackDao,
-    private val trackStatsDao: TrackStatsDao
+    private val trackStatsDao: TrackStatsDao,
 ) : SmartPlaylistRepository {
-
     override fun getMostPlayed(limit: Int): Flow<List<TrackInfo>> {
         return trackStatsDao.getMostPlayedTrackIds(limit).map { trackIds ->
             if (trackIds.isEmpty()) {
@@ -74,7 +76,10 @@ class SmartPlaylistRepositoryImpl(
         }
     }
 
-    override fun getTracksForType(type: SmartPlaylistType, limit: Int): Flow<List<TrackInfo>> {
+    override fun getTracksForType(
+        type: SmartPlaylistType,
+        limit: Int,
+    ): Flow<List<TrackInfo>> {
         return when (type) {
             SmartPlaylistType.MOST_PLAYED -> getMostPlayed(limit)
             SmartPlaylistType.RECENTLY_PLAYED -> getRecentlyPlayed(limit)
@@ -82,4 +87,3 @@ class SmartPlaylistRepositoryImpl(
         }
     }
 }
-

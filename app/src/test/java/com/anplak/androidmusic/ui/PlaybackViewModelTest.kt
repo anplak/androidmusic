@@ -21,11 +21,11 @@ import org.robolectric.RobolectricTestRunner
 
 /**
  * Unit tests for PlaybackViewModel.
- * 
+ *
  * Note: Play history recording is tested through E2E tests (HistoryE2ETest) because
  * PlaybackViewModel creates repositories internally from AppDatabase. Full unit testing
  * of history recording would require refactoring to constructor-inject repositories.
- * 
+ *
  * History recording behavior:
  * - Records play history entry when a new track starts
  * - Updates history entry duration when track completes or changes
@@ -35,84 +35,89 @@ import org.robolectric.RobolectricTestRunner
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class PlaybackViewModelTest {
-    
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var application: Application
-    
+
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         application = ApplicationProvider.getApplicationContext()
     }
-    
+
     @After
     fun tearDown() {
         Dispatchers.resetMain()
     }
-    
+
     @Test
-    fun `initial state has no selected track`() = runTest {
-        val viewModel = createViewModel()
-        advanceUntilIdle()
-        
-        assertNull(viewModel.uiState.value.selectedTrack)
-    }
-    
+    fun `initial state has no selected track`() =
+        runTest {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertNull(viewModel.uiState.value.selectedTrack)
+        }
+
     @Test
-    fun `initial playback state is not playing`() = runTest {
-        val viewModel = createViewModel()
-        advanceUntilIdle()
-        
-        assertEquals(false, viewModel.uiState.value.isPlaying)
-    }
-    
+    fun `initial playback state is not playing`() =
+        runTest {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertEquals(false, viewModel.uiState.value.isPlaying)
+        }
+
     @Test
-    fun `initial position and duration are zero`() = runTest {
-        val viewModel = createViewModel()
-        advanceUntilIdle()
-        
-        assertEquals(0L, viewModel.uiState.value.currentPosition)
-        assertEquals(0L, viewModel.uiState.value.duration)
-    }
-    
+    fun `initial position and duration are zero`() =
+        runTest {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertEquals(0L, viewModel.uiState.value.currentPosition)
+            assertEquals(0L, viewModel.uiState.value.duration)
+        }
+
     @Test
-    fun `initial state has no error`() = runTest {
-        val viewModel = createViewModel()
-        advanceUntilIdle()
-        
-        assertNull(viewModel.uiState.value.error)
-    }
-    
+    fun `initial state has no error`() =
+        runTest {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertNull(viewModel.uiState.value.error)
+        }
+
     @Test
-    fun `initial queue state is empty`() = runTest {
-        val viewModel = createViewModel()
-        advanceUntilIdle()
-        
-        assertEquals(0, viewModel.uiState.value.queuePosition)
-        assertEquals(0, viewModel.uiState.value.queueSize)
-        assertEquals(false, viewModel.uiState.value.hasNext)
-        assertEquals(false, viewModel.uiState.value.hasPrevious)
-    }
-    
+    fun `initial queue state is empty`() =
+        runTest {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertEquals(0, viewModel.uiState.value.queuePosition)
+            assertEquals(0, viewModel.uiState.value.queueSize)
+            assertEquals(false, viewModel.uiState.value.hasNext)
+            assertEquals(false, viewModel.uiState.value.hasPrevious)
+        }
+
     @Test
-    fun `clearTrack resets state`() = runTest {
-        val viewModel = createViewModel()
-        val tracks = createTestTracks(3)
-        
-        viewModel.onTrackSelected(tracks, 0)
-        advanceUntilIdle()
-        
-        viewModel.clearTrack()
-        advanceUntilIdle()
-        
-        assertNull(viewModel.uiState.value.selectedTrack)
-        assertEquals(0, viewModel.uiState.value.queueSize)
-    }
-    
+    fun `clearTrack resets state`() =
+        runTest {
+            val viewModel = createViewModel()
+            val tracks = createTestTracks(3)
+
+            viewModel.onTrackSelected(tracks, 0)
+            advanceUntilIdle()
+
+            viewModel.clearTrack()
+            advanceUntilIdle()
+
+            assertNull(viewModel.uiState.value.selectedTrack)
+            assertEquals(0, viewModel.uiState.value.queueSize)
+        }
+
     private fun createViewModel(): PlaybackViewModel {
         return PlaybackViewModel(application)
     }
-    
+
     private fun createTestTracks(count: Int): List<TrackInfo> {
         return (1..count).map { index ->
             TrackInfo(
@@ -120,22 +125,22 @@ class PlaybackViewModelTest {
                 title = "Track $index",
                 artist = "Artist $index",
                 album = "Album $index",
-                duration = 180000L
+                duration = 180000L,
             )
         }
     }
-    
+
     private fun createTestTrack(
         id: Long = 1,
         title: String = "Test Song",
-        artist: String = "Test Artist"
+        artist: String = "Test Artist",
     ): TrackInfo {
         return TrackInfo(
             uri = Uri.parse("content://media/external/audio/media/$id"),
             title = title,
             artist = artist,
             album = "Test Album",
-            duration = 180000L
+            duration = 180000L,
         )
     }
 }

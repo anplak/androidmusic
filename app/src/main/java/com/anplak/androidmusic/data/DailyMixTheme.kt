@@ -8,7 +8,7 @@ import java.time.ZoneId
 enum class DailyMixTheme {
     DECADE,
     RECENTLY_ADDED,
-    TOP_ARTIST
+    TOP_ARTIST,
 }
 
 object DailyMixConfig {
@@ -16,10 +16,12 @@ object DailyMixConfig {
     const val MIN_TRACKS_PER_THEME = 10
     const val DAILY_MIX_LIMIT = 15
 
-    fun monthStartEpochDay(epochDay: Long): Long =
-        LocalDate.ofEpochDay(epochDay).withDayOfMonth(1).toEpochDay()
+    fun monthStartEpochDay(epochDay: Long): Long = LocalDate.ofEpochDay(epochDay).withDayOfMonth(1).toEpochDay()
 
-    fun slotSeed(epochDay: Long, slot: Int): Long = epochDay * 31L + slot
+    fun slotSeed(
+        epochDay: Long,
+        slot: Int,
+    ): Long = epochDay * 31L + slot
 }
 
 data class DailyMixSelection(
@@ -27,15 +29,16 @@ data class DailyMixSelection(
     val theme: DailyMixTheme,
     val decadeStart: Int? = null,
     val recentSinceEpochDay: Long? = null,
-    val artistSeed: String? = null
+    val artistSeed: String? = null,
 ) {
     fun rowTitle(): String = "Daily Mix ${slot + 1}"
 
-    fun subtitle(): String = when (theme) {
-        DailyMixTheme.DECADE -> "${DailyMixThemePicker.decadeLabel(decadeStart!!)} gems"
-        DailyMixTheme.RECENTLY_ADDED -> "Added this month"
-        DailyMixTheme.TOP_ARTIST -> artistSeed.orEmpty()
-    }
+    fun subtitle(): String =
+        when (theme) {
+            DailyMixTheme.DECADE -> "${DailyMixThemePicker.decadeLabel(decadeStart!!)} gems"
+            DailyMixTheme.RECENTLY_ADDED -> "Added this month"
+            DailyMixTheme.TOP_ARTIST -> artistSeed.orEmpty()
+        }
 }
 
 object DailyMixThemePicker {
@@ -45,7 +48,7 @@ object DailyMixThemePicker {
         library: List<TrackInfo>,
         epochDay: Long,
         topArtists: List<String> = emptyList(),
-        slotCount: Int = DailyMixConfig.SLOT_COUNT
+        slotCount: Int = DailyMixConfig.SLOT_COUNT,
     ): List<DailyMixSelection> {
         if (library.isEmpty()) return emptyList()
 
@@ -65,7 +68,7 @@ object DailyMixThemePicker {
                 topArtists = topArtists,
                 usedThemes = usedThemes,
                 usedDecades = usedDecades,
-                usedArtists = usedArtists
+                usedArtists = usedArtists,
             )
         }
     }
@@ -73,18 +76,20 @@ object DailyMixThemePicker {
     fun poolFor(
         selection: DailyMixSelection,
         library: List<TrackInfo>,
-        epochDay: Long
-    ): List<TrackInfo> = when (selection.theme) {
-        DailyMixTheme.DECADE -> library.filter {
-            it.year?.let { year -> decadeOf(year) == selection.decadeStart } == true
+        epochDay: Long,
+    ): List<TrackInfo> =
+        when (selection.theme) {
+            DailyMixTheme.DECADE ->
+                library.filter {
+                    it.year?.let { year -> decadeOf(year) == selection.decadeStart } == true
+                }
+            DailyMixTheme.RECENTLY_ADDED -> recentPool(library, epochDay)
+            DailyMixTheme.TOP_ARTIST -> {
+                val artist = selection.artistSeed.orEmpty()
+                library.filter { it.artist.equals(artist, ignoreCase = true) }
+                    .ifEmpty { library }
+            }
         }
-        DailyMixTheme.RECENTLY_ADDED -> recentPool(library, epochDay)
-        DailyMixTheme.TOP_ARTIST -> {
-            val artist = selection.artistSeed.orEmpty()
-            library.filter { it.artist.equals(artist, ignoreCase = true) }
-                .ifEmpty { library }
-        }
-    }
 
     internal fun decadeOf(year: Int): Int = (year / 10) * 10
 
@@ -102,7 +107,10 @@ object DailyMixThemePicker {
             .keys
             .sorted()
 
-    internal fun recentPool(library: List<TrackInfo>, epochDay: Long): List<TrackInfo> {
+    internal fun recentPool(
+        library: List<TrackInfo>,
+        epochDay: Long,
+    ): List<TrackInfo> {
         val since = DailyMixConfig.monthStartEpochDay(epochDay)
         return library.filter { track ->
             track.dateAddedSec?.let { sec ->
@@ -111,7 +119,10 @@ object DailyMixThemePicker {
         }
     }
 
-    private fun buildEligibleThemes(library: List<TrackInfo>, epochDay: Long): List<DailyMixTheme> =
+    private fun buildEligibleThemes(
+        library: List<TrackInfo>,
+        epochDay: Long,
+    ): List<DailyMixTheme> =
         buildList {
             if (eligibleDecades(library).isNotEmpty()) add(DailyMixTheme.DECADE)
             if (recentPool(library, epochDay).size >= DailyMixConfig.MIN_TRACKS_PER_THEME) {
@@ -129,7 +140,7 @@ object DailyMixThemePicker {
         topArtists: List<String>,
         usedThemes: MutableSet<DailyMixTheme>,
         usedDecades: MutableSet<Int>,
-        usedArtists: MutableSet<String>
+        usedArtists: MutableSet<String>,
     ): DailyMixSelection {
         val themePool = eligibleThemes.filter { it !in usedThemes }.ifEmpty { eligibleThemes }
         val theme = themePool[(seed % themePool.size).toInt()]
@@ -137,18 +148,20 @@ object DailyMixThemePicker {
 
         return when (theme) {
             DailyMixTheme.DECADE -> {
-                val decades = eligibleDecades(library).filter { it !in usedDecades }
-                    .ifEmpty { eligibleDecades(library) }
+                val decades =
+                    eligibleDecades(library).filter { it !in usedDecades }
+                        .ifEmpty { eligibleDecades(library) }
                 val decadeIndex = if (decades.isEmpty()) 0 else (seed / themePool.size % decades.size).toInt()
                 val decade = decades[decadeIndex]
                 usedDecades += decade
                 DailyMixSelection(slot = slot, theme = theme, decadeStart = decade)
             }
-            DailyMixTheme.RECENTLY_ADDED -> DailyMixSelection(
-                slot = slot,
-                theme = theme,
-                recentSinceEpochDay = DailyMixConfig.monthStartEpochDay(epochDay)
-            )
+            DailyMixTheme.RECENTLY_ADDED ->
+                DailyMixSelection(
+                    slot = slot,
+                    theme = theme,
+                    recentSinceEpochDay = DailyMixConfig.monthStartEpochDay(epochDay),
+                )
             DailyMixTheme.TOP_ARTIST -> {
                 val artist = resolveArtistSeed(seed, topArtists, library, usedArtists)
                 usedArtists += artist.lowercase()
@@ -161,20 +174,23 @@ object DailyMixThemePicker {
         seed: Long,
         topArtists: List<String>,
         library: List<TrackInfo>,
-        usedArtists: Set<String>
+        usedArtists: Set<String>,
     ): String {
-        val libraryArtists = library
-            .map { it.artist }
-            .filter { it.isNotBlank() && !it.equals("Unknown Artist", ignoreCase = true) }
-            .distinct()
-        val candidates = buildList {
-            addAll(topArtists.filter { it.isNotBlank() && it.lowercase() !in usedArtists })
-            addAll(libraryArtists.filter { it.lowercase() !in usedArtists })
-        }.distinct()
+        val libraryArtists =
+            library
+                .map { it.artist }
+                .filter { it.isNotBlank() && !it.equals("Unknown Artist", ignoreCase = true) }
+                .distinct()
+        val candidates =
+            buildList {
+                addAll(topArtists.filter { it.isNotBlank() && it.lowercase() !in usedArtists })
+                addAll(libraryArtists.filter { it.lowercase() !in usedArtists })
+            }.distinct()
 
-        val pool = candidates.ifEmpty {
-            (topArtists.filter { it.isNotBlank() } + libraryArtists).distinct()
-        }
+        val pool =
+            candidates.ifEmpty {
+                (topArtists.filter { it.isNotBlank() } + libraryArtists).distinct()
+            }
         if (pool.isEmpty()) return "Unknown Artist"
         return pool[(seed % pool.size).toInt()]
     }

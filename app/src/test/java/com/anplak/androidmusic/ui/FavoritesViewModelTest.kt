@@ -25,89 +25,97 @@ import org.robolectric.RobolectricTestRunner
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class FavoritesViewModelTest {
-    
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var application: Application
     private lateinit var fakeFavoritesRepository: TestFavoritesRepository
-    
+
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         application = ApplicationProvider.getApplicationContext()
         fakeFavoritesRepository = TestFavoritesRepository()
     }
-    
+
     @After
     fun tearDown() {
         Dispatchers.resetMain()
     }
-    
+
     @Test
-    fun `initial state emits Empty when no favorites`() = runTest {
-        fakeFavoritesRepository.setFavorites(emptyList())
-        
-        val viewModel = createViewModel()
-        advanceUntilIdle()
-        
-        assertEquals(FavoritesUiState.Empty, viewModel.uiState.value)
-    }
-    
+    fun `initial state emits Empty when no favorites`() =
+        runTest {
+            fakeFavoritesRepository.setFavorites(emptyList())
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertEquals(FavoritesUiState.Empty, viewModel.uiState.value)
+        }
+
     @Test
-    fun `emits Content state with favorites`() = runTest {
-        val favorites = listOf(
-            createTrack(1, "Favorite Song", "Artist A"),
-            createTrack(2, "Another Favorite", "Artist B")
-        )
-        fakeFavoritesRepository.setFavorites(favorites)
-        
-        val viewModel = createViewModel()
-        advanceUntilIdle()
-        
-        val state = viewModel.uiState.value
-        assertTrue(state is FavoritesUiState.Content)
-        assertEquals(2, (state as FavoritesUiState.Content).tracks.size)
-        assertEquals("Favorite Song", state.tracks[0].title)
-    }
-    
+    fun `emits Content state with favorites`() =
+        runTest {
+            val favorites =
+                listOf(
+                    createTrack(1, "Favorite Song", "Artist A"),
+                    createTrack(2, "Another Favorite", "Artist B"),
+                )
+            fakeFavoritesRepository.setFavorites(favorites)
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertTrue(state is FavoritesUiState.Content)
+            assertEquals(2, (state as FavoritesUiState.Content).tracks.size)
+            assertEquals("Favorite Song", state.tracks[0].title)
+        }
+
     @Test
-    fun `toggleFavorite calls repository`() = runTest {
-        val viewModel = createViewModel()
-        advanceUntilIdle()
-        
-        viewModel.toggleFavorite(createTrack(1, "Favorite", "Artist"))
-        advanceUntilIdle()
-        
-        assertEquals(1, fakeFavoritesRepository.toggleFavoriteCallCount)
-        assertEquals(1L, fakeFavoritesRepository.lastToggledTrackId)
-    }
-    
+    fun `toggleFavorite calls repository`() =
+        runTest {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.toggleFavorite(createTrack(1, "Favorite", "Artist"))
+            advanceUntilIdle()
+
+            assertEquals(1, fakeFavoritesRepository.toggleFavoriteCallCount)
+            assertEquals(1L, fakeFavoritesRepository.lastToggledTrackId)
+        }
+
     @Test
-    fun `state updates when favorites change`() = runTest {
-        fakeFavoritesRepository.setFavorites(emptyList())
-        
-        val viewModel = createViewModel()
-        advanceUntilIdle()
-        
-        assertEquals(FavoritesUiState.Empty, viewModel.uiState.value)
-        
-        // Add a favorite
-        fakeFavoritesRepository.setFavorites(listOf(createTrack(1, "New Favorite", "Artist")))
-        advanceUntilIdle()
-        
-        assertTrue(viewModel.uiState.value is FavoritesUiState.Content)
-    }
-    
+    fun `state updates when favorites change`() =
+        runTest {
+            fakeFavoritesRepository.setFavorites(emptyList())
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertEquals(FavoritesUiState.Empty, viewModel.uiState.value)
+
+            // Add a favorite
+            fakeFavoritesRepository.setFavorites(listOf(createTrack(1, "New Favorite", "Artist")))
+            advanceUntilIdle()
+
+            assertTrue(viewModel.uiState.value is FavoritesUiState.Content)
+        }
+
     private fun createViewModel(): FavoritesViewModel {
         return FavoritesViewModel(application, fakeFavoritesRepository)
     }
-    
-    private fun createTrack(id: Long, title: String, artist: String): TrackInfo {
+
+    private fun createTrack(
+        id: Long,
+        title: String,
+        artist: String,
+    ): TrackInfo {
         return TrackInfo(
             uri = Uri.parse("content://media/external/audio/media/$id"),
             title = title,
             artist = artist,
             album = "Test Album",
-            duration = 180000L
+            duration = 180000L,
         )
     }
 }
@@ -115,17 +123,17 @@ class FavoritesViewModelTest {
 class TestFavoritesRepository : FavoritesRepository {
     private val favorites = MutableStateFlow<List<TrackInfo>>(emptyList())
     private val favoriteIds = MutableStateFlow<Set<Long>>(emptySet())
-    
+
     var toggleFavoriteCallCount = 0
         private set
     var lastToggledTrackId: Long? = null
         private set
-    
+
     fun setFavorites(tracks: List<TrackInfo>) {
         favorites.value = tracks
         favoriteIds.value = tracks.map { it.id }.toSet()
     }
-    
+
     override suspend fun toggleFavorite(track: TrackInfo) {
         toggleFavorite(track.id)
     }
@@ -134,15 +142,15 @@ class TestFavoritesRepository : FavoritesRepository {
         toggleFavoriteCallCount++
         lastToggledTrackId = trackId
     }
-    
+
     override fun isFavorite(trackId: Long): Flow<Boolean> {
         return MutableStateFlow(favoriteIds.value.contains(trackId))
     }
-    
+
     override fun getAllFavorites(): Flow<List<TrackInfo>> {
         return favorites
     }
-    
+
     override fun getAllFavoriteIds(): Flow<Set<Long>> {
         return favoriteIds
     }
@@ -151,4 +159,3 @@ class TestFavoritesRepository : FavoritesRepository {
         return MutableStateFlow(favoriteIds.value.associateWith { 0L })
     }
 }
-

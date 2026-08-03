@@ -1,6 +1,7 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package com.anplak.androidmusic.ui
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -51,9 +53,9 @@ fun LibraryArtistDetailScreen(
     onBackClick: () -> Unit,
     onPlayAll: (List<TrackInfo>, Int) -> Unit,
     onAddToPlaylist: (TrackInfo) -> Unit,
-    onExcludeArtist: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier,
-    viewModel: LibraryViewModel = viewModel()
+    onExcludeArtist: ((String) -> Unit)? = null,
+    viewModel: LibraryViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val tracks = remember(artistKey, uiState) { viewModel.tracksForArtist(artistKey) }
@@ -61,7 +63,7 @@ fun LibraryArtistDetailScreen(
 
     LibraryCollectionDetailContent(
         title = displayName,
-        subtitle = stringResource(R.string.tracks_count, tracks.size),
+        subtitle = pluralStringResource(R.plurals.tracks_count, tracks.size, tracks.size),
         tracks = tracks,
         favoriteIds = favoriteIds,
         onBackClick = onBackClick,
@@ -69,7 +71,7 @@ fun LibraryArtistDetailScreen(
         onAddToPlaylist = onAddToPlaylist,
         onToggleFavorite = viewModel::toggleFavorite,
         onExcludeArtist = onExcludeArtist?.let { exclude -> { exclude(displayName) } },
-        modifier = modifier
+        modifier = modifier,
     )
 }
 
@@ -81,7 +83,7 @@ fun LibraryAlbumDetailScreen(
     onPlayAll: (List<TrackInfo>, Int) -> Unit,
     onAddToPlaylist: (TrackInfo) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: LibraryViewModel = viewModel()
+    viewModel: LibraryViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val tracks = remember(album, uiState) { viewModel.tracksForAlbum(album) }
@@ -97,7 +99,7 @@ fun LibraryAlbumDetailScreen(
         onAddToPlaylist = onAddToPlaylist,
         onToggleFavorite = viewModel::toggleFavorite,
         onExcludeArtist = null,
-        modifier = modifier
+        modifier = modifier,
     )
 }
 
@@ -113,7 +115,7 @@ private fun LibraryCollectionDetailContent(
     onAddToPlaylist: (TrackInfo) -> Unit,
     onToggleFavorite: (Long) -> Unit,
     onExcludeArtist: (() -> Unit)?,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     var showOverflowMenu by remember { mutableStateOf(false) }
 
@@ -125,26 +127,25 @@ private fun LibraryCollectionDetailContent(
                         Text(
                             text = title,
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
                         )
                         Text(
                             text = subtitle,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
                 },
                 navigationIcon = {
                     IconButton(
                         onClick = onBackClick,
-                        modifier = Modifier.testTag("library_detail_back_button")
+                        modifier = Modifier.testTag("library_detail_back_button"),
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.search_back)
+                            contentDescription = stringResource(R.string.search_back),
                         )
                     }
                 },
@@ -153,16 +154,16 @@ private fun LibraryCollectionDetailContent(
                         Box {
                             IconButton(
                                 onClick = { showOverflowMenu = true },
-                                modifier = Modifier.testTag("library_detail_overflow")
+                                modifier = Modifier.testTag("library_detail_overflow"),
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.MoreVert,
-                                    contentDescription = stringResource(R.string.more_options)
+                                    contentDescription = stringResource(R.string.more_options),
                                 )
                             }
                             DropdownMenu(
                                 expanded = showOverflowMenu,
-                                onDismissRequest = { showOverflowMenu = false }
+                                onDismissRequest = { showOverflowMenu = false },
                             ) {
                                 DropdownMenuItem(
                                     text = {
@@ -172,66 +173,71 @@ private fun LibraryCollectionDetailContent(
                                         showOverflowMenu = false
                                         onExcludeArtist()
                                     },
-                                    modifier = Modifier.testTag("exclude_artist_menu")
+                                    modifier = Modifier.testTag("exclude_artist_menu"),
                                 )
                             }
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
             )
         },
-        modifier = modifier
+        modifier = modifier,
     ) { paddingValues ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
         ) {
             if (tracks.isEmpty()) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .testTag("library_detail_empty"),
-                    contentAlignment = Alignment.Center
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .testTag("library_detail_empty"),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text = stringResource(R.string.library_no_filter_results),
                         style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             } else {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.End
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.End,
                 ) {
                     FilledTonalButton(
                         onClick = { onPlayAll(tracks, 0) },
-                        modifier = Modifier.testTag("library_detail_play_all")
+                        modifier = Modifier.testTag("library_detail_play_all"),
                     ) {
                         Icon(
                             imageVector = Icons.Default.PlayArrow,
                             contentDescription = null,
-                            modifier = Modifier.padding(end = 4.dp)
+                            modifier = Modifier.padding(end = 4.dp),
                         )
                         Text(text = stringResource(R.string.play_all))
                     }
                 }
                 LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .testTag("library_detail_track_list"),
-                    contentPadding = PaddingValues(vertical = 8.dp)
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .testTag("library_detail_track_list"),
+                    contentPadding = PaddingValues(vertical = 8.dp),
                 ) {
                     itemsIndexed(
                         items = tracks,
-                        key = { _, track -> track.uri.toString() }
+                        key = { _, track -> track.uri.toString() },
                     ) { index, track ->
                         TrackListItem(
                             track = track,
@@ -240,7 +246,7 @@ private fun LibraryCollectionDetailContent(
                             onClick = { onPlayAll(tracks, index) },
                             onToggleFavorite = { onToggleFavorite(track.id) },
                             onAddToPlaylist = { onAddToPlaylist(track) },
-                            testTagPrefix = "library_detail_track"
+                            testTagPrefix = "library_detail_track",
                         )
                     }
                 }

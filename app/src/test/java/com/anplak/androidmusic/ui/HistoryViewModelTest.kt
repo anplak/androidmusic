@@ -27,7 +27,6 @@ import org.robolectric.RobolectricTestRunner
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class HistoryViewModelTest {
-
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var application: Application
     private lateinit var fakeRepository: TestPlayHistoryRepository
@@ -45,110 +44,124 @@ class HistoryViewModelTest {
     }
 
     @Test
-    fun `initial state is Loading`() = runTest {
-        val viewModel = createViewModel()
+    fun `initial state is Loading`() =
+        runTest {
+            val viewModel = createViewModel()
 
-        assertEquals(HistoryUiState.Loading, viewModel.uiState.value)
-    }
-
-    @Test
-    fun `emits Empty state when no history`() = runTest {
-        fakeRepository.setHistory(emptyList())
-
-        val viewModel = createViewModel()
-        advanceUntilIdle()
-
-        assertEquals(HistoryUiState.Empty, viewModel.uiState.value)
-    }
+            assertEquals(HistoryUiState.Loading, viewModel.uiState.value)
+        }
 
     @Test
-    fun `emits Content state with history entries`() = runTest {
-        val entries = listOf(
-            createHistoryEntry(1, 1, 3000L),
-            createHistoryEntry(2, 2, 2000L)
-        )
-        fakeRepository.setHistory(entries)
+    fun `emits Empty state when no history`() =
+        runTest {
+            fakeRepository.setHistory(emptyList())
 
-        val viewModel = createViewModel()
-        advanceUntilIdle()
+            val viewModel = createViewModel()
+            advanceUntilIdle()
 
-        val state = viewModel.uiState.value
-        assertTrue(state is HistoryUiState.Content)
-        assertEquals(2, (state as HistoryUiState.Content).entries.size)
-    }
+            assertEquals(HistoryUiState.Empty, viewModel.uiState.value)
+        }
 
     @Test
-    fun `Content state has hasMore true when page is full`() = runTest {
-        // Create 50 entries (full page)
-        val entries = (1..50).map { createHistoryEntry(it.toLong(), it.toLong(), it * 1000L) }
-        fakeRepository.setHistory(entries)
+    fun `emits Content state with history entries`() =
+        runTest {
+            val entries =
+                listOf(
+                    createHistoryEntry(1, 1, 3000L),
+                    createHistoryEntry(2, 2, 2000L),
+                )
+            fakeRepository.setHistory(entries)
 
-        val viewModel = createViewModel()
-        advanceUntilIdle()
+            val viewModel = createViewModel()
+            advanceUntilIdle()
 
-        val state = viewModel.uiState.value as HistoryUiState.Content
-        assertTrue(state.hasMore)
-    }
-
-    @Test
-    fun `Content state has hasMore false when page is not full`() = runTest {
-        // Create 10 entries (less than page size)
-        val entries = (1..10).map { createHistoryEntry(it.toLong(), it.toLong(), it * 1000L) }
-        fakeRepository.setHistory(entries)
-
-        val viewModel = createViewModel()
-        advanceUntilIdle()
-
-        val state = viewModel.uiState.value as HistoryUiState.Content
-        assertTrue(!state.hasMore)
-    }
+            val state = viewModel.uiState.value
+            assertTrue(state is HistoryUiState.Content)
+            assertEquals(2, (state as HistoryUiState.Content).entries.size)
+        }
 
     @Test
-    fun `refresh reloads history`() = runTest {
-        val initialEntries = listOf(createHistoryEntry(1, 1, 1000L))
-        fakeRepository.setHistory(initialEntries)
+    fun `Content state has hasMore true when page is full`() =
+        runTest {
+            // Create 50 entries (full page)
+            val entries = (1..50).map { createHistoryEntry(it.toLong(), it.toLong(), it * 1000L) }
+            fakeRepository.setHistory(entries)
 
-        val viewModel = createViewModel()
-        advanceUntilIdle()
+            val viewModel = createViewModel()
+            advanceUntilIdle()
 
-        val newEntries = listOf(
-            createHistoryEntry(2, 2, 2000L),
-            createHistoryEntry(1, 1, 1000L)
-        )
-        fakeRepository.setHistory(newEntries)
-
-        viewModel.refresh()
-        advanceUntilIdle()
-
-        val state = viewModel.uiState.value as HistoryUiState.Content
-        assertEquals(2, state.entries.size)
-    }
+            val state = viewModel.uiState.value as HistoryUiState.Content
+            assertTrue(state.hasMore)
+        }
 
     @Test
-    fun `cleanup runs on init`() = runTest {
-        val viewModel = createViewModel()
-        advanceUntilIdle()
+    fun `Content state has hasMore false when page is not full`() =
+        runTest {
+            // Create 10 entries (less than page size)
+            val entries = (1..10).map { createHistoryEntry(it.toLong(), it.toLong(), it * 1000L) }
+            fakeRepository.setHistory(entries)
 
-        assertTrue(fakeRepository.cleanupCalled)
-    }
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value as HistoryUiState.Content
+            assertTrue(!state.hasMore)
+        }
+
+    @Test
+    fun `refresh reloads history`() =
+        runTest {
+            val initialEntries = listOf(createHistoryEntry(1, 1, 1000L))
+            fakeRepository.setHistory(initialEntries)
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val newEntries =
+                listOf(
+                    createHistoryEntry(2, 2, 2000L),
+                    createHistoryEntry(1, 1, 1000L),
+                )
+            fakeRepository.setHistory(newEntries)
+
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value as HistoryUiState.Content
+            assertEquals(2, state.entries.size)
+        }
+
+    @Test
+    fun `cleanup runs on init`() =
+        runTest {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertTrue(fakeRepository.cleanupCalled)
+        }
 
     private fun createViewModel(): HistoryViewModel {
         return HistoryViewModel(application, fakeRepository)
     }
 
-    private fun createHistoryEntry(id: Long, trackId: Long, playedAt: Long) = PlayHistoryEntry(
+    private fun createHistoryEntry(
+        id: Long,
+        trackId: Long,
+        playedAt: Long,
+    ) = PlayHistoryEntry(
         id = id,
         trackId = trackId,
         playedAt = playedAt,
         duration = 60000L,
         sessionId = null,
-        track = TrackInfo(
-            uri = TrackInfo.uriFromId(trackId),
-            title = "Track $trackId",
-            artist = "Artist",
-            album = "Album",
-            duration = 180000L
-        )
+        track =
+            TrackInfo(
+                uri = TrackInfo.uriFromId(trackId),
+                title = "Track $trackId",
+                artist = "Artist",
+                album = "Album",
+                duration = 180000L,
+            ),
     )
 }
 
@@ -196,25 +209,43 @@ class TestPlayHistoryRepository : PlayHistoryRepository {
         historyCount = count
     }
 
-    override suspend fun recordPlay(trackId: Long, sessionId: String?): Long {
+    override suspend fun recordPlay(
+        trackId: Long,
+        sessionId: String?,
+    ): Long {
         recordPlayCalls++
         lastRecordedTrackId = trackId
         return 1L
     }
 
-    override suspend fun updateDuration(historyId: Long, duration: Long) {}
+    override suspend fun updateDuration(
+        historyId: Long,
+        duration: Long,
+    ) {}
 
-    override fun getHistory(limit: Int, offset: Int): Flow<List<PlayHistoryEntry>> = history
+    override fun getHistory(
+        limit: Int,
+        offset: Int,
+    ): Flow<List<PlayHistoryEntry>> = history
 
-    override fun getHistoryForTrack(trackId: Long, limit: Int): Flow<List<PlayHistoryEntry>> = historyForTrack
+    override fun getHistoryForTrack(
+        trackId: Long,
+        limit: Int,
+    ): Flow<List<PlayHistoryEntry>> = historyForTrack
 
     override fun getHistorySince(timestamp: Long): Flow<List<PlayHistoryEntry>> = historySince
 
     override fun getTotalPlayTimeSince(timestamp: Long): Flow<Long> = totalPlayTime
 
-    override fun getTopTracksSince(timestamp: Long, limit: Int): Flow<List<TrackPlayCount>> = topTracks
+    override fun getTopTracksSince(
+        timestamp: Long,
+        limit: Int,
+    ): Flow<List<TrackPlayCount>> = topTracks
 
-    override fun getTopArtistsSince(timestamp: Long, limit: Int): Flow<List<ArtistPlayCount>> = topArtists
+    override fun getTopArtistsSince(
+        timestamp: Long,
+        limit: Int,
+    ): Flow<List<ArtistPlayCount>> = topArtists
 
     override suspend fun getHistoryCount(): Int = historyCount
 
@@ -223,7 +254,10 @@ class TestPlayHistoryRepository : PlayHistoryRepository {
         return 0
     }
 
-    override suspend fun getCoPlayedTrackIds(seedTrackId: Long, limit: Int): List<Long> = emptyList()
+    override suspend fun getCoPlayedTrackIds(
+        seedTrackId: Long,
+        limit: Int,
+    ): List<Long> = emptyList()
 
     override suspend fun getLastSessionTrackIds(limit: Int): List<Long> = emptyList()
 }

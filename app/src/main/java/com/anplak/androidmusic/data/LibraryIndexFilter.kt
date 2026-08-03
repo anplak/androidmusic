@@ -1,14 +1,13 @@
 package com.anplak.androidmusic.data
 
 object LibraryIndexFilter {
-
     fun normalizeArtist(name: String): String = name.trim().lowercase()
 
     fun skipReason(
         filePath: String,
         durationMs: Long,
         artist: String,
-        policy: LibraryIndexPolicy
+        policy: LibraryIndexPolicy,
     ): IndexSkipReason? {
         if (durationMs <= 0 || durationMs > policy.maxDurationMs) return IndexSkipReason.DURATION
 
@@ -42,7 +41,7 @@ object LibraryIndexFilter {
         filePath: String,
         durationMs: Long,
         artist: String,
-        policy: LibraryIndexPolicy
+        policy: LibraryIndexPolicy,
     ): Boolean = skipReason(filePath, durationMs, artist, policy) == null
 
     fun normalizePath(path: String): String {

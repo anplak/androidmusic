@@ -25,7 +25,6 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class CompactTabActionsTest {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
@@ -64,13 +63,13 @@ class CompactTabActionsTest {
                 CompactTabActions {
                     IconButton(
                         onClick = { searchClicks++ },
-                        modifier = Modifier.testTag("open_search")
+                        modifier = Modifier.testTag("open_search"),
                     ) {
                         Icon(Icons.Default.Search, contentDescription = "Search")
                     }
                     IconButton(
                         onClick = { refreshClicks++ },
-                        modifier = Modifier.testTag("for_you_refresh")
+                        modifier = Modifier.testTag("for_you_refresh"),
                     ) {
                         Icon(Icons.Default.Refresh, contentDescription = "Refresh")
                     }

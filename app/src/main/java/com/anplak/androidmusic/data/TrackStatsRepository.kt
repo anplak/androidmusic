@@ -13,7 +13,7 @@ data class TrackStats(
     val playCount: Int,
     val lastPlayedAt: Long?,
     val completionCount: Int,
-    val skipCount: Int = 0
+    val skipCount: Int = 0,
 ) {
     val completionRatio: Float
         get() = if (playCount > 0) completionCount.toFloat() / playCount else 0f
@@ -24,7 +24,10 @@ interface TrackStatsRepository {
      * Records a qualified play event for the track.
      * Increments play count and updates last played timestamp.
      */
-    suspend fun recordQualifiedPlay(trackId: Long, timestamp: Long = System.currentTimeMillis())
+    suspend fun recordQualifiedPlay(
+        trackId: Long,
+        timestamp: Long = System.currentTimeMillis(),
+    )
 
     /**
      * Records a fast-skip negative signal without incrementing play count.
@@ -54,10 +57,12 @@ interface TrackStatsRepository {
 }
 
 class TrackStatsRepositoryImpl(
-    private val trackStatsDao: TrackStatsDao
+    private val trackStatsDao: TrackStatsDao,
 ) : TrackStatsRepository {
-
-    override suspend fun recordQualifiedPlay(trackId: Long, timestamp: Long) {
+    override suspend fun recordQualifiedPlay(
+        trackId: Long,
+        timestamp: Long,
+    ) {
         trackStatsDao.insertIfNotExists(TrackStatsEntity(trackId = trackId))
         trackStatsDao.incrementPlayCount(trackId, timestamp)
     }
@@ -90,6 +95,6 @@ private fun TrackStatsEntity.toTrackStats(): TrackStats {
         playCount = playCount,
         lastPlayedAt = lastPlayedAt,
         completionCount = completionCount,
-        skipCount = skipCount
+        skipCount = skipCount,
     )
 }

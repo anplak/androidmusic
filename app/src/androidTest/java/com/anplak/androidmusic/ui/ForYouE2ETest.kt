@@ -18,16 +18,16 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class ForYouE2ETest {
-
     @get:Rule(order = 0)
-    val permissionRule: GrantPermissionRule = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        GrantPermissionRule.grant(
-            Manifest.permission.READ_MEDIA_AUDIO,
-            Manifest.permission.POST_NOTIFICATIONS
-        )
-    } else {
-        GrantPermissionRule.grant(Manifest.permission.READ_EXTERNAL_STORAGE)
-    }
+    val permissionRule: GrantPermissionRule =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            GrantPermissionRule.grant(
+                Manifest.permission.READ_MEDIA_AUDIO,
+                Manifest.permission.POST_NOTIFICATIONS,
+            )
+        } else {
+            GrantPermissionRule.grant(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
 
     @get:Rule(order = 1)
     val composeTestRule = createAndroidComposeRule<MainActivity>()
@@ -64,8 +64,9 @@ class ForYouE2ETest {
         composeTestRule.navigateToForYou()
         composeTestRule.waitForForYouSettled()
 
-        val onForYou = composeTestRule.safeHasNodes(hasTestTag("for_you_list")) ||
-            composeTestRule.safeHasNodes(hasTestTag("for_you_empty"))
+        val onForYou =
+            composeTestRule.safeHasNodes(hasTestTag("for_you_list")) ||
+                composeTestRule.safeHasNodes(hasTestTag("for_you_empty"))
         assert(onForYou) { "Should return to For You tab" }
     }
 

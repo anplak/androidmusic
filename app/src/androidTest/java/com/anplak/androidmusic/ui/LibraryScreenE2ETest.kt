@@ -24,16 +24,16 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class LibraryScreenE2ETest {
-
     @get:Rule(order = 0)
-    val permissionRule: GrantPermissionRule = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        GrantPermissionRule.grant(
-            Manifest.permission.READ_MEDIA_AUDIO,
-            Manifest.permission.POST_NOTIFICATIONS
-        )
-    } else {
-        GrantPermissionRule.grant(Manifest.permission.READ_EXTERNAL_STORAGE)
-    }
+    val permissionRule: GrantPermissionRule =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            GrantPermissionRule.grant(
+                Manifest.permission.READ_MEDIA_AUDIO,
+                Manifest.permission.POST_NOTIFICATIONS,
+            )
+        } else {
+            GrantPermissionRule.grant(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
 
     @get:Rule(order = 1)
     val composeTestRule = createAndroidComposeRule<MainActivity>()
@@ -47,17 +47,19 @@ class LibraryScreenE2ETest {
     fun permissionGranted_showsLibraryScreen() {
         composeTestRule.waitForAppReady()
         composeTestRule.navigateToLibrary()
-        
+
         // Verify we're on library tab by checking for track_list or empty_state
-        val hasTrackList = composeTestRule
-            .onAllNodes(hasTestTag("track_list"))
-            .fetchSemanticsNodes()
-            .isNotEmpty()
-        val hasEmptyState = composeTestRule
-            .onAllNodes(hasTestTag("empty_state"))
-            .fetchSemanticsNodes()
-            .isNotEmpty()
-        
+        val hasTrackList =
+            composeTestRule
+                .onAllNodes(hasTestTag("track_list"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        val hasEmptyState =
+            composeTestRule
+                .onAllNodes(hasTestTag("empty_state"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+
         assert(hasTrackList || hasEmptyState) {
             "Expected track_list or empty_state to be displayed on Library screen"
         }
@@ -80,15 +82,17 @@ class LibraryScreenE2ETest {
         } catch (e: AssertionError) {
             // Loading may have completed too fast - that's acceptable
             // Verify we're on a valid library state (content or empty)
-            val contentExists = composeTestRule
-                .onAllNodes(hasTestTag("track_list"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            val emptyExists = composeTestRule
-                .onAllNodes(hasTestTag("empty_state"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-            
+            val contentExists =
+                composeTestRule
+                    .onAllNodes(hasTestTag("track_list"))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            val emptyExists =
+                composeTestRule
+                    .onAllNodes(hasTestTag("empty_state"))
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+
             assert(contentExists || emptyExists) {
                 "Expected either track_list or empty_state to be displayed after loading"
             }
@@ -111,7 +115,7 @@ class LibraryScreenE2ETest {
             composeTestRule
                 .onNodeWithTag("track_list")
                 .assertIsDisplayed()
-            
+
             // Verify at least the first track item exists
             composeTestRule
                 .onNodeWithTag("track_item_0")
@@ -140,7 +144,7 @@ class LibraryScreenE2ETest {
             composeTestRule
                 .onNodeWithTag("empty_state")
                 .assertIsDisplayed()
-            
+
             composeTestRule
                 .onNodeWithText("No music found")
                 .assertIsDisplayed()
@@ -229,4 +233,3 @@ class LibraryScreenE2ETest {
         }
     }
 }
-

@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package com.anplak.androidmusic.ui
 
 import androidx.compose.foundation.clickable
@@ -47,19 +49,20 @@ fun SmartPlaylistDetailScreen(
     onBackClick: () -> Unit,
     onPlayAll: (List<TrackInfo>, Int) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: SmartPlaylistsViewModel = viewModel()
+    viewModel: SmartPlaylistsViewModel = viewModel(),
 ) {
     val uiState by viewModel.detailState.collectAsState()
-    
+
     LaunchedEffect(type) {
         viewModel.loadSmartPlaylist(type)
     }
-    
-    val title = when (type) {
-        SmartPlaylistType.MOST_PLAYED -> stringResource(R.string.most_played)
-        SmartPlaylistType.RECENTLY_PLAYED -> stringResource(R.string.recently_played)
-        SmartPlaylistType.RECENTLY_ADDED -> stringResource(R.string.recently_added)
-    }
+
+    val title =
+        when (type) {
+            SmartPlaylistType.MOST_PLAYED -> stringResource(R.string.most_played)
+            SmartPlaylistType.RECENTLY_PLAYED -> stringResource(R.string.recently_played)
+            SmartPlaylistType.RECENTLY_ADDED -> stringResource(R.string.recently_added)
+        }
 
     Scaffold(
         topBar = {
@@ -68,26 +71,28 @@ fun SmartPlaylistDetailScreen(
                 navigationIcon = {
                     IconButton(
                         onClick = onBackClick,
-                        modifier = Modifier.testTag("smart_playlist_back_button")
+                        modifier = Modifier.testTag("smart_playlist_back_button"),
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.previous)
+                            contentDescription = stringResource(R.string.previous),
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
             )
         },
-        modifier = modifier
+        modifier = modifier,
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
         ) {
             when (val state = uiState) {
                 is SmartPlaylistDetailUiState.Loading -> {
@@ -100,7 +105,7 @@ fun SmartPlaylistDetailScreen(
                     SmartPlaylistContent(
                         tracks = state.tracks,
                         onTrackClick = { index -> onPlayAll(state.tracks, index) },
-                        onPlayAll = { onPlayAll(state.tracks, 0) }
+                        onPlayAll = { onPlayAll(state.tracks, 0) },
                     )
                 }
             }
@@ -111,10 +116,11 @@ fun SmartPlaylistDetailScreen(
 @Composable
 private fun SmartPlaylistLoadingState() {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("smart_playlist_loading_state"),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("smart_playlist_loading_state"),
+        contentAlignment = Alignment.Center,
     ) {
         CircularProgressIndicator()
     }
@@ -122,27 +128,29 @@ private fun SmartPlaylistLoadingState() {
 
 @Composable
 private fun SmartPlaylistEmptyState(type: SmartPlaylistType) {
-    val message = when (type) {
-        SmartPlaylistType.MOST_PLAYED -> "Play some tracks to see your most played here."
-        SmartPlaylistType.RECENTLY_PLAYED -> "Your recently played tracks will appear here."
-        SmartPlaylistType.RECENTLY_ADDED -> "Add music to your device to see it here."
-    }
-    
+    val message =
+        when (type) {
+            SmartPlaylistType.MOST_PLAYED -> "Play some tracks to see your most played here."
+            SmartPlaylistType.RECENTLY_PLAYED -> "Your recently played tracks will appear here."
+            SmartPlaylistType.RECENTLY_ADDED -> "Add music to your device to see it here."
+        }
+
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("smart_playlist_empty_state"),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .testTag("smart_playlist_empty_state"),
+        contentAlignment = Alignment.Center,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(32.dp)
+            modifier = Modifier.padding(32.dp),
         ) {
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -152,43 +160,45 @@ private fun SmartPlaylistEmptyState(type: SmartPlaylistType) {
 private fun SmartPlaylistContent(
     tracks: List<TrackInfo>,
     onTrackClick: (Int) -> Unit,
-    onPlayAll: () -> Unit
+    onPlayAll: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         // Play All button
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.End
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.End,
         ) {
             FilledTonalButton(
                 onClick = onPlayAll,
-                modifier = Modifier.testTag("smart_playlist_play_all")
+                modifier = Modifier.testTag("smart_playlist_play_all"),
             ) {
                 Icon(
                     imageVector = Icons.Default.PlayArrow,
                     contentDescription = null,
-                    modifier = Modifier.padding(end = 4.dp)
+                    modifier = Modifier.padding(end = 4.dp),
                 )
                 Text(text = stringResource(R.string.play_all))
             }
         }
-        
+
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .testTag("smart_playlist_track_list"),
-            contentPadding = PaddingValues(vertical = 8.dp)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .testTag("smart_playlist_track_list"),
+            contentPadding = PaddingValues(vertical = 8.dp),
         ) {
             itemsIndexed(
                 items = tracks,
-                key = { _, track -> track.id }
+                key = { _, track -> track.id },
             ) { index, track ->
                 SmartPlaylistTrackItem(
                     track = track,
                     index = index,
-                    onClick = { onTrackClick(index) }
+                    onClick = { onTrackClick(index) },
                 )
             }
         }
@@ -199,14 +209,14 @@ private fun SmartPlaylistContent(
 private fun SmartPlaylistTrackItem(
     track: TrackInfo,
     index: Int,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     ListItem(
         headlineContent = {
             Text(
                 text = track.title,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
         },
         supportingContent = {
@@ -214,20 +224,21 @@ private fun SmartPlaylistTrackItem(
                 text = track.artist.ifBlank { "Unknown Artist" },
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         },
         trailingContent = {
             Text(
                 text = formatDuration(track.duration),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         },
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .testTag("smart_playlist_track_item_$index")
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .testTag("smart_playlist_track_item_$index"),
     )
 }
 
@@ -237,4 +248,3 @@ private fun formatDuration(durationMs: Long): String {
     val seconds = totalSeconds % 60
     return "%d:%02d".format(minutes, seconds)
 }
-

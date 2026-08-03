@@ -8,7 +8,7 @@ data class RankingInputs(
     val skipCount: Int,
     val isFavorite: Boolean,
     val favoritedAt: Long?,
-    val nowMs: Long
+    val nowMs: Long,
 )
 
 object TrackRankingWeights {
@@ -23,8 +23,13 @@ object TrackRankingWeights {
         return weight.coerceAtLeast(RankingConfig.MIN_WEIGHT)
     }
 
-    fun isQualifiedListen(listenedMs: Long, trackDurationMs: Long): Boolean =
+    fun isQualifiedListen(
+        listenedMs: Long,
+        trackDurationMs: Long,
+    ): Boolean =
         listenedMs >= RankingConfig.QUALIFIED_PLAY_MS ||
-            (trackDurationMs > 0 &&
-                listenedMs >= (trackDurationMs * RankingConfig.QUALIFIED_PLAY_FRACTION).toLong())
+            (
+                trackDurationMs > 0 &&
+                    listenedMs >= (trackDurationMs * RankingConfig.QUALIFIED_PLAY_FRACTION).toLong()
+            )
 }

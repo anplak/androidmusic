@@ -8,9 +8,9 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
@@ -93,8 +93,7 @@ fun MainActivityComposeRule.prepareLibraryTab() {
     navigateToLibrary()
 }
 
-fun MainActivityComposeRule.hasLibraryTracks(): Boolean =
-    safeHasNodes(hasTestTag("track_list"))
+fun MainActivityComposeRule.hasLibraryTracks(): Boolean = safeHasNodes(hasTestTag("track_list"))
 
 fun MainActivityComposeRule.switchLibraryBrowseTab(tab: LibraryBrowseTab) {
     onNodeWithTag("library_tab_${tab.name.lowercase()}").performClick()
@@ -274,7 +273,10 @@ fun MainActivityComposeRule.waitForFavoriteTrackList(timeoutMillis: Long = 15_00
     }
 }
 
-private fun favoriteButtonMatcher(index: Int, favorited: Boolean): SemanticsMatcher {
+private fun favoriteButtonMatcher(
+    index: Int,
+    favorited: Boolean,
+): SemanticsMatcher {
     val description = if (favorited) "Remove from favorites" else "Add to favorites"
     return hasTestTag("favorite_button_$index").and(hasContentDescription(description))
 }
@@ -287,7 +289,10 @@ fun MainActivityComposeRule.clickLibraryFavoriteAtIndex(index: Int) {
 }
 
 /** Toggles until the track at [index] matches [favorited] (handles persisted DB state). */
-fun MainActivityComposeRule.setLibraryFavoriteAtIndex(index: Int, favorited: Boolean) {
+fun MainActivityComposeRule.setLibraryFavoriteAtIndex(
+    index: Int,
+    favorited: Boolean,
+) {
     onNodeWithTag("track_item_$index").performScrollTo()
     waitUntil(timeoutMillis = 15_000) {
         safeHasNodes(hasTestTag("favorite_button_$index"))
@@ -303,7 +308,7 @@ fun MainActivityComposeRule.setLibraryFavoriteAtIndex(index: Int, favorited: Boo
 fun MainActivityComposeRule.waitForLibraryFavoriteAtIndex(
     index: Int,
     favorited: Boolean,
-    timeoutMillis: Long = 15_000
+    timeoutMillis: Long = 15_000,
 ) {
     onNodeWithTag("track_item_$index").performScrollTo()
     waitUntil(timeoutMillis = timeoutMillis) {
@@ -311,7 +316,10 @@ fun MainActivityComposeRule.waitForLibraryFavoriteAtIndex(
     }
 }
 
-fun MainActivityComposeRule.assertLibraryFavoriteAtIndex(index: Int, favorited: Boolean) {
+fun MainActivityComposeRule.assertLibraryFavoriteAtIndex(
+    index: Int,
+    favorited: Boolean,
+) {
     onNodeWithTag("track_item_$index").performScrollTo()
     onNode(favoriteButtonMatcher(index, favorited)).assertIsDisplayed()
 }
@@ -328,7 +336,7 @@ fun MainActivityComposeRule.waitForForYouSettled() {
                 safeHasNodes(hasTestTag("for_you_list")) ||
                     safeHasNodes(hasTestTag("for_you_empty")) ||
                     safeHasNodes(hasTestTag("for_you_error"))
-                )
+            )
     }
 }
 
@@ -372,19 +380,24 @@ fun MainActivityComposeRule.refreshForYou() {
 }
 
 /** Waits until Now Playing queue position reaches at least [minPosition] (1-based). */
-fun MainActivityComposeRule.waitForQueuePositionAtLeast(minPosition: Int, timeoutMillis: Long = 8_000) {
+fun MainActivityComposeRule.waitForQueuePositionAtLeast(
+    minPosition: Int,
+    timeoutMillis: Long = 8_000,
+) {
     waitUntil(timeoutMillis = timeoutMillis) {
         if (!safeHasNodes(hasTestTag("queue_position"))) return@waitUntil false
         try {
-            val text = onNodeWithTag("queue_position")
-                .fetchSemanticsNode()
-                .config
-                .getOrNull(SemanticsProperties.Text)
-                ?.firstOrNull()
-                ?.text
-                ?: return@waitUntil false
-            val position = Regex("""Track\s+(\d+)""").find(text)?.groupValues?.get(1)?.toIntOrNull()
-                ?: return@waitUntil false
+            val text =
+                onNodeWithTag("queue_position")
+                    .fetchSemanticsNode()
+                    .config
+                    .getOrNull(SemanticsProperties.Text)
+                    ?.firstOrNull()
+                    ?.text
+                    ?: return@waitUntil false
+            val position =
+                Regex("""Track\s+(\d+)""").find(text)?.groupValues?.get(1)?.toIntOrNull()
+                    ?: return@waitUntil false
             position >= minPosition
         } catch (_: Exception) {
             false

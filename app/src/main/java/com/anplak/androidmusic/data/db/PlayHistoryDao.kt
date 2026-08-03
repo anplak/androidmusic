@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
  */
 data class TrackPlayCountResult(
     val trackId: Long,
-    val playCount: Int
+    val playCount: Int,
 )
 
 /**
@@ -19,7 +19,7 @@ data class TrackPlayCountResult(
  */
 data class ArtistPlayCountResult(
     val artist: String,
-    val playCount: Int
+    val playCount: Int,
 )
 
 /**
@@ -34,12 +34,11 @@ data class PlayHistoryWithTrack(
     val title: String,
     val artist: String,
     val album: String,
-    val trackDuration: Long
+    val trackDuration: Long,
 )
 
 @Dao
 interface PlayHistoryDao {
-
     @Insert
     suspend fun insert(history: PlayHistoryEntity): Long
 
@@ -52,20 +51,26 @@ interface PlayHistoryDao {
     /**
      * Gets play history with track details, ordered by most recent first.
      */
-    @Query("""
+    @Query(
+        """
         SELECT ph.id, ph.trackId, ph.playedAt, ph.duration, ph.sessionId,
                t.title, t.artist, t.album, t.duration as trackDuration
         FROM play_history ph
         INNER JOIN tracks t ON ph.trackId = t.id
         ORDER BY ph.playedAt DESC
         LIMIT :limit OFFSET :offset
-    """)
-    fun getHistory(limit: Int, offset: Int = 0): Flow<List<PlayHistoryWithTrack>>
+    """,
+    )
+    fun getHistory(
+        limit: Int,
+        offset: Int = 0,
+    ): Flow<List<PlayHistoryWithTrack>>
 
     /**
      * Gets play history for a specific track.
      */
-    @Query("""
+    @Query(
+        """
         SELECT ph.id, ph.trackId, ph.playedAt, ph.duration, ph.sessionId,
                t.title, t.artist, t.album, t.duration as trackDuration
         FROM play_history ph
@@ -73,48 +78,62 @@ interface PlayHistoryDao {
         WHERE ph.trackId = :trackId
         ORDER BY ph.playedAt DESC
         LIMIT :limit
-    """)
-    fun getHistoryForTrack(trackId: Long, limit: Int): Flow<List<PlayHistoryWithTrack>>
+    """,
+    )
+    fun getHistoryForTrack(
+        trackId: Long,
+        limit: Int,
+    ): Flow<List<PlayHistoryWithTrack>>
 
     /**
      * Gets play history since a given timestamp.
      */
-    @Query("""
+    @Query(
+        """
         SELECT ph.id, ph.trackId, ph.playedAt, ph.duration, ph.sessionId,
                t.title, t.artist, t.album, t.duration as trackDuration
         FROM play_history ph
         INNER JOIN tracks t ON ph.trackId = t.id
         WHERE ph.playedAt >= :timestamp
         ORDER BY ph.playedAt DESC
-    """)
+    """,
+    )
     fun getHistorySince(timestamp: Long): Flow<List<PlayHistoryWithTrack>>
 
     /**
      * Gets total play time (sum of durations) since a given timestamp.
      */
-    @Query("""
+    @Query(
+        """
         SELECT COALESCE(SUM(duration), 0) FROM play_history
         WHERE playedAt >= :timestamp
-    """)
+    """,
+    )
     fun getTotalPlayTimeSince(timestamp: Long): Flow<Long>
 
     /**
      * Gets top tracks by play count since a given timestamp.
      */
-    @Query("""
+    @Query(
+        """
         SELECT trackId, COUNT(*) as playCount
         FROM play_history
         WHERE playedAt >= :timestamp
         GROUP BY trackId
         ORDER BY playCount DESC
         LIMIT :limit
-    """)
-    fun getTopTracksSince(timestamp: Long, limit: Int): Flow<List<TrackPlayCountResult>>
+    """,
+    )
+    fun getTopTracksSince(
+        timestamp: Long,
+        limit: Int,
+    ): Flow<List<TrackPlayCountResult>>
 
     /**
      * Gets top artists by play count since a given timestamp.
      */
-    @Query("""
+    @Query(
+        """
         SELECT t.artist, COUNT(*) as playCount
         FROM play_history ph
         INNER JOIN tracks t ON ph.trackId = t.id
@@ -122,8 +141,12 @@ interface PlayHistoryDao {
         GROUP BY t.artist
         ORDER BY playCount DESC
         LIMIT :limit
-    """)
-    fun getTopArtistsSince(timestamp: Long, limit: Int): Flow<List<ArtistPlayCountResult>>
+    """,
+    )
+    fun getTopArtistsSince(
+        timestamp: Long,
+        limit: Int,
+    ): Flow<List<ArtistPlayCountResult>>
 
     /**
      * Gets the total count of history entries.
@@ -147,7 +170,8 @@ interface PlayHistoryDao {
     /**
      * Tracks often played in the same session as [seedTrackId] (co-occurrence).
      */
-    @Query("""
+    @Query(
+        """
         SELECT ph2.trackId AS trackId, COUNT(*) AS playCount
         FROM play_history ph1
         INNER JOIN play_history ph2
@@ -158,13 +182,18 @@ interface PlayHistoryDao {
         GROUP BY ph2.trackId
         ORDER BY playCount DESC
         LIMIT :limit
-    """)
-    suspend fun getCoPlayedTrackIds(seedTrackId: Long, limit: Int): List<TrackPlayCountResult>
+    """,
+    )
+    suspend fun getCoPlayedTrackIds(
+        seedTrackId: Long,
+        limit: Int,
+    ): List<TrackPlayCountResult>
 
     /**
      * Distinct track IDs from the most recent listening session.
      */
-    @Query("""
+    @Query(
+        """
         SELECT DISTINCT trackId FROM play_history
         WHERE sessionId = (
             SELECT sessionId FROM play_history
@@ -174,10 +203,12 @@ interface PlayHistoryDao {
         )
         ORDER BY playedAt DESC
         LIMIT :limit
-    """)
+    """,
+    )
     suspend fun getLastSessionTrackIds(limit: Int): List<Long>
 
-    @Query("""
+    @Query(
+        """
         SELECT ph.id, ph.trackId, ph.playedAt, ph.duration, ph.sessionId,
                t.title, t.artist, t.album, t.duration AS trackDuration
         FROM play_history ph
@@ -187,6 +218,10 @@ interface PlayHistoryDao {
            OR t.album LIKE '%' || :query || '%' COLLATE NOCASE
         ORDER BY ph.playedAt DESC
         LIMIT :limit
-    """)
-    suspend fun searchHistory(query: String, limit: Int): List<PlayHistoryWithTrack>
+    """,
+    )
+    suspend fun searchHistory(
+        query: String,
+        limit: Int,
+    ): List<PlayHistoryWithTrack>
 }

@@ -8,7 +8,6 @@ import com.anplak.androidmusic.data.PlayHistoryRepository
 import com.anplak.androidmusic.data.TrackPlayCount
 import com.anplak.androidmusic.data.db.TrackDao
 import com.anplak.androidmusic.data.db.TrackEntity
-import com.anplak.androidmusic.player.TrackInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -30,7 +29,6 @@ import org.robolectric.RobolectricTestRunner
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class InsightsViewModelTest {
-
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var application: Application
     private lateinit var fakeRepository: TestInsightsPlayHistoryRepository
@@ -50,116 +48,127 @@ class InsightsViewModelTest {
     }
 
     @Test
-    fun `initial state is loading`() = runTest {
-        val viewModel = createViewModel()
+    fun `initial state is loading`() =
+        runTest {
+            val viewModel = createViewModel()
 
-        assertTrue(viewModel.uiState.value.isLoading)
-    }
-
-    @Test
-    fun `emits state with hasData false when no listening data`() = runTest {
-        fakeRepository.setTotalPlayTime(0, 0)
-        fakeRepository.setTopTracks(emptyList(), emptyList())
-        fakeRepository.setTopArtists(emptyList(), emptyList())
-
-        val viewModel = createViewModel()
-        advanceUntilIdle()
-
-        assertFalse(viewModel.uiState.value.hasData)
-    }
+            assertTrue(viewModel.uiState.value.isLoading)
+        }
 
     @Test
-    fun `emits state with hasData true when has play time`() = runTest {
-        // Use same value for both since the mock can't reliably distinguish
-        // today vs week timestamps in a concurrent test environment
-        fakeRepository.setTotalPlayTime(60000L, 60000L)
-        fakeRepository.setTopTracks(emptyList(), emptyList())
-        fakeRepository.setTopArtists(emptyList(), emptyList())
+    fun `emits state with hasData false when no listening data`() =
+        runTest {
+            fakeRepository.setTotalPlayTime(0, 0)
+            fakeRepository.setTopTracks(emptyList(), emptyList())
+            fakeRepository.setTopArtists(emptyList(), emptyList())
 
-        val viewModel = createViewModel()
-        advanceUntilIdle()
+            val viewModel = createViewModel()
+            advanceUntilIdle()
 
-        val state = viewModel.uiState.value
-        assertTrue("State should have data when play time > 0", state.hasData)
-        assertTrue("Today play time should be > 0", state.todayPlayTime > 0)
-        assertTrue("Week play time should be > 0", state.weekPlayTime > 0)
-    }
+            assertFalse(viewModel.uiState.value.hasData)
+        }
 
     @Test
-    fun `emits state with top tracks when available`() = runTest {
-        fakeRepository.setTotalPlayTime(60000L, 120000L)
-        fakeRepository.setTopTracks(
-            listOf(TrackPlayCount(1, 5), TrackPlayCount(2, 3)),
-            listOf(TrackPlayCount(1, 10), TrackPlayCount(2, 8))
-        )
-        fakeRepository.setTopArtists(emptyList(), emptyList())
-        fakeTrackDao.setTracks(listOf(
-            createTrackEntity(1, "Song A"),
-            createTrackEntity(2, "Song B")
-        ))
+    fun `emits state with hasData true when has play time`() =
+        runTest {
+            // Use same value for both since the mock can't reliably distinguish
+            // today vs week timestamps in a concurrent test environment
+            fakeRepository.setTotalPlayTime(60000L, 60000L)
+            fakeRepository.setTopTracks(emptyList(), emptyList())
+            fakeRepository.setTopArtists(emptyList(), emptyList())
 
-        val viewModel = createViewModel()
-        advanceUntilIdle()
+            val viewModel = createViewModel()
+            advanceUntilIdle()
 
-        val state = viewModel.uiState.value
-        assertEquals(2, state.todayTopTracks.size)
-        assertEquals("Song A", state.todayTopTracks[0].track.title)
-        assertEquals(5, state.todayTopTracks[0].playCount)
-        assertEquals(2, state.weekTopTracks.size)
-    }
+            val state = viewModel.uiState.value
+            assertTrue("State should have data when play time > 0", state.hasData)
+            assertTrue("Today play time should be > 0", state.todayPlayTime > 0)
+            assertTrue("Week play time should be > 0", state.weekPlayTime > 0)
+        }
 
     @Test
-    fun `emits state with top artists when available`() = runTest {
-        fakeRepository.setTotalPlayTime(60000L, 120000L)
-        fakeRepository.setTopTracks(emptyList(), emptyList())
-        fakeRepository.setTopArtists(
-            listOf(ArtistPlayCount("Artist A", 10), ArtistPlayCount("Artist B", 5)),
-            listOf(ArtistPlayCount("Artist A", 20), ArtistPlayCount("Artist B", 15))
-        )
+    fun `emits state with top tracks when available`() =
+        runTest {
+            fakeRepository.setTotalPlayTime(60000L, 120000L)
+            fakeRepository.setTopTracks(
+                listOf(TrackPlayCount(1, 5), TrackPlayCount(2, 3)),
+                listOf(TrackPlayCount(1, 10), TrackPlayCount(2, 8)),
+            )
+            fakeRepository.setTopArtists(emptyList(), emptyList())
+            fakeTrackDao.setTracks(
+                listOf(
+                    createTrackEntity(1, "Song A"),
+                    createTrackEntity(2, "Song B"),
+                ),
+            )
 
-        val viewModel = createViewModel()
-        advanceUntilIdle()
+            val viewModel = createViewModel()
+            advanceUntilIdle()
 
-        val state = viewModel.uiState.value
-        assertEquals(2, state.todayTopArtists.size)
-        assertEquals("Artist A", state.todayTopArtists[0].artist)
-        assertEquals(10, state.todayTopArtists[0].playCount)
-        assertEquals(2, state.weekTopArtists.size)
-    }
+            val state = viewModel.uiState.value
+            assertEquals(2, state.todayTopTracks.size)
+            assertEquals("Song A", state.todayTopTracks[0].track.title)
+            assertEquals(5, state.todayTopTracks[0].playCount)
+            assertEquals(2, state.weekTopTracks.size)
+        }
 
     @Test
-    fun `refresh reloads insights`() = runTest {
-        fakeRepository.setTotalPlayTime(60000L, 60000L)
-        fakeRepository.setTopTracks(emptyList(), emptyList())
-        fakeRepository.setTopArtists(emptyList(), emptyList())
+    fun `emits state with top artists when available`() =
+        runTest {
+            fakeRepository.setTotalPlayTime(60000L, 120000L)
+            fakeRepository.setTopTracks(emptyList(), emptyList())
+            fakeRepository.setTopArtists(
+                listOf(ArtistPlayCount("Artist A", 10), ArtistPlayCount("Artist B", 5)),
+                listOf(ArtistPlayCount("Artist A", 20), ArtistPlayCount("Artist B", 15)),
+            )
 
-        val viewModel = createViewModel()
-        advanceUntilIdle()
+            val viewModel = createViewModel()
+            advanceUntilIdle()
 
-        val initialPlayTime = viewModel.uiState.value.todayPlayTime
-        assertTrue("Initial play time should be set", initialPlayTime > 0)
+            val state = viewModel.uiState.value
+            assertEquals(2, state.todayTopArtists.size)
+            assertEquals("Artist A", state.todayTopArtists[0].artist)
+            assertEquals(10, state.todayTopArtists[0].playCount)
+            assertEquals(2, state.weekTopArtists.size)
+        }
 
-        fakeRepository.setTotalPlayTime(90000L, 90000L)
+    @Test
+    fun `refresh reloads insights`() =
+        runTest {
+            fakeRepository.setTotalPlayTime(60000L, 60000L)
+            fakeRepository.setTopTracks(emptyList(), emptyList())
+            fakeRepository.setTopArtists(emptyList(), emptyList())
 
-        viewModel.refresh()
-        advanceUntilIdle()
+            val viewModel = createViewModel()
+            advanceUntilIdle()
 
-        val refreshedPlayTime = viewModel.uiState.value.todayPlayTime
-        assertTrue("Refreshed play time should be updated", refreshedPlayTime > initialPlayTime)
-    }
+            val initialPlayTime = viewModel.uiState.value.todayPlayTime
+            assertTrue("Initial play time should be set", initialPlayTime > 0)
+
+            fakeRepository.setTotalPlayTime(90000L, 90000L)
+
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            val refreshedPlayTime = viewModel.uiState.value.todayPlayTime
+            assertTrue("Refreshed play time should be updated", refreshedPlayTime > initialPlayTime)
+        }
 
     private fun createViewModel(): InsightsViewModel {
         return InsightsViewModel(application, fakeRepository, fakeTrackDao)
     }
 
-    private fun createTrackEntity(id: Long, title: String) = TrackEntity(
+    private fun createTrackEntity(
+        id: Long,
+        title: String,
+    ) = TrackEntity(
         id = id,
         title = title,
         artist = "Artist",
         album = "Album",
         duration = 180000L,
         path = "path/to/track",
-        firstSeenAt = System.currentTimeMillis()
+        firstSeenAt = System.currentTimeMillis(),
     )
 }
 
@@ -167,15 +176,15 @@ class TestInsightsPlayHistoryRepository : PlayHistoryRepository {
     private val history = MutableStateFlow<List<PlayHistoryEntry>>(emptyList())
     private val historyForTrack = MutableStateFlow<List<PlayHistoryEntry>>(emptyList())
     private val historySince = MutableStateFlow<List<PlayHistoryEntry>>(emptyList())
-    
+
     // Store play time values mapped by the actual timestamp that will be used
     private val playTimeByTimestamp = mutableMapOf<Long, Long>()
     private val topTracksByTimestamp = mutableMapOf<Long, List<TrackPlayCount>>()
     private val topArtistsByTimestamp = mutableMapOf<Long, List<ArtistPlayCount>>()
-    
+
     // Captured timestamps from ViewModel calls
     private val capturedTimestamps = mutableSetOf<Long>()
-    
+
     // Default values
     private var todayPlayTimeValue = 0L
     private var weekPlayTimeValue = 0L
@@ -184,21 +193,30 @@ class TestInsightsPlayHistoryRepository : PlayHistoryRepository {
     private var todayTopArtistsValue = emptyList<ArtistPlayCount>()
     private var weekTopArtistsValue = emptyList<ArtistPlayCount>()
 
-    fun setTotalPlayTime(today: Long, week: Long) {
+    fun setTotalPlayTime(
+        today: Long,
+        week: Long,
+    ) {
         todayPlayTimeValue = today
         weekPlayTimeValue = week
     }
 
-    fun setTopTracks(today: List<TrackPlayCount>, week: List<TrackPlayCount>) {
+    fun setTopTracks(
+        today: List<TrackPlayCount>,
+        week: List<TrackPlayCount>,
+    ) {
         todayTopTracksValue = today
         weekTopTracksValue = week
     }
 
-    fun setTopArtists(today: List<ArtistPlayCount>, week: List<ArtistPlayCount>) {
+    fun setTopArtists(
+        today: List<ArtistPlayCount>,
+        week: List<ArtistPlayCount>,
+    ) {
         todayTopArtistsValue = today
         weekTopArtistsValue = week
     }
-    
+
     private fun isMoreRecentTimestamp(timestamp: Long): Boolean {
         // The more recent timestamp is "today", the older one is "week"
         // todayStart is always >= weekStart (midnight today >= Monday midnight)
@@ -214,13 +232,25 @@ class TestInsightsPlayHistoryRepository : PlayHistoryRepository {
         }
     }
 
-    override suspend fun recordPlay(trackId: Long, sessionId: String?): Long = 1L
+    override suspend fun recordPlay(
+        trackId: Long,
+        sessionId: String?,
+    ): Long = 1L
 
-    override suspend fun updateDuration(historyId: Long, duration: Long) {}
+    override suspend fun updateDuration(
+        historyId: Long,
+        duration: Long,
+    ) {}
 
-    override fun getHistory(limit: Int, offset: Int): Flow<List<PlayHistoryEntry>> = history
+    override fun getHistory(
+        limit: Int,
+        offset: Int,
+    ): Flow<List<PlayHistoryEntry>> = history
 
-    override fun getHistoryForTrack(trackId: Long, limit: Int): Flow<List<PlayHistoryEntry>> = historyForTrack
+    override fun getHistoryForTrack(
+        trackId: Long,
+        limit: Int,
+    ): Flow<List<PlayHistoryEntry>> = historyForTrack
 
     override fun getHistorySince(timestamp: Long): Flow<List<PlayHistoryEntry>> = historySince
 
@@ -229,12 +259,18 @@ class TestInsightsPlayHistoryRepository : PlayHistoryRepository {
         return MutableStateFlow(if (isToday) todayPlayTimeValue else weekPlayTimeValue)
     }
 
-    override fun getTopTracksSince(timestamp: Long, limit: Int): Flow<List<TrackPlayCount>> {
+    override fun getTopTracksSince(
+        timestamp: Long,
+        limit: Int,
+    ): Flow<List<TrackPlayCount>> {
         val isToday = isMoreRecentTimestamp(timestamp)
         return MutableStateFlow(if (isToday) todayTopTracksValue else weekTopTracksValue)
     }
 
-    override fun getTopArtistsSince(timestamp: Long, limit: Int): Flow<List<ArtistPlayCount>> {
+    override fun getTopArtistsSince(
+        timestamp: Long,
+        limit: Int,
+    ): Flow<List<ArtistPlayCount>> {
         val isToday = isMoreRecentTimestamp(timestamp)
         return MutableStateFlow(if (isToday) todayTopArtistsValue else weekTopArtistsValue)
     }
@@ -243,7 +279,10 @@ class TestInsightsPlayHistoryRepository : PlayHistoryRepository {
 
     override suspend fun cleanupOldHistory(retentionDays: Int): Int = 0
 
-    override suspend fun getCoPlayedTrackIds(seedTrackId: Long, limit: Int): List<Long> = emptyList()
+    override suspend fun getCoPlayedTrackIds(
+        seedTrackId: Long,
+        limit: Int,
+    ): List<Long> = emptyList()
 
     override suspend fun getLastSessionTrackIds(limit: Int): List<Long> = emptyList()
 }
@@ -265,24 +304,22 @@ class TestTrackDao : TrackDao {
 
     override fun observeAll(): Flow<List<TrackEntity>> = kotlinx.coroutines.flow.flowOf(tracks)
 
-    override suspend fun getByIds(trackIds: List<Long>): List<TrackEntity> =
-        tracks.filter { it.id in trackIds }
+    override suspend fun getByIds(trackIds: List<Long>): List<TrackEntity> = tracks.filter { it.id in trackIds }
 
-    override fun getRecentlyAddedTracks(limit: Int): Flow<List<TrackEntity>> =
-        MutableStateFlow(tracks.take(limit))
+    override fun getRecentlyAddedTracks(limit: Int): Flow<List<TrackEntity>> = MutableStateFlow(tracks.take(limit))
 
-    override suspend fun getTracksAddedSince(sinceMs: Long): List<TrackEntity> =
-        tracks.filter { it.firstSeenAt >= sinceMs }
+    override suspend fun getTracksAddedSince(sinceMs: Long): List<TrackEntity> = tracks.filter { it.firstSeenAt >= sinceMs }
 
-    override suspend fun searchTracks(query: String, limit: Int): List<TrackEntity> = emptyList()
+    override suspend fun searchTracks(
+        query: String,
+        limit: Int,
+    ): List<TrackEntity> = emptyList()
 
     override suspend fun deleteStaleEntries(validIds: List<Long>) {}
 
     override suspend fun deleteAll() {}
 
-    override suspend fun getDistinctArtists(): List<String> =
-        tracks.map { it.artist }.distinct().sorted()
+    override suspend fun getDistinctArtists(): List<String> = tracks.map { it.artist }.distinct().sorted()
 
-    override suspend fun getTrackPaths(): List<String> =
-        tracks.mapNotNull { it.path.takeIf { path -> path.isNotBlank() } }
+    override suspend fun getTrackPaths(): List<String> = tracks.mapNotNull { it.path.takeIf { path -> path.isNotBlank() } }
 }

@@ -14,7 +14,7 @@ data class PlaylistWithTrackCount(
     val id: Long,
     val name: String,
     val createdAt: Long,
-    val trackCount: Int
+    val trackCount: Int,
 )
 
 @Dao
@@ -26,21 +26,27 @@ interface PlaylistDao {
     suspend fun deletePlaylist(playlistId: Long)
 
     @Query("UPDATE playlists SET name = :name WHERE id = :playlistId")
-    suspend fun renamePlaylist(playlistId: Long, name: String)
+    suspend fun renamePlaylist(
+        playlistId: Long,
+        name: String,
+    )
 
     @Query("SELECT * FROM playlists ORDER BY createdAt DESC")
     fun getAllPlaylists(): Flow<List<PlaylistEntity>>
-    
-    @Query("""
+
+    @Query(
+        """
         SELECT p.id, p.name, p.createdAt, COUNT(pt.trackId) as trackCount
         FROM playlists p
         LEFT JOIN playlist_tracks pt ON p.id = pt.playlistId
         GROUP BY p.id
         ORDER BY p.createdAt DESC
-    """)
+    """,
+    )
     fun getAllPlaylistsWithTrackCount(): Flow<List<PlaylistWithTrackCount>>
 
-    @Query("""
+    @Query(
+        """
         SELECT DISTINCT p.id, p.name, p.createdAt,
             (SELECT COUNT(*) FROM playlist_tracks pt WHERE pt.playlistId = p.id) AS trackCount
         FROM playlists p
@@ -51,8 +57,12 @@ interface PlaylistDao {
            OR t.artist LIKE '%' || :query || '%' COLLATE NOCASE
         ORDER BY p.createdAt DESC
         LIMIT :limit
-    """)
-    suspend fun searchPlaylists(query: String, limit: Int): List<PlaylistWithTrackCount>
+    """,
+    )
+    suspend fun searchPlaylists(
+        query: String,
+        limit: Int,
+    ): List<PlaylistWithTrackCount>
 
     @Query("SELECT * FROM playlists WHERE id = :playlistId")
     suspend fun getPlaylistById(playlistId: Long): PlaylistEntity?
@@ -67,34 +77,46 @@ interface PlaylistDao {
     suspend fun addTracksToPlaylist(crossRefs: List<PlaylistTrackCrossRef>)
 
     @Query("DELETE FROM playlist_tracks WHERE playlistId = :playlistId AND trackId = :trackId")
-    suspend fun removeTrackFromPlaylist(playlistId: Long, trackId: Long)
+    suspend fun removeTrackFromPlaylist(
+        playlistId: Long,
+        trackId: Long,
+    )
 
     @Query("DELETE FROM playlist_tracks WHERE playlistId = :playlistId AND trackId IN (:trackIds)")
-    suspend fun removeTracksFromPlaylist(playlistId: Long, trackIds: List<Long>)
+    suspend fun removeTracksFromPlaylist(
+        playlistId: Long,
+        trackIds: List<Long>,
+    )
 
     @Query("DELETE FROM playlist_tracks WHERE playlistId = :playlistId")
     suspend fun clearPlaylistTracks(playlistId: Long)
 
-    @Query("""
+    @Query(
+        """
         SELECT t.* FROM tracks t
         INNER JOIN playlist_tracks pt ON t.id = pt.trackId
         WHERE pt.playlistId = :playlistId
         ORDER BY pt.position ASC
-    """)
+    """,
+    )
     fun getPlaylistTracks(playlistId: Long): Flow<List<TrackEntity>>
 
-    @Query("""
+    @Query(
+        """
         SELECT * FROM playlist_tracks
         WHERE playlistId = :playlistId
         ORDER BY position ASC
-    """)
+    """,
+    )
     suspend fun getPlaylistTrackRefs(playlistId: Long): List<PlaylistTrackCrossRef>
 
-    @Query("""
+    @Query(
+        """
         SELECT trackId FROM playlist_tracks
         WHERE playlistId = :playlistId
         ORDER BY position ASC
-    """)
+    """,
+    )
     suspend fun getPlaylistTrackIds(playlistId: Long): List<Long>
 
     @Query("SELECT MAX(position) FROM playlist_tracks WHERE playlistId = :playlistId")
@@ -104,38 +126,44 @@ interface PlaylistDao {
     fun getPlaylistTrackCount(playlistId: Long): Flow<Int>
 
     @Query("SELECT EXISTS(SELECT 1 FROM playlist_tracks WHERE playlistId = :playlistId AND trackId = :trackId)")
-    suspend fun isTrackInPlaylist(playlistId: Long, trackId: Long): Boolean
+    suspend fun isTrackInPlaylist(
+        playlistId: Long,
+        trackId: Long,
+    ): Boolean
 
     @Transaction
-    suspend fun addTrackToPlaylistAtEnd(playlistId: Long, trackId: Long) {
+    suspend fun addTrackToPlaylistAtEnd(
+        playlistId: Long,
+        trackId: Long,
+    ) {
         val maxPosition = getMaxPosition(playlistId) ?: -1
         addTrackToPlaylist(
             PlaylistTrackCrossRef(
                 playlistId = playlistId,
                 trackId = trackId,
-                position = maxPosition + 1
-            )
+                position = maxPosition + 1,
+            ),
         )
     }
 
     @Transaction
     suspend fun replacePlaylistTracks(
         playlistId: Long,
-        orderedTrackIds: List<Long>
+        orderedTrackIds: List<Long>,
     ) {
         val existing = getPlaylistTrackRefs(playlistId).associateBy { it.trackId }
         clearPlaylistTracks(playlistId)
-        val newRefs = orderedTrackIds.mapIndexed { index, trackId ->
-            PlaylistTrackCrossRef(
-                playlistId = playlistId,
-                trackId = trackId,
-                position = index,
-                addedAt = existing[trackId]?.addedAt ?: System.currentTimeMillis()
-            )
-        }
+        val newRefs =
+            orderedTrackIds.mapIndexed { index, trackId ->
+                PlaylistTrackCrossRef(
+                    playlistId = playlistId,
+                    trackId = trackId,
+                    position = index,
+                    addedAt = existing[trackId]?.addedAt ?: System.currentTimeMillis(),
+                )
+            }
         if (newRefs.isNotEmpty()) {
             addTracksToPlaylist(newRefs)
         }
     }
 }
-

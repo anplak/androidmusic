@@ -21,7 +21,7 @@ data class TrackEntity(
     val firstSeenAt: Long = System.currentTimeMillis(),
     val year: Int? = null,
     val dateAddedSec: Long? = null,
-    val albumId: Long? = null
+    val albumId: Long? = null,
 )
 
 /**
@@ -34,20 +34,20 @@ data class TrackEntity(
             entity = TrackEntity::class,
             parentColumns = ["id"],
             childColumns = ["trackId"],
-            onDelete = ForeignKey.CASCADE
-        )
+            onDelete = ForeignKey.CASCADE,
+        ),
     ],
-    indices = [Index("trackId")]
+    indices = [Index("trackId")],
 )
 data class FavoriteEntity(
     @PrimaryKey
     val trackId: Long,
-    val addedAt: Long = System.currentTimeMillis()
+    val addedAt: Long = System.currentTimeMillis(),
 )
 
 data class FavoriteTimestamp(
     val trackId: Long,
-    val addedAt: Long
+    val addedAt: Long,
 )
 
 /**
@@ -58,7 +58,7 @@ data class PlaylistEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val name: String,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
 )
 
 /**
@@ -72,22 +72,22 @@ data class PlaylistEntity(
             entity = PlaylistEntity::class,
             parentColumns = ["id"],
             childColumns = ["playlistId"],
-            onDelete = ForeignKey.CASCADE
+            onDelete = ForeignKey.CASCADE,
         ),
         ForeignKey(
             entity = TrackEntity::class,
             parentColumns = ["id"],
             childColumns = ["trackId"],
-            onDelete = ForeignKey.CASCADE
-        )
+            onDelete = ForeignKey.CASCADE,
+        ),
     ],
-    indices = [Index("trackId")]
+    indices = [Index("trackId")],
 )
 data class PlaylistTrackCrossRef(
     val playlistId: Long,
     val trackId: Long,
     val position: Int,
-    val addedAt: Long = System.currentTimeMillis()
+    val addedAt: Long = System.currentTimeMillis(),
 )
 
 /**
@@ -100,10 +100,10 @@ data class PlaylistTrackCrossRef(
             entity = TrackEntity::class,
             parentColumns = ["id"],
             childColumns = ["trackId"],
-            onDelete = ForeignKey.CASCADE
-        )
+            onDelete = ForeignKey.CASCADE,
+        ),
     ],
-    indices = [Index("trackId")]
+    indices = [Index("trackId")],
 )
 data class TrackStatsEntity(
     @PrimaryKey
@@ -111,7 +111,7 @@ data class TrackStatsEntity(
     val playCount: Int = 0,
     val lastPlayedAt: Long? = null,
     val completionCount: Int = 0,
-    val skipCount: Int = 0
+    val skipCount: Int = 0,
 )
 
 /**
@@ -125,13 +125,13 @@ data class TrackStatsEntity(
             entity = TrackEntity::class,
             parentColumns = ["id"],
             childColumns = ["trackId"],
-            onDelete = ForeignKey.CASCADE
-        )
+            onDelete = ForeignKey.CASCADE,
+        ),
     ],
     indices = [
         Index("trackId"),
-        Index("playedAt")
-    ]
+        Index("playedAt"),
+    ],
 )
 data class PlayHistoryEntity(
     @PrimaryKey(autoGenerate = true)
@@ -139,6 +139,5 @@ data class PlayHistoryEntity(
     val trackId: Long,
     val playedAt: Long = System.currentTimeMillis(),
     val duration: Long = 0,
-    val sessionId: String? = null
+    val sessionId: String? = null,
 )
-

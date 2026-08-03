@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package com.anplak.androidmusic.ui
 
 import android.net.Uri
@@ -29,23 +31,24 @@ fun MediaArtwork(
     contentDescription: String?,
     fallbackLabel: String,
     modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(Dimens.artworkCornerRadius)
+    shape: Shape = RoundedCornerShape(Dimens.artworkCornerRadius),
 ) {
     Box(
-        modifier = modifier
-            .clip(shape)
-            .testTag("media_artwork")
+        modifier =
+            modifier
+                .clip(shape)
+                .testTag("media_artwork"),
     ) {
         ArtworkFallback(
             label = fallbackLabel,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
         )
         if (uri != null) {
             AsyncImage(
                 model = uri,
                 contentDescription = contentDescription,
                 modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
+                contentScale = ContentScale.Crop,
             )
         }
     }
@@ -54,24 +57,25 @@ fun MediaArtwork(
 @Composable
 private fun ArtworkFallback(
     label: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val initial = label.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "?"
     Box(
-        modifier = modifier
-            .background(MaterialTheme.colorScheme.surfaceContainer)
-            .border(
-                width = Dimens.artworkFallbackBorderWidth,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
-            )
-            .testTag("media_artwork_fallback"),
-        contentAlignment = Alignment.Center
+        modifier =
+            modifier
+                .background(MaterialTheme.colorScheme.surfaceContainer)
+                .border(
+                    width = Dimens.artworkFallbackBorderWidth,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
+                )
+                .testTag("media_artwork_fallback"),
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             text = initial,
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.primary,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
         )
     }
 }

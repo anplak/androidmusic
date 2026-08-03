@@ -9,7 +9,6 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
@@ -32,16 +31,16 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class NowPlayingE2ETest {
-
     @get:Rule(order = 0)
-    val permissionRule: GrantPermissionRule = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        GrantPermissionRule.grant(
-            Manifest.permission.READ_MEDIA_AUDIO,
-            Manifest.permission.POST_NOTIFICATIONS
-        )
-    } else {
-        GrantPermissionRule.grant(Manifest.permission.READ_EXTERNAL_STORAGE)
-    }
+    val permissionRule: GrantPermissionRule =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            GrantPermissionRule.grant(
+                Manifest.permission.READ_MEDIA_AUDIO,
+                Manifest.permission.POST_NOTIFICATIONS,
+            )
+        } else {
+            GrantPermissionRule.grant(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
 
     @get:Rule(order = 1)
     val composeTestRule = createAndroidComposeRule<MainActivity>()
@@ -79,10 +78,11 @@ class NowPlayingE2ETest {
 
         // Queue position is only shown when queueSize > 1
         // We need at least 2 tracks to see the indicator
-        val hasQueuePosition = composeTestRule
-            .onAllNodes(hasTestTag("queue_position"))
-            .fetchSemanticsNodes()
-            .isNotEmpty()
+        val hasQueuePosition =
+            composeTestRule
+                .onAllNodes(hasTestTag("queue_position"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
 
         if (hasQueuePosition) {
             composeTestRule
@@ -103,10 +103,11 @@ class NowPlayingE2ETest {
         }
 
         // Check if next button is enabled (requires > 1 track)
-        val nextButtonNodes = composeTestRule
-            .onAllNodes(hasTestTag("next_button"))
-            .fetchSemanticsNodes()
-        
+        val nextButtonNodes =
+            composeTestRule
+                .onAllNodes(hasTestTag("next_button"))
+                .fetchSemanticsNodes()
+
         if (nextButtonNodes.isNotEmpty()) {
             composeTestRule
                 .onNodeWithTag("next_button")
@@ -175,7 +176,7 @@ class NowPlayingE2ETest {
         composeTestRule
             .onNodeWithTag("previous_button")
             .assertIsDisplayed()
-        
+
         composeTestRule
             .onNodeWithTag("next_button")
             .assertIsDisplayed()
@@ -285,7 +286,7 @@ class NowPlayingE2ETest {
     /**
      * Scenario #12: Configuration changes
      * Rotating the device should preserve playback state.
-     * 
+     *
      * Note: This test can be flaky on some emulators due to timing issues
      * with configuration changes. If the UI doesn't stabilize in time,
      * we verify we're at least in a valid state.
@@ -312,23 +313,25 @@ class NowPlayingE2ETest {
         composeTestRule.waitForIdle()
 
         // Wait for UI to stabilize after rotation
-        val isNowPlayingVisibleAfterRotation = try {
-            composeTestRule.waitUntil(timeoutMillis = 15_000) {
-                composeTestRule
-                    .onAllNodes(hasTestTag("play_pause_button"))
-                    .fetchSemanticsNodes()
-                    .isNotEmpty()
+        val isNowPlayingVisibleAfterRotation =
+            try {
+                composeTestRule.waitUntil(timeoutMillis = 15_000) {
+                    composeTestRule
+                        .onAllNodes(hasTestTag("play_pause_button"))
+                        .fetchSemanticsNodes()
+                        .isNotEmpty()
+                }
+                true
+            } catch (e: androidx.compose.ui.test.ComposeTimeoutException) {
+                val onMainShell =
+                    composeTestRule.safeHasNodes(hasTestTag("nav_foryou")) ||
+                        composeTestRule.safeHasNodes(hasTestTag("track_list")) ||
+                        composeTestRule.safeHasNodes(hasTestTag("empty_state"))
+                if (onMainShell) {
+                    return
+                }
+                throw e
             }
-            true
-        } catch (e: androidx.compose.ui.test.ComposeTimeoutException) {
-            val onMainShell = composeTestRule.safeHasNodes(hasTestTag("nav_foryou")) ||
-                composeTestRule.safeHasNodes(hasTestTag("track_list")) ||
-                composeTestRule.safeHasNodes(hasTestTag("empty_state"))
-            if (onMainShell) {
-                return
-            }
-            throw e
-        }
 
         if (isNowPlayingVisibleAfterRotation) {
             composeTestRule
@@ -367,7 +370,7 @@ class NowPlayingE2ETest {
      * Note: This test verifies the error dialog structure exists in the UI.
      * Triggering actual playback errors is difficult in E2E tests without
      * special setup (corrupted files, etc.).
-     * 
+     *
      * The error dialog will be tested by verifying its presence when an error occurs.
      * For now, we verify the error dismissal flow works when error is shown.
      */
@@ -377,7 +380,7 @@ class NowPlayingE2ETest {
         // In a real scenario, the error dialog appears when playback fails.
         // Since we can't easily trigger an error in E2E tests without special setup,
         // we verify the path to Now Playing works and that the UI is stable.
-        
+
         if (!navigateToNowPlaying()) {
             return
         }
@@ -388,10 +391,11 @@ class NowPlayingE2ETest {
             .assertIsDisplayed()
 
         // Check that error_dialog does NOT exist initially (no error)
-        val hasErrorDialog = composeTestRule
-            .onAllNodes(hasTestTag("error_dialog"))
-            .fetchSemanticsNodes()
-            .isNotEmpty()
+        val hasErrorDialog =
+            composeTestRule
+                .onAllNodes(hasTestTag("error_dialog"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
 
         // There should be no error dialog in normal operation
         assert(!hasErrorDialog) {
@@ -399,4 +403,3 @@ class NowPlayingE2ETest {
         }
     }
 }
-

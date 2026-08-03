@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package com.anplak.androidmusic.ui
 
 import androidx.compose.foundation.clickable
@@ -39,21 +41,22 @@ fun TrackListItem(
     onToggleFavorite: () -> Unit,
     onAddToPlaylist: () -> Unit,
     modifier: Modifier = Modifier,
-    testTagPrefix: String = "track"
+    testTagPrefix: String = "track",
 ) {
     var showMenu by remember { mutableStateOf(false) }
-    val favoriteContentDescription = if (isFavorite) {
-        stringResource(R.string.remove_from_favorites)
-    } else {
-        stringResource(R.string.add_to_favorites)
-    }
+    val favoriteContentDescription =
+        if (isFavorite) {
+            stringResource(R.string.remove_from_favorites)
+        } else {
+            stringResource(R.string.add_to_favorites)
+        }
 
     ListItem(
         headlineContent = {
             Text(
                 text = track.title,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
         },
         supportingContent = {
@@ -61,7 +64,7 @@ fun TrackListItem(
                 text = track.artist,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         },
         trailingContent = {
@@ -69,40 +72,42 @@ fun TrackListItem(
                 Text(
                     text = formatTrackDuration(track.duration),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 IconButton(
                     onClick = onToggleFavorite,
-                    modifier = Modifier
-                        .testTag("favorite_button_$index")
-                        .semantics {
-                            contentDescription = favoriteContentDescription
-                        }
+                    modifier =
+                        Modifier
+                            .testTag("favorite_button_$index")
+                            .semantics {
+                                contentDescription = favoriteContentDescription
+                            },
                 ) {
                     Icon(
                         imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                         contentDescription = null,
-                        tint = if (isFavorite) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        }
+                        tint =
+                            if (isFavorite) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
                     )
                 }
                 Box {
                     IconButton(
                         onClick = { showMenu = true },
-                        modifier = Modifier.testTag("more_button_$index")
+                        modifier = Modifier.testTag("more_button_$index"),
                     ) {
                         Icon(
                             imageVector = Icons.Default.MoreVert,
                             contentDescription = stringResource(R.string.more_options),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     DropdownMenu(
                         expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
+                        onDismissRequest = { showMenu = false },
                     ) {
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.add_to_playlist)) },
@@ -110,16 +115,17 @@ fun TrackListItem(
                                 showMenu = false
                                 onAddToPlaylist()
                             },
-                            modifier = Modifier.testTag("add_to_playlist_menu_$index")
+                            modifier = Modifier.testTag("add_to_playlist_menu_$index"),
                         )
                     }
                 }
             }
         },
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .testTag("${testTagPrefix}_item_$index")
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .testTag("${testTagPrefix}_item_$index"),
     )
 }
 

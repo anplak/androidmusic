@@ -7,5 +7,5 @@ data class LibraryScanResult(
     val indexedCount: Int,
     val skippedDurationCount: Int,
     val skippedFolderCount: Int,
-    val skippedArtistCount: Int = 0
+    val skippedArtistCount: Int = 0,
 )

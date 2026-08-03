@@ -4,20 +4,20 @@ import android.content.Context
 import com.anplak.androidmusic.data.db.AppDatabase
 
 object MusicLibraryRepositoryFactory {
-
     fun create(context: Context): MusicLibraryRepositoryImpl {
         val appContext = context.applicationContext
         val database = AppDatabase.getInstance(appContext)
-        val policyRepository = LibraryIndexPolicyRepository(
-            preferences = SharedPreferencesLibraryIndexPreferences(appContext),
-            folderRuleDao = database.indexFolderRuleDao(),
-            artistRuleDao = database.indexArtistRuleDao()
-        )
+        val policyRepository =
+            LibraryIndexPolicyRepository(
+                preferences = SharedPreferencesLibraryIndexPreferences(appContext),
+                folderRuleDao = database.indexFolderRuleDao(),
+                artistRuleDao = database.indexArtistRuleDao(),
+            )
         return MusicLibraryRepositoryImpl(
             contentResolver = appContext.contentResolver,
             context = appContext,
             trackDao = database.trackDao(),
-            policyRepository = policyRepository
+            policyRepository = policyRepository,
         )
     }
 }
