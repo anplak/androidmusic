@@ -4,13 +4,16 @@ package com.anplak.androidmusic.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -25,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
@@ -37,10 +41,12 @@ import com.anplak.androidmusic.player.TrackInfo
 
 @Composable
 fun AddToPlaylistDialog(
-    track: TrackInfo,
+    collectionName: String,
+    trackCount: Int,
+    trackIds: List<Long>,
     onDismiss: () -> Unit,
-    onPlaylistSelected: (playlistId: Long, trackId: Long) -> Unit,
-    onCreatePlaylist: (name: String, trackId: Long) -> Unit,
+    onPlaylistSelected: (playlistId: Long, trackIds: List<Long>) -> Unit,
+    onCreatePlaylist: (name: String, trackIds: List<Long>) -> Unit,
     viewModel: PlaylistsViewModel = viewModel(),
 ) {
     val playlists by viewModel.playlists.collectAsState()
@@ -56,26 +62,27 @@ fun AddToPlaylistDialog(
             Column(
                 modifier = Modifier.heightIn(max = 400.dp),
             ) {
-                // Create new playlist option
-                ListItem(
-                    headlineContent = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(bottom = 16.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MusicNote,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                    )
+                    Column(modifier = Modifier.padding(start = 8.dp)) {
                         Text(
-                            text = stringResource(R.string.new_playlist),
-                            color = MaterialTheme.colorScheme.primary,
+                            text = collectionName,
+                            style = MaterialTheme.typography.titleMedium,
                         )
-                    },
-                    leadingContent = {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
+                        Text(
+                            text = pluralStringResource(R.plurals.tracks_count, trackCount, trackCount),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                    },
-                    modifier =
-                        Modifier
-                            .clickable { showCreateNew = true }
-                            .testTag("create_new_playlist_option"),
-                )
+                    }
+                }
 
                 if (showCreateNew) {
                     OutlinedTextField(
@@ -86,7 +93,7 @@ fun AddToPlaylistDialog(
                         modifier =
                             Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                                .padding(vertical = 8.dp)
                                 .testTag("new_playlist_name_input"),
                     )
                 }
@@ -102,7 +109,7 @@ fun AddToPlaylistDialog(
                             PlaylistOption(
                                 playlist = playlist,
                                 onClick = {
-                                    onPlaylistSelected(playlist.id, track.id)
+                                    onPlaylistSelected(playlist.id, trackIds)
                                     onDismiss()
                                 },
                             )
@@ -116,7 +123,7 @@ fun AddToPlaylistDialog(
                 TextButton(
                     onClick = {
                         if (newPlaylistName.isNotBlank()) {
-                            onCreatePlaylist(newPlaylistName, track.id)
+                            onCreatePlaylist(newPlaylistName, trackIds)
                             onDismiss()
                         }
                     },
@@ -136,6 +143,29 @@ fun AddToPlaylistDialog(
             }
         },
         modifier = Modifier.testTag("add_to_playlist_dialog"),
+    )
+}
+
+@Composable
+fun AddToPlaylistDialog(
+    track: TrackInfo,
+    onDismiss: () -> Unit,
+    onPlaylistSelected: (playlistId: Long, trackId: Long) -> Unit,
+    onCreatePlaylist: (name: String, trackId: Long) -> Unit,
+    viewModel: PlaylistsViewModel = viewModel(),
+) {
+    AddToPlaylistDialog(
+        collectionName = track.title,
+        trackCount = 1,
+        trackIds = listOf(track.id),
+        onDismiss = onDismiss,
+        onPlaylistSelected = { playlistId, trackIds ->
+            onPlaylistSelected(playlistId, trackIds[0])
+        },
+        onCreatePlaylist = { name, trackIds ->
+            onCreatePlaylist(name, trackIds[0])
+        },
+        viewModel = viewModel,
     )
 }
 

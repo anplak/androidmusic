@@ -62,6 +62,10 @@
         <item quantity="other">%d tracks</item>
     </plurals>
     <string name="play_all">Play all</string>
+    <plurals name="tracks_added">
+        <item quantity="one">Added %d track</item>
+        <item quantity="other">Added %d tracks</item>
+    </plurals>
     
     <!-- Smart Playlists -->
     <string name="smart_playlists">Smart Playlists</string>

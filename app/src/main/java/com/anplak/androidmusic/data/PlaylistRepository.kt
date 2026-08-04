@@ -18,6 +18,12 @@ data class Playlist(
     val trackCount: Int = 0,
 )
 
+data class PlaylistOperationResult(
+    val addedCount: Int,
+    val skippedCount: Int,
+    val playlistId: Long,
+)
+
 interface PlaylistRepository {
     suspend fun createPlaylist(name: String): Long
 
@@ -74,6 +80,11 @@ interface PlaylistRepository {
         playlistId: Long,
         trackId: Long,
     ): Boolean
+
+    suspend fun addTracksToPlaylist(
+        playlistId: Long,
+        trackIds: List<Long>,
+    ): PlaylistOperationResult
 }
 
 class PlaylistRepositoryImpl(
@@ -193,6 +204,38 @@ class PlaylistRepositoryImpl(
         trackId: Long,
     ): Boolean {
         return playlistDao.isTrackInPlaylist(playlistId, trackId)
+    }
+
+    override suspend fun addTracksToPlaylist(
+        playlistId: Long,
+        trackIds: List<Long>,
+    ): PlaylistOperationResult {
+        if (trackIds.isEmpty()) {
+            return PlaylistOperationResult(0, 0, playlistId)
+        }
+
+        val deduplicatedIds = trackIds.distinct()
+        val existingIds = playlistDao.getExistingTrackIds(playlistId, deduplicatedIds)
+        val newIds = deduplicatedIds.filter { it !in existingIds }
+
+        if (newIds.isEmpty()) {
+            return PlaylistOperationResult(0, deduplicatedIds.size, playlistId)
+        }
+
+        val maxPosition = playlistDao.getMaxPosition(playlistId) ?: -1
+        val now = System.currentTimeMillis()
+        val refs = newIds.mapIndexed { index, trackId ->
+            PlaylistTrackCrossRef(
+                playlistId = playlistId,
+                trackId = trackId,
+                position = maxPosition + index + 1,
+                addedAt = now,
+            )
+        }
+
+        playlistDao.addTracksToPlaylist(refs)
+
+        return PlaylistOperationResult(newIds.size, deduplicatedIds.size - newIds.size, playlistId)
     }
 
     private suspend fun insertTracksAtPositions(

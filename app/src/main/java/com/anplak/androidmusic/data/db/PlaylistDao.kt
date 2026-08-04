@@ -131,6 +131,15 @@ interface PlaylistDao {
         trackId: Long,
     ): Boolean
 
+    @Query("""
+        SELECT trackId FROM playlist_tracks
+        WHERE playlistId = :playlistId AND trackId IN (:trackIds)
+    """)
+    suspend fun getExistingTrackIds(
+        playlistId: Long,
+        trackIds: List<Long>,
+    ): List<Long>
+
     @Transaction
     suspend fun addTrackToPlaylistAtEnd(
         playlistId: Long,

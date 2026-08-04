@@ -3,6 +3,7 @@ package com.anplak.androidmusic.ui
 import android.app.Application
 import androidx.test.core.app.ApplicationProvider
 import com.anplak.androidmusic.data.Playlist
+import com.anplak.androidmusic.data.PlaylistOperationResult
 import com.anplak.androidmusic.data.PlaylistRepository
 import com.anplak.androidmusic.player.TrackInfo
 import kotlinx.coroutines.Dispatchers
@@ -205,6 +206,130 @@ class PlaylistsViewModelTest {
             assertEquals(PlaylistDetailUiState.NotFound, viewModel.detailState.value)
         }
 
+    // Collection-level addToPlaylist tests
+
+    @Test
+    fun `addCollectionToPlaylist emits Error when track list is empty`() =
+        runTest {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.addCollectionToPlaylist(1L, "Test Collection", emptyList())
+            advanceUntilIdle()
+
+            val state = viewModel.operationState.value
+            assertTrue(state is PlaylistOperationState.Error)
+            assertEquals("No tracks to add", (state as PlaylistOperationState.Error).message)
+        }
+
+    @Test
+    fun `addCollectionToPlaylist prevents duplicate submit during loading`() =
+        runTest {
+            fakePlaylistRepository.setAddTracksDelay(1000L)
+            fakePlaylistRepository.setAddTracksResult(
+                PlaylistOperationResult(addedCount = 5, skippedCount = 0, playlistId = 1L)
+            )
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            // First call
+            viewModel.addCollectionToPlaylist(1L, "Test Collection", listOf(1L, 2L, 3L, 4L, 5L))
+
+            // Second call during loading - should be ignored
+            viewModel.addCollectionToPlaylist(1L, "Test Collection", listOf(1L, 2L))
+
+            advanceUntilIdle()
+
+            // Repository should only be called once
+            assertEquals(1, fakePlaylistRepository.addTracksCallCount)
+        }
+
+    @Test
+    fun `addCollectionToPlaylist emits Success with counts for existing playlist`() =
+        runTest {
+            fakePlaylistRepository.setAddTracksResult(
+                PlaylistOperationResult(addedCount = 8, skippedCount = 2, playlistId = 1L)
+            )
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.addCollectionToPlaylist(1L, "Test Album", listOf(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L))
+            advanceUntilIdle()
+
+            val state = viewModel.operationState.value
+            assertTrue(state is PlaylistOperationState.Success)
+            val result = (state as PlaylistOperationState.Success).result
+            assertEquals(8, result.addedCount)
+            assertEquals(2, result.skippedCount)
+            assertEquals(1L, result.playlistId)
+        }
+
+    @Test
+    fun `addCollectionToPlaylist emits Success with counts for new playlist`() =
+        runTest {
+            fakePlaylistRepository.setCreatePlaylistId(99L)
+            fakePlaylistRepository.setAddTracksResult(
+                PlaylistOperationResult(addedCount = 10, skippedCount = 0, playlistId = 99L)
+            )
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            // Pass null playlistId to create new playlist
+            viewModel.addCollectionToPlaylist(null, "New Artist Playlist", listOf(1L, 2L, 3L, 4L, 5L))
+            advanceUntilIdle()
+
+            // Verify playlist was created
+            assertEquals(1, fakePlaylistRepository.createPlaylistCallCount)
+            assertEquals("New Artist Playlist", fakePlaylistRepository.lastCreatedPlaylistName)
+
+            val state = viewModel.operationState.value
+            assertTrue(state is PlaylistOperationState.Success)
+            val result = (state as PlaylistOperationState.Success).result
+            assertEquals(10, result.addedCount)
+            assertEquals(99L, result.playlistId)
+        }
+
+    @Test
+    fun `addCollectionToPlaylist emits Error on database failure`() =
+        runTest {
+            fakePlaylistRepository.setAddTracksError(RuntimeException("Database connection failed"))
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.addCollectionToPlaylist(1L, "Test Collection", listOf(1L, 2L, 3L))
+            advanceUntilIdle()
+
+            val state = viewModel.operationState.value
+            assertTrue(state is PlaylistOperationState.Error)
+            assertEquals("Database connection failed", (state as PlaylistOperationState.Error).message)
+        }
+
+    @Test
+    fun `clearOperationState resets to Idle`() =
+        runTest {
+            fakePlaylistRepository.setAddTracksResult(
+                PlaylistOperationResult(addedCount = 5, skippedCount = 0, playlistId = 1L)
+            )
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.addCollectionToPlaylist(1L, "Test Collection", listOf(1L, 2L, 3L))
+            advanceUntilIdle()
+
+            // Verify we're in Success state
+            assertTrue(viewModel.operationState.value is PlaylistOperationState.Success)
+
+            viewModel.clearOperationState()
+
+            // Should be back to Idle
+            assertEquals(PlaylistOperationState.Idle, viewModel.operationState.value)
+        }
+
     private fun createViewModel(): PlaylistsViewModel {
         return PlaylistsViewModel(application, fakePlaylistRepository)
     }
@@ -231,6 +356,17 @@ class TestPlaylistRepository : PlaylistRepository {
         private set
     var removeTrackCallCount = 0
         private set
+    var addTracksCallCount = 0
+        private set
+    var lastAddedTracksPlaylistId: Long? = null
+        private set
+    var lastAddedTrackIds: List<Long> = emptyList()
+        private set
+
+    private var createPlaylistId = 1L
+    private var addTracksDelay = 0L
+    private var addTracksResult: PlaylistOperationResult = PlaylistOperationResult(0, 0, 0L)
+    private var addTracksError: Throwable? = null
 
     fun setPlaylists(playlistList: List<Playlist>) {
         playlists.value = playlistList
@@ -244,10 +380,27 @@ class TestPlaylistRepository : PlaylistRepository {
         playlistTracks.value = tracks
     }
 
+    fun setCreatePlaylistId(id: Long) {
+        createPlaylistId = id
+    }
+
+    fun setAddTracksDelay(delay: Long) {
+        addTracksDelay = delay
+    }
+
+    fun setAddTracksResult(result: PlaylistOperationResult) {
+        addTracksResult = result
+        addTracksError = null
+    }
+
+    fun setAddTracksError(error: Throwable) {
+        addTracksError = error
+    }
+
     override suspend fun createPlaylist(name: String): Long {
         createPlaylistCallCount++
         lastCreatedPlaylistName = name
-        return 1L
+        return createPlaylistId
     }
 
     override suspend fun createPlaylistWithTracks(
@@ -256,7 +409,7 @@ class TestPlaylistRepository : PlaylistRepository {
     ): Long {
         createPlaylistCallCount++
         lastCreatedPlaylistName = name
-        return 1L
+        return createPlaylistId
     }
 
     override suspend fun deletePlaylist(playlistId: Long) {
@@ -327,5 +480,19 @@ class TestPlaylistRepository : PlaylistRepository {
         trackId: Long,
     ): Boolean {
         return false
+    }
+
+    override suspend fun addTracksToPlaylist(
+        playlistId: Long,
+        trackIds: List<Long>,
+    ): PlaylistOperationResult {
+        if (addTracksDelay > 0) {
+            kotlinx.coroutines.delay(addTracksDelay)
+        }
+        addTracksError?.let { throw it }
+        addTracksCallCount++
+        lastAddedTracksPlaylistId = playlistId
+        lastAddedTrackIds = trackIds
+        return addTracksResult
     }
 }

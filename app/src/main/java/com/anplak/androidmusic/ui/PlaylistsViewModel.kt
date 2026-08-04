@@ -8,6 +8,7 @@ import com.anplak.androidmusic.data.FavoritesRepositoryImpl
 import com.anplak.androidmusic.data.MusicLibraryRepository
 import com.anplak.androidmusic.data.MusicLibraryRepositoryFactory
 import com.anplak.androidmusic.data.Playlist
+import com.anplak.androidmusic.data.PlaylistOperationResult
 import com.anplak.androidmusic.data.PlaylistRepository
 import com.anplak.androidmusic.data.PlaylistRepositoryImpl
 import com.anplak.androidmusic.data.SmartPlaylistRepository
@@ -65,6 +66,13 @@ sealed interface AutoMixState {
     data class Error(val message: String) : AutoMixState
 }
 
+sealed interface PlaylistOperationState {
+    data object Idle : PlaylistOperationState
+    data object Loading : PlaylistOperationState
+    data class Success(val result: PlaylistOperationResult) : PlaylistOperationState
+    data class Error(val message: String) : PlaylistOperationState
+}
+
 data class PlaylistDetailEditState(
     val isSelectionMode: Boolean = false,
     val selectedTrackIds: Set<Long> = emptySet(),
@@ -105,6 +113,9 @@ class PlaylistsViewModel
 
         private val _detailState = MutableStateFlow<PlaylistDetailUiState>(PlaylistDetailUiState.Loading)
         val detailState: StateFlow<PlaylistDetailUiState> = _detailState.asStateFlow()
+
+        private val _operationState = MutableStateFlow<PlaylistOperationState>(PlaylistOperationState.Idle)
+        val operationState: StateFlow<PlaylistOperationState> = _operationState.asStateFlow()
 
         private val _playlists = MutableStateFlow<List<Playlist>>(emptyList())
         val playlists: StateFlow<List<Playlist>> = _playlists.asStateFlow()
@@ -390,6 +401,39 @@ class PlaylistsViewModel
 
         fun clearAutoMixPreview() {
             _editState.update { it.copy(autoMixState = AutoMixState.Idle) }
+        }
+
+        fun addCollectionToPlaylist(
+            playlistId: Long?,
+            collectionName: String,
+            trackIds: List<Long>,
+        ) {
+            if (trackIds.isEmpty()) {
+                _operationState.value = PlaylistOperationState.Error("No tracks to add")
+                return
+            }
+
+            if (_operationState.value is PlaylistOperationState.Loading) return
+
+            _operationState.value = PlaylistOperationState.Loading
+
+            viewModelScope.launch {
+                try {
+                    val result = if (playlistId != null) {
+                        playlistRepository.addTracksToPlaylist(playlistId, trackIds)
+                    } else {
+                        val newId = playlistRepository.createPlaylist(collectionName)
+                        playlistRepository.addTracksToPlaylist(newId, trackIds)
+                    }
+                    _operationState.value = PlaylistOperationState.Success(result)
+                } catch (e: Exception) {
+                    _operationState.value = PlaylistOperationState.Error(e.message ?: "Unknown error")
+                }
+            }
+        }
+
+        fun clearOperationState() {
+            _operationState.value = PlaylistOperationState.Idle
         }
 
         fun saveAutoMixAsPlaylist(name: String) {

@@ -23,9 +23,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,13 +39,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anplak.androidmusic.R
 import com.anplak.androidmusic.data.AlbumSummary
 import com.anplak.androidmusic.data.ArtistSummary
+import com.anplak.androidmusic.data.PlaylistOperationResult
 import com.anplak.androidmusic.data.RecommendationRow
 import com.anplak.androidmusic.data.SmartPlaylistType
+import com.anplak.androidmusic.ui.PlaylistOperationState
 import com.anplak.androidmusic.player.TrackInfo
 
 enum class NavigationTab(val icon: ImageVector, val labelResId: Int) {
@@ -76,6 +84,11 @@ sealed class AppScreen {
     data class LibraryAlbumDetail(val album: AlbumSummary) : AppScreen()
 }
 
+data class CollectionForPlaylistDialog(
+    val collectionName: String,
+    val trackIds: List<Long>,
+)
+
 @Composable
 fun MusicPlayerApp(
     playbackViewModel: PlaybackViewModel = viewModel(),
@@ -92,7 +105,11 @@ fun MusicPlayerApp(
     var currentScreen by remember { mutableStateOf<AppScreen>(AppScreen.MainTabs) }
     var screenBeforeNowPlaying by remember { mutableStateOf<AppScreen>(AppScreen.MainTabs) }
     var trackForPlaylistDialog by remember { mutableStateOf<TrackInfo?>(null) }
+    var collectionForPlaylistDialog by remember {
+        mutableStateOf<CollectionForPlaylistDialog?>(null)
+    }
     var librarySearchHint by remember { mutableStateOf<String?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     fun openNowPlaying() {
         if (currentScreen !is AppScreen.NowPlaying) {
@@ -267,6 +284,13 @@ fun MusicPlayerApp(
                         onAddToPlaylist = { track ->
                             trackForPlaylistDialog = track
                         },
+                        onAddCollectionToPlaylist = {
+                            val tracks = libraryViewModel.tracksForArtist(args.artistKey)
+                            collectionForPlaylistDialog = CollectionForPlaylistDialog(
+                                collectionName = args.displayName,
+                                trackIds = tracks.map { it.id },
+                            )
+                        },
                         onExcludeArtist = { artistName ->
                             libraryIndexViewModel.addArtistRule(artistName)
                             libraryViewModel.refresh()
@@ -292,6 +316,13 @@ fun MusicPlayerApp(
                         },
                         onAddToPlaylist = { track ->
                             trackForPlaylistDialog = track
+                        },
+                        onAddCollectionToPlaylist = {
+                            val tracks = libraryViewModel.tracksForAlbum(args.album)
+                            collectionForPlaylistDialog = CollectionForPlaylistDialog(
+                                collectionName = args.album.displayTitle,
+                                trackIds = tracks.map { it.id },
+                            )
                         },
                         viewModel = libraryViewModel,
                     )
@@ -343,6 +374,7 @@ fun MusicPlayerApp(
                     onOpenNowPlaying = { openNowPlaying() },
                     onPlayPause = playbackViewModel::onPlayPause,
                     onToggleFavorite = playbackViewModel::toggleFavorite,
+                    snackbarHostState = snackbarHostState,
                 )
             }
         }
@@ -359,6 +391,64 @@ fun MusicPlayerApp(
                 },
                 viewModel = playlistsViewModel,
             )
+        }
+
+        collectionForPlaylistDialog?.let { collection ->
+            AddToPlaylistDialog(
+                collectionName = collection.collectionName,
+                trackCount = collection.trackIds.size,
+                trackIds = collection.trackIds,
+                onDismiss = { collectionForPlaylistDialog = null },
+                onPlaylistSelected = { playlistId, trackIds ->
+                    playlistsViewModel.addCollectionToPlaylist(
+                        playlistId = playlistId,
+                        collectionName = collection.collectionName,
+                        trackIds = trackIds,
+                    )
+                },
+                onCreatePlaylist = { name, trackIds ->
+                    playlistsViewModel.addCollectionToPlaylist(
+                        playlistId = null,
+                        collectionName = name,
+                        trackIds = trackIds,
+                    )
+                },
+                viewModel = playlistsViewModel,
+            )
+        }
+
+        val context = LocalContext.current
+        val operationState by playlistsViewModel.operationState.collectAsState()
+        LaunchedEffect(operationState) {
+            when (operationState) {
+                is PlaylistOperationState.Success -> {
+                    val result = (operationState as PlaylistOperationState.Success).result
+                    val message = if (result.addedCount > 0) {
+                        if (result.skippedCount > 0) {
+                            "${result.addedCount} added · ${result.skippedCount} already there"
+                        } else {
+                            context.resources.getQuantityString(
+                                R.plurals.tracks_added,
+                                result.addedCount,
+                                result.addedCount,
+                            )
+                        }
+                    } else {
+                        if (result.skippedCount > 0) {
+                            "Already in playlist"
+                        } else {
+                            "No tracks to add"
+                        }
+                    }
+                    snackbarHostState.showSnackbar(message)
+                    playlistsViewModel.clearOperationState()
+                }
+                is PlaylistOperationState.Error -> {
+                    snackbarHostState.showSnackbar((operationState as PlaylistOperationState.Error).message)
+                    playlistsViewModel.clearOperationState()
+                }
+                else -> Unit
+            }
         }
     }
 }
@@ -431,6 +521,7 @@ private fun MainTabsContent(
     onOpenNowPlaying: () -> Unit,
     onPlayPause: () -> Unit,
     onToggleFavorite: () -> Unit,
+    snackbarHostState: SnackbarHostState,
 ) {
     val showMiniPlayer = playbackUiState.selectedTrack != null
 
@@ -470,6 +561,9 @@ private fun MainTabsContent(
                     }
                 }
             }
+        },
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
         },
     ) { paddingValues ->
         Surface(
