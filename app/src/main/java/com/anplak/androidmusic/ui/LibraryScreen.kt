@@ -60,13 +60,13 @@ import com.anplak.androidmusic.ui.theme.Dimens
 fun LibraryScreen(
     onTrackSelected: (List<TrackInfo>, Int) -> Unit,
     onAddToPlaylist: (TrackInfo) -> Unit,
+    modifier: Modifier = Modifier,
     onArtistClick: (ArtistSummary) -> Unit = {},
     onAlbumClick: (AlbumSummary) -> Unit = {},
     onOpenSearch: () -> Unit = {},
     onOpenLibraryIndex: () -> Unit = {},
     initialLocalQuery: String? = null,
     onConsumeLibraryHint: () -> Unit = {},
-    modifier: Modifier = Modifier,
     viewModel: LibraryViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -242,6 +242,13 @@ private fun LibraryTracksContent(
     }
 }
 
+private data class LibraryFilterChipSpec(
+    val selected: Boolean,
+    val labelResId: Int,
+    val testTag: String,
+    val onClick: () -> Unit,
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LibraryFilterBar(
@@ -250,6 +257,8 @@ private fun LibraryFilterBar(
     onFilterChange: (LibraryFilter) -> Unit,
     onLocalQueryChange: (String) -> Unit,
 ) {
+    val chips = libraryFilterChips(filter, onFilterChange)
+
     Column(
         modifier =
             Modifier
@@ -271,71 +280,72 @@ private fun LibraryFilterBar(
             modifier = Modifier.testTag("library_filter_chips"),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            item {
+            items(chips, key = { it.testTag }) { chip ->
                 FilterChip(
-                    selected = filter.favoritesOnly,
-                    onClick = {
-                        onFilterChange(filter.copy(favoritesOnly = !filter.favoritesOnly))
-                    },
-                    label = { Text(stringResource(R.string.filter_favorites)) },
-                    modifier = Modifier.testTag("library_filter_favorites"),
-                )
-            }
-            item {
-                FilterChip(
-                    selected = filter.recentlyAdded,
-                    onClick = {
-                        onFilterChange(filter.copy(recentlyAdded = !filter.recentlyAdded))
-                    },
-                    label = { Text(stringResource(R.string.filter_recently_added)) },
-                    modifier = Modifier.testTag("library_filter_recently_added"),
-                )
-            }
-            item {
-                FilterChip(
-                    selected = filter.durationBucket == DurationBucket.SHORT,
-                    onClick = {
-                        onFilterChange(
-                            filter.copy(
-                                durationBucket = toggleDuration(filter.durationBucket, DurationBucket.SHORT),
-                            ),
-                        )
-                    },
-                    label = { Text(stringResource(R.string.filter_duration_short)) },
-                    modifier = Modifier.testTag("library_filter_duration_short"),
-                )
-            }
-            item {
-                FilterChip(
-                    selected = filter.durationBucket == DurationBucket.MEDIUM,
-                    onClick = {
-                        onFilterChange(
-                            filter.copy(
-                                durationBucket = toggleDuration(filter.durationBucket, DurationBucket.MEDIUM),
-                            ),
-                        )
-                    },
-                    label = { Text(stringResource(R.string.filter_duration_medium)) },
-                    modifier = Modifier.testTag("library_filter_duration_medium"),
-                )
-            }
-            item {
-                FilterChip(
-                    selected = filter.durationBucket == DurationBucket.LONG,
-                    onClick = {
-                        onFilterChange(
-                            filter.copy(
-                                durationBucket = toggleDuration(filter.durationBucket, DurationBucket.LONG),
-                            ),
-                        )
-                    },
-                    label = { Text(stringResource(R.string.filter_duration_long)) },
-                    modifier = Modifier.testTag("library_filter_duration_long"),
+                    selected = chip.selected,
+                    onClick = chip.onClick,
+                    label = { Text(stringResource(chip.labelResId)) },
+                    modifier = Modifier.testTag(chip.testTag),
                 )
             }
         }
     }
 }
+
+private fun libraryFilterChips(
+    filter: LibraryFilter,
+    onFilterChange: (LibraryFilter) -> Unit,
+): List<LibraryFilterChipSpec> =
+    listOf(
+        LibraryFilterChipSpec(
+            selected = filter.favoritesOnly,
+            labelResId = R.string.filter_favorites,
+            testTag = "library_filter_favorites",
+            onClick = { onFilterChange(filter.copy(favoritesOnly = !filter.favoritesOnly)) },
+        ),
+        LibraryFilterChipSpec(
+            selected = filter.recentlyAdded,
+            labelResId = R.string.filter_recently_added,
+            testTag = "library_filter_recently_added",
+            onClick = { onFilterChange(filter.copy(recentlyAdded = !filter.recentlyAdded)) },
+        ),
+        LibraryFilterChipSpec(
+            selected = filter.durationBucket == DurationBucket.SHORT,
+            labelResId = R.string.filter_duration_short,
+            testTag = "library_filter_duration_short",
+            onClick = {
+                onFilterChange(
+                    filter.copy(
+                        durationBucket = toggleDuration(filter.durationBucket, DurationBucket.SHORT),
+                    ),
+                )
+            },
+        ),
+        LibraryFilterChipSpec(
+            selected = filter.durationBucket == DurationBucket.MEDIUM,
+            labelResId = R.string.filter_duration_medium,
+            testTag = "library_filter_duration_medium",
+            onClick = {
+                onFilterChange(
+                    filter.copy(
+                        durationBucket = toggleDuration(filter.durationBucket, DurationBucket.MEDIUM),
+                    ),
+                )
+            },
+        ),
+        LibraryFilterChipSpec(
+            selected = filter.durationBucket == DurationBucket.LONG,
+            labelResId = R.string.filter_duration_long,
+            testTag = "library_filter_duration_long",
+            onClick = {
+                onFilterChange(
+                    filter.copy(
+                        durationBucket = toggleDuration(filter.durationBucket, DurationBucket.LONG),
+                    ),
+                )
+            },
+        ),
+    )
 
 @Composable
 private fun ArtistList(

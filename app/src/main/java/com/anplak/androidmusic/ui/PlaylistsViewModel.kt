@@ -25,7 +25,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -68,8 +67,11 @@ sealed interface AutoMixState {
 
 sealed interface PlaylistOperationState {
     data object Idle : PlaylistOperationState
+
     data object Loading : PlaylistOperationState
+
     data class Success(val result: PlaylistOperationResult) : PlaylistOperationState
+
     data class Error(val message: String) : PlaylistOperationState
 }
 
@@ -132,10 +134,21 @@ class PlaylistsViewModel
                 statsRepository = trackStatsRepository,
             )
         private val autoMixGenerator = AutoMixGenerator(smartShuffleGenerator)
+        private val autoMixCoordinator =
+            AutoMixCoordinator(
+                scope = viewModelScope,
+                favoritesRepository = favoritesRepository,
+                musicLibraryRepository = musicLibraryRepository,
+                smartPlaylistRepository = smartPlaylistRepository,
+                autoMixGenerator = autoMixGenerator,
+                editState = _editState,
+                createPlaylistWithTracks = { name, trackIds ->
+                    playlistRepository.createPlaylistWithTracks(name = name, trackIds = trackIds)
+                },
+            )
 
         // Track the current detail loading job to cancel it when loading a new playlist
         private var detailLoadingJob: Job? = null
-        private var autoMixSeedJob: Job? = null
 
         init {
             loadPlaylists()
@@ -341,66 +354,18 @@ class PlaylistsViewModel
         }
 
         fun loadAutoMixSeeds() {
-            autoMixSeedJob?.cancel()
-            autoMixSeedJob =
-                viewModelScope.launch {
-                    favoritesRepository.getAllFavorites().collect { favorites ->
-                        val artists =
-                            favorites.mapNotNull { it.artist.takeIf { artist -> artist.isNotBlank() } }
-                                .distinct()
-                                .sorted()
-                        _editState.update { state ->
-                            state.copy(
-                                favoriteTracks = favorites,
-                                favoriteArtists = artists,
-                            )
-                        }
-                    }
-                }
+            autoMixCoordinator.loadSeeds()
         }
 
         fun generateAutoMix(
             seed: AutoMixSeed,
-            limit: Int = DEFAULT_MIX_SIZE,
+            limit: Int = AutoMixCoordinator.DEFAULT_MIX_SIZE,
         ) {
-            viewModelScope.launch {
-                _editState.update { it.copy(autoMixState = AutoMixState.Loading) }
-                val mixTracks =
-                    when (seed) {
-                        is AutoMixSeed.FavoriteTrack -> {
-                            autoMixGenerator.fromFavoriteTrack(
-                                seed = seed.track,
-                                libraryTracks = musicLibraryRepository.getAllTracks(),
-                                limit = limit,
-                            )
-                        }
-                        is AutoMixSeed.FavoriteArtist -> {
-                            autoMixGenerator.fromFavoriteArtist(
-                                artist = seed.artist,
-                                libraryTracks = musicLibraryRepository.getAllTracks(),
-                                limit = limit,
-                            )
-                        }
-                        is AutoMixSeed.SmartPlaylist -> {
-                            val tracks = smartPlaylistRepository.getTracksForType(seed.type).first()
-                            autoMixGenerator.fromSmartPlaylist(
-                                tracks = tracks,
-                                limit = limit,
-                            )
-                        }
-                    }
-                _editState.update {
-                    if (mixTracks.isEmpty()) {
-                        it.copy(autoMixState = AutoMixState.Error("No tracks found for this mix."))
-                    } else {
-                        it.copy(autoMixState = AutoMixState.Preview(seed, mixTracks))
-                    }
-                }
-            }
+            autoMixCoordinator.generate(seed, limit)
         }
 
         fun clearAutoMixPreview() {
-            _editState.update { it.copy(autoMixState = AutoMixState.Idle) }
+            autoMixCoordinator.clearPreview()
         }
 
         fun addCollectionToPlaylist(
@@ -419,12 +384,13 @@ class PlaylistsViewModel
 
             viewModelScope.launch {
                 try {
-                    val result = if (playlistId != null) {
-                        playlistRepository.addTracksToPlaylist(playlistId, trackIds)
-                    } else {
-                        val newId = playlistRepository.createPlaylist(collectionName)
-                        playlistRepository.addTracksToPlaylist(newId, trackIds)
-                    }
+                    val result =
+                        if (playlistId != null) {
+                            playlistRepository.addTracksToPlaylist(playlistId, trackIds)
+                        } else {
+                            val newId = playlistRepository.createPlaylist(collectionName)
+                            playlistRepository.addTracksToPlaylist(newId, trackIds)
+                        }
                     _operationState.value = PlaylistOperationState.Success(result)
                 } catch (e: Exception) {
                     _operationState.value = PlaylistOperationState.Error(e.message ?: "Unknown error")
@@ -437,18 +403,6 @@ class PlaylistsViewModel
         }
 
         fun saveAutoMixAsPlaylist(name: String) {
-            val current = _editState.value.autoMixState
-            if (name.isBlank() || current !is AutoMixState.Preview) return
-            viewModelScope.launch {
-                playlistRepository.createPlaylistWithTracks(
-                    name = name.trim(),
-                    trackIds = current.tracks.map { it.id },
-                )
-                _editState.update { it.copy(autoMixState = AutoMixState.Idle) }
-            }
-        }
-
-        companion object {
-            private const val DEFAULT_MIX_SIZE = 30
+            autoMixCoordinator.saveAsPlaylist(name)
         }
     }

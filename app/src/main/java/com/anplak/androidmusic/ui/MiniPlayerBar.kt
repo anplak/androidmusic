@@ -44,8 +44,8 @@ fun MiniPlayerBar(
     onBarClick: () -> Unit,
     onPlayPauseClick: () -> Unit,
     onToggleFavorite: () -> Unit,
-    artworkUri: Uri? = null,
     modifier: Modifier = Modifier,
+    artworkUri: Uri? = null,
 ) {
     Column(
         modifier =

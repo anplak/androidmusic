@@ -4,11 +4,9 @@ import android.Manifest
 import android.os.Build
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
-import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -23,10 +21,7 @@ import com.anplak.androidmusic.ui.navigateToLibraryArtistsTab
 import com.anplak.androidmusic.ui.navigateToPlaylists
 import com.anplak.androidmusic.ui.prepareLibraryTab
 import com.anplak.androidmusic.ui.preparePlaylistsTab
-import com.anplak.androidmusic.ui.returnToMainShell
 import com.anplak.androidmusic.ui.safeHasNodes
-import com.anplak.androidmusic.ui.switchLibraryBrowseTab
-import com.anplak.androidmusic.ui.waitForLibraryContent
 import com.anplak.androidmusic.ui.waitForLibraryDetailSettled
 import org.junit.Rule
 import org.junit.Test
@@ -159,9 +154,10 @@ class CollectionAddToPlaylistE2ETest {
 
         // Wait for partial success message showing skipped count
         composeTestRule.waitUntil(timeoutMillis = 5_000) {
-            val snackbarShown = composeTestRule.safeHasNodes(hasText("already there")) ||
-                composeTestRule.safeHasNodes(hasText("skipped")) ||
-                composeTestRule.safeHasNodes(hasText("0 added"))
+            val snackbarShown =
+                composeTestRule.safeHasNodes(hasText("already there")) ||
+                    composeTestRule.safeHasNodes(hasText("skipped")) ||
+                    composeTestRule.safeHasNodes(hasText("0 added"))
             snackbarShown
         }
 
@@ -223,9 +219,10 @@ class CollectionAddToPlaylistE2ETest {
 
         // Verify each artist track appears exactly once in the playlist
         for (trackTitle in artistTrackTitles) {
-            val matchingNodes = composeTestRule.onAllNodes(
-                hasText(trackTitle, substring = true)
-            ).fetchSemanticsNodes()
+            val matchingNodes =
+                composeTestRule.onAllNodes(
+                    hasText(trackTitle, substring = true),
+                ).fetchSemanticsNodes()
             assert(matchingNodes.size == 1) {
                 "Expected exactly one instance of track '$trackTitle' in playlist, found ${matchingNodes.size}"
             }
@@ -272,8 +269,9 @@ class CollectionAddToPlaylistE2ETest {
         }
 
         // Verify the snackbar shows the message
-        val hasSnackbar = composeTestRule.safeHasNodes(hasTestTag("add_to_playlist_snackbar")) ||
-            composeTestRule.safeHasNodes(hasText("added", substring = true))
+        val hasSnackbar =
+            composeTestRule.safeHasNodes(hasTestTag("add_to_playlist_snackbar")) ||
+                composeTestRule.safeHasNodes(hasText("added", substring = true))
         assert(hasSnackbar) { "Expected success snackbar to be displayed" }
     }
 

@@ -131,10 +131,12 @@ interface PlaylistDao {
         trackId: Long,
     ): Boolean
 
-    @Query("""
+    @Query(
+        """
         SELECT trackId FROM playlist_tracks
         WHERE playlistId = :playlistId AND trackId IN (:trackIds)
-    """)
+    """,
+    )
     suspend fun getExistingTrackIds(
         playlistId: Long,
         trackIds: List<Long>,

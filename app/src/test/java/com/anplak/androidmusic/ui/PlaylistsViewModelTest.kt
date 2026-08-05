@@ -227,7 +227,7 @@ class PlaylistsViewModelTest {
         runTest {
             fakePlaylistRepository.setAddTracksDelay(1000L)
             fakePlaylistRepository.setAddTracksResult(
-                PlaylistOperationResult(addedCount = 5, skippedCount = 0, playlistId = 1L)
+                PlaylistOperationResult(addedCount = 5, skippedCount = 0, playlistId = 1L),
             )
 
             val viewModel = createViewModel()
@@ -249,7 +249,7 @@ class PlaylistsViewModelTest {
     fun `addCollectionToPlaylist emits Success with counts for existing playlist`() =
         runTest {
             fakePlaylistRepository.setAddTracksResult(
-                PlaylistOperationResult(addedCount = 8, skippedCount = 2, playlistId = 1L)
+                PlaylistOperationResult(addedCount = 8, skippedCount = 2, playlistId = 1L),
             )
 
             val viewModel = createViewModel()
@@ -271,7 +271,7 @@ class PlaylistsViewModelTest {
         runTest {
             fakePlaylistRepository.setCreatePlaylistId(99L)
             fakePlaylistRepository.setAddTracksResult(
-                PlaylistOperationResult(addedCount = 10, skippedCount = 0, playlistId = 99L)
+                PlaylistOperationResult(addedCount = 10, skippedCount = 0, playlistId = 99L),
             )
 
             val viewModel = createViewModel()
@@ -312,7 +312,7 @@ class PlaylistsViewModelTest {
     fun `clearOperationState resets to Idle`() =
         runTest {
             fakePlaylistRepository.setAddTracksResult(
-                PlaylistOperationResult(addedCount = 5, skippedCount = 0, playlistId = 1L)
+                PlaylistOperationResult(addedCount = 5, skippedCount = 0, playlistId = 1L),
             )
 
             val viewModel = createViewModel()

@@ -112,8 +112,9 @@ class LibraryCollectionDetailScreenTest {
         }
 
         // Verify snackbar shows counts or exists
-        val snackbarExists = composeTestRule.safeHasNodes(hasTestTag("add_to_playlist_snackbar")) ||
-            composeTestRule.safeHasNodes(hasTestTag("snackbar"))
+        val snackbarExists =
+            composeTestRule.safeHasNodes(hasTestTag("add_to_playlist_snackbar")) ||
+                composeTestRule.safeHasNodes(hasTestTag("snackbar"))
         assert(snackbarExists) { "Expected snackbar to be displayed" }
     }
 }

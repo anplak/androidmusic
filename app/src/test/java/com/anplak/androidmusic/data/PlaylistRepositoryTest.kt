@@ -437,15 +437,24 @@ class FakePlaylistDao : PlaylistDao {
         trackInPlaylist = value
     }
 
-    fun setExistingTrackIds(playlistId: Long, trackIds: List<Long>) {
+    fun setExistingTrackIds(
+        playlistId: Long,
+        trackIds: List<Long>,
+    ) {
         existingTrackIds[playlistId] = trackIds.toMutableSet()
     }
 
-    fun addToExistingTrackIds(playlistId: Long, trackIds: List<Long>) {
+    fun addToExistingTrackIds(
+        playlistId: Long,
+        trackIds: List<Long>,
+    ) {
         existingTrackIds.getOrPut(playlistId) { mutableSetOf() }.addAll(trackIds)
     }
 
-    fun setMaxPosition(playlistId: Long, position: Int?) {
+    fun setMaxPosition(
+        playlistId: Long,
+        position: Int?,
+    ) {
         maxPosition = position
     }
 

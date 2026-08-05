@@ -78,9 +78,9 @@ fun NowPlayingScreen(
     onBackClick: () -> Unit,
     onToggleFavorite: () -> Unit,
     onAddToPlaylist: () -> Unit,
+    modifier: Modifier = Modifier,
     onSmartShuffle: () -> Unit = {},
     artworkUri: Uri? = null,
-    modifier: Modifier = Modifier,
 ) {
     var showMenu by remember { mutableStateOf(false) }
 

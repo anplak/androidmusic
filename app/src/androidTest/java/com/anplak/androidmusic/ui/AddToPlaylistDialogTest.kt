@@ -1,7 +1,6 @@
 package com.anplak.androidmusic.ui
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -40,7 +39,7 @@ class AddToPlaylistDialogTest {
                 playlists = playlistsFlow.value,
                 onDismiss = {},
                 onPlaylistSelected = { _, _ -> },
-                onCreatePlaylist = { _, _ -> }
+                onCreatePlaylist = { _, _ -> },
             )
         }
 
@@ -68,7 +67,7 @@ class AddToPlaylistDialogTest {
                 playlists = playlistsFlow.value,
                 onDismiss = {},
                 onPlaylistSelected = { _, _ -> },
-                onCreatePlaylist = { _, _ -> }
+                onCreatePlaylist = { _, _ -> },
             )
         }
 
@@ -85,9 +84,10 @@ class AddToPlaylistDialogTest {
         var selectedPlaylistId: Long? = null
         var selectedTrackIds: List<Long>? = null
 
-        val testPlaylists = listOf(
-            Playlist(id = 10L, name = "My Playlist", createdAt = System.currentTimeMillis(), trackCount = 3)
-        )
+        val testPlaylists =
+            listOf(
+                Playlist(id = 10L, name = "My Playlist", createdAt = System.currentTimeMillis(), trackCount = 3),
+            )
 
         composeTestRule.setContent {
             val playlistsFlow = rememberTestPlaylistsFlow(testPlaylists)
@@ -101,7 +101,7 @@ class AddToPlaylistDialogTest {
                     selectedPlaylistId = playlistId
                     selectedTrackIds = ids
                 },
-                onCreatePlaylist = { _, _ -> }
+                onCreatePlaylist = { _, _ -> },
             )
         }
 
@@ -131,7 +131,7 @@ class AddToPlaylistDialogTest {
                 onCreatePlaylist = { name, ids ->
                     createdPlaylistName = name
                     createdTrackIds = ids
-                }
+                },
             )
         }
 
@@ -157,7 +157,7 @@ class AddToPlaylistDialogTest {
                 playlists = playlistsFlow.value,
                 onDismiss = {},
                 onPlaylistSelected = { _, _ -> },
-                onCreatePlaylist = { _, _ -> }
+                onCreatePlaylist = { _, _ -> },
             )
         }
 
@@ -187,7 +187,7 @@ class AddToPlaylistDialogTest {
                 playlists = playlistsFlow.value,
                 onDismiss = { dismissCalled = true },
                 onPlaylistSelected = { _, _ -> playlistSelectedCalled = true },
-                onCreatePlaylist = { _, _ -> createPlaylistCalled = true }
+                onCreatePlaylist = { _, _ -> createPlaylistCalled = true },
             )
         }
 
@@ -202,11 +202,12 @@ class AddToPlaylistDialogTest {
 
     @Test
     fun dialogDisplaysExistingPlaylistsInList() {
-        val testPlaylists = listOf(
-            Playlist(id = 1L, name = "Favorites", createdAt = 1000L, trackCount = 10),
-            Playlist(id = 2L, name = "Workout Mix", createdAt = 2000L, trackCount = 25),
-            Playlist(id = 3L, name = "Road Trip", createdAt = 3000L, trackCount = 50)
-        )
+        val testPlaylists =
+            listOf(
+                Playlist(id = 1L, name = "Favorites", createdAt = 1000L, trackCount = 10),
+                Playlist(id = 2L, name = "Workout Mix", createdAt = 2000L, trackCount = 25),
+                Playlist(id = 3L, name = "Road Trip", createdAt = 3000L, trackCount = 50),
+            )
 
         composeTestRule.setContent {
             val playlistsFlow = rememberTestPlaylistsFlow(testPlaylists)
@@ -217,7 +218,7 @@ class AddToPlaylistDialogTest {
                 playlists = playlistsFlow.value,
                 onDismiss = {},
                 onPlaylistSelected = { _, _ -> },
-                onCreatePlaylist = { _, _ -> }
+                onCreatePlaylist = { _, _ -> },
             )
         }
 

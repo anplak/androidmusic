@@ -51,9 +51,9 @@ import com.anplak.androidmusic.data.SmartPlaylistType
 @Composable
 fun PlaylistsScreen(
     onPlaylistSelected: (Long) -> Unit,
+    modifier: Modifier = Modifier,
     onSmartPlaylistSelected: (SmartPlaylistType) -> Unit = {},
     onOpenSearch: () -> Unit = {},
-    modifier: Modifier = Modifier,
     viewModel: PlaylistsViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()

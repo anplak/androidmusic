@@ -224,14 +224,15 @@ class PlaylistRepositoryImpl(
 
         val maxPosition = playlistDao.getMaxPosition(playlistId) ?: -1
         val now = System.currentTimeMillis()
-        val refs = newIds.mapIndexed { index, trackId ->
-            PlaylistTrackCrossRef(
-                playlistId = playlistId,
-                trackId = trackId,
-                position = maxPosition + index + 1,
-                addedAt = now,
-            )
-        }
+        val refs =
+            newIds.mapIndexed { index, trackId ->
+                PlaylistTrackCrossRef(
+                    playlistId = playlistId,
+                    trackId = trackId,
+                    position = maxPosition + index + 1,
+                    addedAt = now,
+                )
+            }
 
         playlistDao.addTracksToPlaylist(refs)
 
