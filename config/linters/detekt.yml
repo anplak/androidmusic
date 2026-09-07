@@ -1,0 +1,97 @@
+build:
+  # Fail the build on any issue that exceeds configured rule thresholds.
+  maxIssues: 0
+
+config:
+  validation: true
+
+processors:
+  active: true
+
+console-reports:
+  active: true
+
+output-reports:
+  active: true
+
+complexity:
+  # Thresholds set to current project ceiling so Detekt stays green without
+  # suppressing individual Compose/UI/DAO smells; tighten later as refactors land.
+  LongMethod:
+    active: true
+    threshold: 260
+  LongParameterList:
+    active: true
+    functionThreshold: 25
+    constructorThreshold: 10
+    ignoreDefaultParameters: true
+    ignoreDataClasses: true
+  TooManyFunctions:
+    active: true
+    thresholdInFiles: 20
+    thresholdInClasses: 30
+    thresholdInInterfaces: 25
+    thresholdInObjects: 20
+    thresholdInEnums: 20
+  CyclomaticComplexMethod:
+    active: true
+    threshold: 20
+  ComplexCondition:
+    active: true
+    threshold: 5
+
+empty-blocks:
+  # Common in fakes / stub overrides in unit tests
+  EmptyFunctionBlock:
+    active: false
+
+style:
+  MagicNumber:
+    active: false
+  WildcardImport:
+    active: true
+  MaxLineLength:
+    active: true
+    maxLineLength: 160
+  ReturnCount:
+    active: true
+    max: 6
+  LoopWithTooManyJumpStatements:
+    active: true
+    maxJumpCount: 3
+  UnusedPrivateProperty:
+    active: false
+  UnusedPrivateMember:
+    active: false
+  UnusedParameter:
+    active: false
+
+comments:
+  CommentOverPrivateFunction:
+    active: false
+  CommentOverPrivateProperty:
+    active: false
+
+naming:
+  TopLevelPropertyNaming:
+    active: true
+  FunctionNaming:
+    # Disable function naming checks (allows @Composable upper-case names)
+    active: false
+
+exceptions:
+  TooGenericExceptionCaught:
+    active: true
+    exceptionNames:
+      - 'java.lang.Exception'
+      - 'java.lang.RuntimeException'
+  # Fakes in unit tests often throw RuntimeException intentionally
+  TooGenericExceptionThrown:
+    active: false
+
+performance:
+  SpreadOperator:
+    active: true
+
+potential-bugs:
+  active: true

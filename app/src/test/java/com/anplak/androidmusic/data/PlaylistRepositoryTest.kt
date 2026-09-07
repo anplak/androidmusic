@@ -249,6 +249,128 @@ class PlaylistRepositoryTest {
 
             assertFalse(repository.isTrackInPlaylist(1L, 2L))
         }
+
+    // Collection-level addTracksToPlaylist tests
+
+    @Test
+    fun `addTracksToPlaylist returns zero counts when empty input`() =
+        runTest {
+            val result = repository.addTracksToPlaylist(1L, emptyList())
+
+            assertEquals(0, result.addedCount)
+            assertEquals(0, result.skippedCount)
+            assertEquals(1L, result.playlistId)
+        }
+
+    @Test
+    fun `addTracksToPlaylist deduplicates duplicate input IDs`() =
+        runTest {
+            fakePlaylistDao.setCreatedPlaylistId(1L)
+            fakePlaylistDao.setExistingTrackIds(1L, emptyList())
+            fakePlaylistDao.setMaxPosition(1L, -1)
+
+            // Input has duplicates
+            val result = repository.addTracksToPlaylist(1L, listOf(1L, 1L, 2L, 2L, 2L, 3L))
+
+            // Should only add unique tracks
+            assertEquals(3, result.addedCount)
+            assertEquals(0, result.skippedCount)
+            assertEquals(1L, result.playlistId)
+
+            // Verify DAO received only unique refs
+            val refs = fakePlaylistDao.getPlaylistTrackRefs(1L)
+            assertEquals(3, refs.size)
+            assertEquals(setOf(1L, 2L, 3L), refs.map { it.trackId }.toSet())
+        }
+
+    @Test
+    fun `addTracksToPlaylist returns correct counts when some tracks already present`() =
+        runTest {
+            fakePlaylistDao.setCreatedPlaylistId(1L)
+            // Track 2 is already in playlist
+            fakePlaylistDao.setExistingTrackIds(1L, listOf(2L))
+            fakePlaylistDao.setMaxPosition(1L, 0)
+
+            val result = repository.addTracksToPlaylist(1L, listOf(1L, 2L, 3L))
+
+            // Only tracks 1 and 3 are new
+            assertEquals(2, result.addedCount)
+            assertEquals(1, result.skippedCount)
+            assertEquals(1L, result.playlistId)
+        }
+
+    @Test
+    fun `addTracksToPlaylist returns zero added when all tracks already present`() =
+        runTest {
+            fakePlaylistDao.setCreatedPlaylistId(1L)
+            // All tracks already in playlist
+            fakePlaylistDao.setExistingTrackIds(1L, listOf(1L, 2L, 3L))
+            fakePlaylistDao.setMaxPosition(1L, 2)
+
+            val result = repository.addTracksToPlaylist(1L, listOf(1L, 2L, 3L))
+
+            assertEquals(0, result.addedCount)
+            assertEquals(3, result.skippedCount)
+            assertEquals(1L, result.playlistId)
+        }
+
+    @Test
+    fun `addTracksToPlaylist uses deterministic append positions`() =
+        runTest {
+            fakePlaylistDao.setCreatedPlaylistId(1L)
+            fakePlaylistDao.setExistingTrackIds(1L, emptyList())
+            // Playlist already has tracks at positions 0, 1, 2
+            fakePlaylistDao.setMaxPosition(1L, 2)
+
+            repository.addTracksToPlaylist(1L, listOf(10L, 11L, 12L))
+
+            val refs = fakePlaylistDao.getPlaylistTrackRefs(1L)
+            assertEquals(3, refs.size)
+            // New positions should be max + 1, +2, +3 = 3, 4, 5
+            assertEquals(listOf(3, 4, 5), refs.map { it.position })
+        }
+
+    @Test
+    fun `addTracksToPlaylist handles concurrent calls without violating uniqueness`() =
+        runTest {
+            fakePlaylistDao.setCreatedPlaylistId(1L)
+            // Simulate first batch adding tracks
+            fakePlaylistDao.setExistingTrackIds(1L, emptyList())
+            fakePlaylistDao.setMaxPosition(1L, -1)
+
+            // First concurrent call
+            val result1 = repository.addTracksToPlaylist(1L, listOf(1L, 2L))
+
+            // Update existing IDs as if first call succeeded
+            fakePlaylistDao.addToExistingTrackIds(1L, listOf(1L, 2L))
+            fakePlaylistDao.setMaxPosition(1L, 1)
+
+            // Second concurrent call with overlapping tracks
+            val result2 = repository.addTracksToPlaylist(1L, listOf(2L, 3L))
+
+            // Second call should only add track 3
+            assertEquals(2, result1.addedCount)
+            assertEquals(1, result2.addedCount) // Only track 3 is new
+            assertEquals(1, result2.skippedCount) // Track 2 already added
+
+            // Verify final state has no duplicates
+            val refs = fakePlaylistDao.getPlaylistTrackRefs(1L)
+            val trackIds = refs.map { it.trackId }
+            assertEquals(trackIds.size, trackIds.toSet().size) // No duplicates
+            assertEquals(setOf(1L, 2L, 3L), trackIds.toSet())
+        }
+
+    @Test
+    fun `addTracksToPlaylist uses playlistId from result`() =
+        runTest {
+            fakePlaylistDao.setCreatedPlaylistId(99L)
+            fakePlaylistDao.setExistingTrackIds(99L, emptyList())
+            fakePlaylistDao.setMaxPosition(99L, -1)
+
+            val result = repository.addTracksToPlaylist(99L, listOf(1L, 2L))
+
+            assertEquals(99L, result.playlistId)
+        }
 }
 
 class FakePlaylistDao : PlaylistDao {
@@ -258,6 +380,8 @@ class FakePlaylistDao : PlaylistDao {
     private val playlistTracks = MutableStateFlow<List<TrackEntity>>(emptyList())
     private val playlistTrackRefs = mutableListOf<PlaylistTrackCrossRef>()
     private var trackInPlaylist = false
+    private val existingTrackIds = mutableMapOf<Long, MutableSet<Long>>()
+    private var maxPosition: Int? = null
 
     var createPlaylistCalled = false
         private set
@@ -311,6 +435,27 @@ class FakePlaylistDao : PlaylistDao {
 
     fun setTrackInPlaylist(value: Boolean) {
         trackInPlaylist = value
+    }
+
+    fun setExistingTrackIds(
+        playlistId: Long,
+        trackIds: List<Long>,
+    ) {
+        existingTrackIds[playlistId] = trackIds.toMutableSet()
+    }
+
+    fun addToExistingTrackIds(
+        playlistId: Long,
+        trackIds: List<Long>,
+    ) {
+        existingTrackIds.getOrPut(playlistId) { mutableSetOf() }.addAll(trackIds)
+    }
+
+    fun setMaxPosition(
+        playlistId: Long,
+        position: Int?,
+    ) {
+        maxPosition = position
     }
 
     override suspend fun createPlaylist(playlist: PlaylistEntity): Long {
@@ -396,7 +541,7 @@ class FakePlaylistDao : PlaylistDao {
         return playlistTrackRefs.filter { it.playlistId == playlistId }.sortedBy { it.position }.map { it.trackId }
     }
 
-    override suspend fun getMaxPosition(playlistId: Long): Int? = 0
+    override suspend fun getMaxPosition(playlistId: Long): Int? = maxPosition
 
     override fun getPlaylistTrackCount(playlistId: Long): Flow<Int> = MutableStateFlow(playlistTracks.value.size)
 
@@ -416,4 +561,12 @@ class FakePlaylistDao : PlaylistDao {
         query: String,
         limit: Int,
     ): List<PlaylistWithTrackCount> = emptyList()
+
+    override suspend fun getExistingTrackIds(
+        playlistId: Long,
+        trackIds: List<Long>,
+    ): List<Long> {
+        val existing = existingTrackIds[playlistId] ?: emptySet()
+        return trackIds.filter { it in existing }
+    }
 }

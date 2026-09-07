@@ -119,15 +119,6 @@
     - Keep dependencies cleanly separated and use interface segregation principle.
     - Use Git for version control with clean, atomic commits and descriptive messages.
 
-    Continuous integration and delivery:
-    - Automate testing, building, and deployment processes through CI/CD pipelines.
-    - Use GitHub Actions or similar tools for running tests and builds on push/pull requests.
-    - Use GitHub dependency graph to monitor and update dependencies proactively.
-    - Implement code quality checks (linting, format checks) in CI/CD pipelines.
-    - Use branch protection rules to maintain code quality standards.
-    - Consider using pre-commit hooks and build checks to enforce code quality.
-    - Usecięšla doğrulatma şeması for versioning to communicate API stability and backwards compatibility.
-
     Project structure organization:
     - Group files by feature or functionality rather than by type to improve cohesion.
     - Create clear module boundaries for large projects with well-defined responsibilities.
@@ -142,6 +133,9 @@
     - Write clear commit messages that explain the "why" behind changes.
     - Implement automated testing at multiple levels (unit, integration, UI) for coverage.
     - Use pull requests as overviews of implementation with discussion of tradeoffs.
+    - **Run linters before every commit: `./gradlew detekt lint spotlessApply spotlessCheck`.**
+    - Fix all linter issues before pushing; the CI pipeline will enforce these checks.
+    - Configure pre-commit hooks to automatically run linters and prevent non-compliant code.
 
     Code review process:
     - Focus on functionality, readability, and maintainability in code reviews.
@@ -149,6 +143,8 @@
     - Suggest improvements while acknowledging the author's implementation approach.
     - Use proactive measurement to inform performance optimization discussions.
     - Keep code reviews focused on objective quality metrics rather than subjective preferences.
+    - **Verify all linters pass before approving code review (detekt, Android Lint, Ktlint/Spotless).**
+    - Reject PRs with linter errors or unaddressed warnings.
 
     Sprint and iteration management:
     - Break work into manageable story sizes that can be completed in short iterations.
@@ -164,6 +160,19 @@
     - Keep unit tests fast, isolated, and deterministic for reliable CI/CD execution.
     - Use mocking libraries judiciously to create focused, isolated test scenarios.
     - Test error cases and boundary conditions in addition to happy paths.
+
+    Linting and static analysis:
+    - **All linters MUST pass before any code can be committed or merged.**
+    - Linters are ALWAYS executed - no exceptions or bypasses allowed.
+    - Fix all linter issues immediately when detected; do not suppress or ignore them.
+    - Use Detekt for Kotlin static analysis with project-wide configuration.
+    - Use Android Lint for Android-specific inspections and best practices.
+    - Use Ktlint via Spotless for Kotlin code formatting consistency.
+    - Run linters locally before pushing changes: `./gradlew detekt lint spotlessCheck`.
+    - Auto-fix formatting issues with `./gradlew spotlessApply` before commit.
+    - Address all linter warnings and errors; suppression only allowed with explicit justification and TODO link.
+    - Keep linter configurations synchronized across the team in version control.
+    - Treat linter errors as bugs that must be fixed immediately, not as optional suggestions.
 
     Internationalization (i18n) considerations:
     - Keep strings in string resources for easy translation and localization.

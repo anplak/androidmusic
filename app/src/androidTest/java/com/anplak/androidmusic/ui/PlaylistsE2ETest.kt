@@ -206,7 +206,7 @@ class PlaylistsE2ETest {
             .assertIsDisplayed()
 
         // Verify the playlist shows the correct pluralized track count (handles singular/plural)
-val expectedCountText = composeTestRule.activity.resources.getQuantityString(com.anplak.androidmusic.R.plurals.tracks_count, 1, 1)
+        val expectedCountText = composeTestRule.activity.resources.getQuantityString(com.anplak.androidmusic.R.plurals.tracks_count, 1, 1)
         composeTestRule
             .onNodeWithText(expectedCountText)
             .assertIsDisplayed()

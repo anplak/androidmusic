@@ -6,6 +6,34 @@ plugins {
     alias(libs.plugins.detekt)
 }
 
+import java.io.File
+import java.util.Properties
+
+fun Properties.loadFromLocalProperties(propName: String): String? {
+    return this[propName]?.toString()?.trim()
+}
+
+fun getKeystorePassword(): String {
+    val localProps = Properties().apply {
+        File("local.properties").inputStream().use { load(it) }
+    }
+    return localProps.loadFromLocalProperties("keystore.password") ?: "androidmusic"
+}
+
+fun getKeystoreAlias(): String {
+    val localProps = Properties().apply {
+        File("local.properties").inputStream().use { load(it) }
+    }
+    return localProps.loadFromLocalProperties("keystore.alias") ?: "androidmusic"
+}
+
+fun getKeystoreKeyPassword(): String {
+    val localProps = Properties().apply {
+        File("local.properties").inputStream().use { load(it) }
+    }
+    return localProps.loadFromLocalProperties("keystore.key.password") ?: "androidmusic"
+}
+
 android {
     namespace = "com.anplak.androidmusic"
     compileSdk = 34
@@ -15,7 +43,7 @@ android {
         minSdk = 26
         targetSdk = 34
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -24,13 +52,24 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("keystores/androidmusic.keystore")
+            storePassword = getKeystorePassword()
+            keyAlias = getKeystoreAlias()
+            keyPassword = getKeystoreKeyPassword()
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
@@ -69,8 +108,17 @@ android {
         abortOnError = true
         warningsAsErrors = true
         checkReleaseBuilds = true
-        // Use a baseline file to suppress historical lint findings; new issues will still fail the build
-        baseline = file("config/lint-baseline.xml")
+        // Dependency/version churn is intentional pin noise — track via Dependabot/renovate, not baseline.
+        disable +=
+            setOf(
+                "GradleDependency",
+                "NewerVersionAvailable",
+                "AndroidGradlePluginVersion",
+                // Adaptive icons stay in mipmap-anydpi-v26 (required for linking); minSdk is already 26.
+                "ObsoleteSdkInt",
+            )
+        // Single shared baseline under config/linters/ (repo root)
+        baseline = rootProject.file("config/linters/lint-baseline.xml")
     }
 }
 
@@ -143,11 +191,9 @@ detekt {
     buildUponDefaultConfig = true
     allRules = false
     autoCorrect = false
-    // Detekt should not fail on historical issues: use baseline file
     ignoreFailures = false
-    baseline = file("config/detekt/detekt-baseline.xml")
-    // Use root project relative path for Detekt config
-    config.setFrom(rootProject.files("config/detekt/detekt.yml"))
+    baseline = rootProject.file("config/linters/detekt-baseline.xml")
+    config.setFrom(rootProject.files("config/linters/detekt.yml"))
 }
 
 // Configure Detekt report formats (HTML for local viewing)

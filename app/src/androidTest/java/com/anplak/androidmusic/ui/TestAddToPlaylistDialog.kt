@@ -22,7 +22,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,23 +32,24 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anplak.androidmusic.R
 import com.anplak.androidmusic.data.Playlist
-import com.anplak.androidmusic.player.TrackInfo
 
+/**
+ * Testable version of AddToPlaylistDialog that doesn't depend on ViewModel.
+ * Used for UI testing with injected playlist data.
+ */
 @Composable
-fun AddToPlaylistDialog(
+fun TestAddToPlaylistDialog(
     collectionName: String,
     trackCount: Int,
     trackIds: List<Long>,
+    playlists: List<Playlist>,
     onDismiss: () -> Unit,
     onPlaylistSelected: (playlistId: Long, trackIds: List<Long>) -> Unit,
     onCreatePlaylist: (name: String, trackIds: List<Long>) -> Unit,
-    viewModel: PlaylistsViewModel = viewModel(),
 ) {
-    val playlists by viewModel.playlists.collectAsState()
-    var showCreateNew by remember { mutableStateOf(false) }
+    var showCreateNew by remember { mutableStateOf(playlists.isEmpty()) }
     var newPlaylistName by remember { mutableStateOf("") }
 
     AlertDialog(
@@ -83,7 +83,7 @@ fun AddToPlaylistDialog(
                     }
                 }
 
-                if (showCreateNew) {
+                if (showCreateNew || playlists.isEmpty()) {
                     OutlinedTextField(
                         value = newPlaylistName,
                         onValueChange = { newPlaylistName = it },
@@ -105,7 +105,7 @@ fun AddToPlaylistDialog(
                             items = playlists,
                             key = { it.id },
                         ) { playlist ->
-                            PlaylistOption(
+                            TestPlaylistOption(
                                 playlist = playlist,
                                 onClick = {
                                     onPlaylistSelected(playlist.id, trackIds)
@@ -118,7 +118,7 @@ fun AddToPlaylistDialog(
             }
         },
         confirmButton = {
-            if (showCreateNew) {
+            if (showCreateNew || playlists.isEmpty()) {
                 TextButton(
                     onClick = {
                         if (newPlaylistName.isNotBlank()) {
@@ -126,7 +126,7 @@ fun AddToPlaylistDialog(
                             onDismiss()
                         }
                     },
-                    enabled = newPlaylistName.isNotBlank(),
+                    enabled = newPlaylistName.isNotBlank() && trackIds.isNotEmpty(),
                     modifier = Modifier.testTag("create_and_add_button"),
                 ) {
                     Text(stringResource(R.string.create))
@@ -146,30 +146,7 @@ fun AddToPlaylistDialog(
 }
 
 @Composable
-fun AddToPlaylistDialog(
-    track: TrackInfo,
-    onDismiss: () -> Unit,
-    onPlaylistSelected: (playlistId: Long, trackId: Long) -> Unit,
-    onCreatePlaylist: (name: String, trackId: Long) -> Unit,
-    viewModel: PlaylistsViewModel = viewModel(),
-) {
-    AddToPlaylistDialog(
-        collectionName = track.title,
-        trackCount = 1,
-        trackIds = listOf(track.id),
-        onDismiss = onDismiss,
-        onPlaylistSelected = { playlistId, trackIds ->
-            onPlaylistSelected(playlistId, trackIds[0])
-        },
-        onCreatePlaylist = { name, trackIds ->
-            onCreatePlaylist(name, trackIds[0])
-        },
-        viewModel = viewModel,
-    )
-}
-
-@Composable
-private fun PlaylistOption(
+private fun TestPlaylistOption(
     playlist: Playlist,
     onClick: () -> Unit,
 ) {

@@ -47,6 +47,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -108,46 +109,49 @@ fun PlaylistDetailScreen(
                 playlistName = state.playlist.name,
                 tracks = displayTracks,
                 editState = editState,
-                onBackClick = onBackClick,
-                onPlayAll = { onPlayAll(state.tracks, 0) },
-                onSmartShufflePlay = { onSmartShufflePlay(state.tracks) },
-                onTrackSelected = { track ->
-                    if (editState.isSelectionMode) {
-                        viewModel.toggleTrackSelection(track.id)
-                    } else {
-                        val index = state.tracks.indexOf(track)
-                        onPlayAll(state.tracks, index)
-                    }
-                },
-                onRemoveTrack = { trackId ->
-                    viewModel.removeTrackFromPlaylist(playlistId, trackId)
-                },
-                onStartSelectionMode = { viewModel.startSelectionMode() },
-                onExitSelectionMode = { viewModel.exitSelectionMode() },
-                onRequestRemoveSelected = { viewModel.requestRemoveSelected() },
-                onConfirmRemoveSelected = { viewModel.confirmRemoveSelected(playlistId) },
-                onDismissRemoveConfirm = { viewModel.dismissRemoveConfirmation() },
-                onStartReorder = { viewModel.startReorderMode(state.tracks) },
-                onCancelReorder = { viewModel.cancelReorderMode() },
-                onCommitReorder = { viewModel.commitReorder(playlistId) },
-                onUpdateReorder = { viewModel.updateReorder(it) },
-                onDuplicatePlaylist = { showDuplicateDialog = true },
-                onMergePlaylist = {
-                    mergedName = "${state.playlist.name} Mix"
-                    mergeTargetId = null
-                    showMergeDialog = true
-                },
-                onGenerateMix = {
-                    viewModel.loadAutoMixSeeds()
-                    if (showAutoMixInfo) {
-                        showAutoMixIntroDialog = true
-                    } else {
-                        showAutoMixDialog = true
-                    }
-                },
-                onToggleMenu = { showMenu = !showMenu },
                 menuExpanded = showMenu,
                 modifier = modifier,
+                actions =
+                    PlaylistDetailActions(
+                        onBackClick = onBackClick,
+                        onPlayAll = { onPlayAll(state.tracks, 0) },
+                        onSmartShufflePlay = { onSmartShufflePlay(state.tracks) },
+                        onTrackSelected = { track ->
+                            if (editState.isSelectionMode) {
+                                viewModel.toggleTrackSelection(track.id)
+                            } else {
+                                val index = state.tracks.indexOf(track)
+                                onPlayAll(state.tracks, index)
+                            }
+                        },
+                        onRemoveTrack = { trackId ->
+                            viewModel.removeTrackFromPlaylist(playlistId, trackId)
+                        },
+                        onStartSelectionMode = { viewModel.startSelectionMode() },
+                        onExitSelectionMode = { viewModel.exitSelectionMode() },
+                        onRequestRemoveSelected = { viewModel.requestRemoveSelected() },
+                        onConfirmRemoveSelected = { viewModel.confirmRemoveSelected(playlistId) },
+                        onDismissRemoveConfirm = { viewModel.dismissRemoveConfirmation() },
+                        onStartReorder = { viewModel.startReorderMode(state.tracks) },
+                        onCancelReorder = { viewModel.cancelReorderMode() },
+                        onCommitReorder = { viewModel.commitReorder(playlistId) },
+                        onUpdateReorder = { viewModel.updateReorder(it) },
+                        onDuplicatePlaylist = { showDuplicateDialog = true },
+                        onMergePlaylist = {
+                            mergedName = "${state.playlist.name} Mix"
+                            mergeTargetId = null
+                            showMergeDialog = true
+                        },
+                        onGenerateMix = {
+                            viewModel.loadAutoMixSeeds()
+                            if (showAutoMixInfo) {
+                                showAutoMixIntroDialog = true
+                            } else {
+                                showAutoMixDialog = true
+                            }
+                        },
+                        onToggleMenu = { showMenu = !showMenu },
+                    ),
             )
 
             if (showDuplicateDialog) {
@@ -376,30 +380,34 @@ private fun NotFoundState(onBackClick: () -> Unit) {
     }
 }
 
+data class PlaylistDetailActions(
+    val onBackClick: () -> Unit,
+    val onPlayAll: () -> Unit,
+    val onSmartShufflePlay: () -> Unit,
+    val onTrackSelected: (TrackInfo) -> Unit,
+    val onRemoveTrack: (Long) -> Unit,
+    val onStartSelectionMode: () -> Unit,
+    val onExitSelectionMode: () -> Unit,
+    val onRequestRemoveSelected: () -> Unit,
+    val onConfirmRemoveSelected: () -> Unit,
+    val onDismissRemoveConfirm: () -> Unit,
+    val onStartReorder: () -> Unit,
+    val onCancelReorder: () -> Unit,
+    val onCommitReorder: () -> Unit,
+    val onUpdateReorder: (List<TrackInfo>) -> Unit,
+    val onDuplicatePlaylist: () -> Unit,
+    val onMergePlaylist: () -> Unit,
+    val onGenerateMix: () -> Unit,
+    val onToggleMenu: () -> Unit,
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PlaylistDetailContent(
     playlistName: String,
     tracks: List<TrackInfo>,
     editState: PlaylistDetailEditState,
-    onBackClick: () -> Unit,
-    onPlayAll: () -> Unit,
-    onSmartShufflePlay: () -> Unit,
-    onTrackSelected: (TrackInfo) -> Unit,
-    onRemoveTrack: (Long) -> Unit,
-    onStartSelectionMode: () -> Unit,
-    onExitSelectionMode: () -> Unit,
-    onRequestRemoveSelected: () -> Unit,
-    onConfirmRemoveSelected: () -> Unit,
-    onDismissRemoveConfirm: () -> Unit,
-    onStartReorder: () -> Unit,
-    onCancelReorder: () -> Unit,
-    onCommitReorder: () -> Unit,
-    onUpdateReorder: (List<TrackInfo>) -> Unit,
-    onDuplicatePlaylist: () -> Unit,
-    onMergePlaylist: () -> Unit,
-    onGenerateMix: () -> Unit,
-    onToggleMenu: () -> Unit,
+    actions: PlaylistDetailActions,
     menuExpanded: Boolean,
     modifier: Modifier = Modifier,
 ) {
@@ -409,7 +417,7 @@ private fun PlaylistDetailContent(
                 title = { Text(text = playlistName) },
                 navigationIcon = {
                     IconButton(
-                        onClick = onBackClick,
+                        onClick = actions.onBackClick,
                         modifier = Modifier.testTag("playlist_detail_back_button"),
                     ) {
                         Icon(
@@ -421,13 +429,13 @@ private fun PlaylistDetailContent(
                 actions = {
                     when {
                         editState.isReorderMode -> {
-                            IconButton(onClick = onCommitReorder) {
+                            IconButton(onClick = actions.onCommitReorder) {
                                 Icon(
                                     imageVector = Icons.Default.Done,
                                     contentDescription = "Save order",
                                 )
                             }
-                            IconButton(onClick = onCancelReorder) {
+                            IconButton(onClick = actions.onCancelReorder) {
                                 Icon(
                                     imageVector = Icons.Default.Close,
                                     contentDescription = "Cancel reorder",
@@ -435,13 +443,13 @@ private fun PlaylistDetailContent(
                             }
                         }
                         editState.isSelectionMode -> {
-                            IconButton(onClick = onRequestRemoveSelected) {
+                            IconButton(onClick = actions.onRequestRemoveSelected) {
                                 Icon(
                                     imageVector = Icons.Default.Delete,
                                     contentDescription = "Remove selected",
                                 )
                             }
-                            IconButton(onClick = onExitSelectionMode) {
+                            IconButton(onClick = actions.onExitSelectionMode) {
                                 Icon(
                                     imageVector = Icons.Default.Close,
                                     contentDescription = "Exit selection",
@@ -449,7 +457,7 @@ private fun PlaylistDetailContent(
                             }
                         }
                         else -> {
-                            IconButton(onClick = onToggleMenu) {
+                            IconButton(onClick = actions.onToggleMenu) {
                                 Icon(
                                     imageVector = Icons.Default.MoreVert,
                                     contentDescription = "More options",
@@ -457,48 +465,48 @@ private fun PlaylistDetailContent(
                             }
                             DropdownMenu(
                                 expanded = menuExpanded,
-                                onDismissRequest = onToggleMenu,
+                                onDismissRequest = actions.onToggleMenu,
                             ) {
                                 DropdownMenuItem(
                                     text = { Text(text = "Reorder tracks") },
                                     onClick = {
-                                        onToggleMenu()
-                                        onStartReorder()
+                                        actions.onToggleMenu()
+                                        actions.onStartReorder()
                                     },
                                 )
                                 DropdownMenuItem(
                                     text = { Text(text = "Select tracks") },
                                     onClick = {
-                                        onToggleMenu()
-                                        onStartSelectionMode()
+                                        actions.onToggleMenu()
+                                        actions.onStartSelectionMode()
                                     },
                                 )
                                 DropdownMenuItem(
                                     text = { Text(text = "Duplicate") },
                                     onClick = {
-                                        onToggleMenu()
-                                        onDuplicatePlaylist()
+                                        actions.onToggleMenu()
+                                        actions.onDuplicatePlaylist()
                                     },
                                 )
                                 DropdownMenuItem(
                                     text = { Text(text = "Merge into new") },
                                     onClick = {
-                                        onToggleMenu()
-                                        onMergePlaylist()
+                                        actions.onToggleMenu()
+                                        actions.onMergePlaylist()
                                     },
                                 )
                                 DropdownMenuItem(
                                     text = { Text(text = "Generate mix") },
                                     onClick = {
-                                        onToggleMenu()
-                                        onGenerateMix()
+                                        actions.onToggleMenu()
+                                        actions.onGenerateMix()
                                     },
                                 )
                                 DropdownMenuItem(
                                     text = { Text(text = "Smart shuffle play") },
                                     onClick = {
-                                        onToggleMenu()
-                                        onSmartShufflePlay()
+                                        actions.onToggleMenu()
+                                        actions.onSmartShufflePlay()
                                     },
                                 )
                             }
@@ -515,7 +523,7 @@ private fun PlaylistDetailContent(
         floatingActionButton = {
             if (tracks.isNotEmpty()) {
                 FloatingActionButton(
-                    onClick = onPlayAll,
+                    onClick = actions.onPlayAll,
                     modifier = Modifier.testTag("play_all_fab"),
                 ) {
                     Icon(
@@ -539,17 +547,17 @@ private fun PlaylistDetailContent(
                 if (editState.isReorderMode) {
                     ReorderablePlaylistTrackList(
                         tracks = tracks,
-                        onTrackSelected = onTrackSelected,
-                        onReorder = onUpdateReorder,
+                        onTrackSelected = actions.onTrackSelected,
+                        onReorder = actions.onUpdateReorder,
                     )
                 } else {
                     PlaylistTrackList(
                         tracks = tracks,
                         selectionMode = editState.isSelectionMode,
                         selectedTrackIds = editState.selectedTrackIds,
-                        onTrackSelected = onTrackSelected,
-                        onToggleSelected = { onTrackSelected(it) },
-                        onRemoveTrack = onRemoveTrack,
+                        onTrackSelected = actions.onTrackSelected,
+                        onToggleSelected = { actions.onTrackSelected(it) },
+                        onRemoveTrack = actions.onRemoveTrack,
                     )
                 }
             }
@@ -558,16 +566,16 @@ private fun PlaylistDetailContent(
 
     if (editState.showRemoveConfirmation) {
         AlertDialog(
-            onDismissRequest = onDismissRemoveConfirm,
+            onDismissRequest = actions.onDismissRemoveConfirm,
             title = { Text(text = "Remove tracks") },
             text = { Text(text = "Remove selected tracks from this playlist?") },
             confirmButton = {
-                FilledTonalButton(onClick = onConfirmRemoveSelected) {
+                FilledTonalButton(onClick = actions.onConfirmRemoveSelected) {
                     Text(text = "Remove")
                 }
             },
             dismissButton = {
-                FilledTonalButton(onClick = onDismissRemoveConfirm) {
+                FilledTonalButton(onClick = actions.onDismissRemoveConfirm) {
                     Text(text = "Cancel")
                 }
             },
@@ -650,7 +658,7 @@ private fun ReorderablePlaylistTrackList(
 ) {
     val listState = rememberLazyListState()
     var draggingIndex by remember { mutableStateOf<Int?>(null) }
-    var dragOffset by remember { mutableStateOf(0f) }
+    var dragOffset by remember { mutableFloatStateOf(0f) }
 
     LazyColumn(
         modifier =
@@ -676,7 +684,7 @@ private fun ReorderablePlaylistTrackList(
                 highlight = isDragging,
                 onClick = { onTrackSelected(track) },
                 onRemove = {},
-                onDragHandle =
+                modifier =
                     Modifier.pointerInput(tracks) {
                         detectDragGesturesAfterLongPress(
                             onDragStart = {
@@ -725,10 +733,10 @@ private fun PlaylistTrackItem(
     isSelected: Boolean,
     onClick: () -> Unit,
     onRemove: () -> Unit,
+    modifier: Modifier = Modifier,
     showDragHandle: Boolean = false,
     highlight: Boolean = false,
     showRemoveButton: Boolean = true,
-    onDragHandle: Modifier = Modifier,
 ) {
     ListItem(
         headlineContent = {
@@ -753,7 +761,7 @@ private fun PlaylistTrackItem(
                         imageVector = Icons.Default.DragHandle,
                         contentDescription = "Drag to reorder",
                         modifier =
-                            onDragHandle
+                            modifier
                                 .padding(end = 8.dp)
                                 .testTag("playlist_drag_handle_$index"),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,

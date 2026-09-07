@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Insights
@@ -99,7 +100,7 @@ fun InsightsScreen(
  */
 @Composable
 fun InsightsSection(
-    onTrackSelected: (List<TrackInfo>, Int) -> Unit,
+    @Suppress("UNUSED_PARAMETER") onTrackSelected: (List<TrackInfo>, Int) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: InsightsViewModel = viewModel(),
 ) {
@@ -186,11 +187,48 @@ private fun InsightsEmptyState() {
     }
 }
 
+private data class InsightsPeriodData(
+    val titleResId: Int,
+    val playTime: Long,
+    val playTimeTestTag: String,
+    val topTracks: List<TrackWithPlayCount>,
+    val topArtists: List<ArtistPlayCount>,
+    val trackKeyPrefix: String,
+    val artistKeyPrefix: String,
+    val topTracksHeaderTestTag: String? = null,
+    val topArtistsHeaderTestTag: String? = null,
+    val leadingSpacer: Boolean = false,
+)
+
 @Composable
 private fun InsightsContent(
     state: InsightsUiState,
     onTrackClick: (TrackInfo) -> Unit,
 ) {
+    val todayPeriod =
+        InsightsPeriodData(
+            titleResId = R.string.today,
+            playTime = state.todayPlayTime,
+            playTimeTestTag = "insights_today_time",
+            topTracks = state.todayTopTracks,
+            topArtists = state.todayTopArtists,
+            trackKeyPrefix = "today_track",
+            artistKeyPrefix = "today_artist",
+        )
+    val weekPeriod =
+        InsightsPeriodData(
+            titleResId = R.string.this_week,
+            playTime = state.weekPlayTime,
+            playTimeTestTag = "insights_week_time",
+            topTracks = state.weekTopTracks,
+            topArtists = state.weekTopArtists,
+            trackKeyPrefix = "week_track",
+            artistKeyPrefix = "week_artist",
+            topTracksHeaderTestTag = "insights_top_tracks",
+            topArtistsHeaderTestTag = "insights_top_artists",
+            leadingSpacer = true,
+        )
+
     LazyColumn(
         modifier =
             Modifier
@@ -199,113 +237,71 @@ private fun InsightsContent(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // Today section
-        item {
-            Text(
-                text = stringResource(R.string.today),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-            )
-        }
+        insightsPeriodSection(todayPeriod, onTrackClick)
+        insightsPeriodSection(weekPeriod, onTrackClick)
+    }
+}
 
-        item {
-            PlayTimeCard(
-                title = stringResource(R.string.total_play_time),
-                playTime = state.todayPlayTime,
-                modifier = Modifier.testTag("insights_today_time"),
-            )
-        }
-
-        if (state.todayTopTracks.isNotEmpty()) {
-            item {
-                SectionHeader(
-                    title = stringResource(R.string.top_tracks),
-                    icon = Icons.Default.MusicNote,
-                )
-            }
-
-            items(
-                items = state.todayTopTracks,
-                key = { "today_track_${it.track.id}" },
-            ) { trackWithCount ->
-                TopTrackItem(
-                    track = trackWithCount.track,
-                    playCount = trackWithCount.playCount,
-                    onClick = { onTrackClick(trackWithCount.track) },
-                )
-            }
-        }
-
-        if (state.todayTopArtists.isNotEmpty()) {
-            item {
-                SectionHeader(
-                    title = stringResource(R.string.top_artists),
-                    icon = Icons.Default.Person,
-                )
-            }
-
-            items(
-                items = state.todayTopArtists,
-                key = { "today_artist_${it.artist}" },
-            ) { artistCount ->
-                TopArtistItem(artistCount = artistCount)
-            }
-        }
-
-        // This Week section
-        item {
+private fun LazyListScope.insightsPeriodSection(
+    period: InsightsPeriodData,
+    onTrackClick: (TrackInfo) -> Unit,
+) {
+    item {
+        if (period.leadingSpacer) {
             Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = stringResource(R.string.this_week),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-            )
         }
+        Text(
+            text = stringResource(period.titleResId),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+        )
+    }
 
+    item {
+        PlayTimeCard(
+            title = stringResource(R.string.total_play_time),
+            playTime = period.playTime,
+            modifier = Modifier.testTag(period.playTimeTestTag),
+        )
+    }
+
+    if (period.topTracks.isNotEmpty()) {
         item {
-            PlayTimeCard(
-                title = stringResource(R.string.total_play_time),
-                playTime = state.weekPlayTime,
-                modifier = Modifier.testTag("insights_week_time"),
+            SectionHeader(
+                title = stringResource(R.string.top_tracks),
+                icon = Icons.Default.MusicNote,
+                modifier =
+                    period.topTracksHeaderTestTag?.let { Modifier.testTag(it) } ?: Modifier,
             )
         }
 
-        if (state.weekTopTracks.isNotEmpty()) {
-            item {
-                SectionHeader(
-                    title = stringResource(R.string.top_tracks),
-                    icon = Icons.Default.MusicNote,
-                    modifier = Modifier.testTag("insights_top_tracks"),
-                )
-            }
+        items(
+            items = period.topTracks,
+            key = { "${period.trackKeyPrefix}_${it.track.id}" },
+        ) { trackWithCount ->
+            TopTrackItem(
+                track = trackWithCount.track,
+                playCount = trackWithCount.playCount,
+                onClick = { onTrackClick(trackWithCount.track) },
+            )
+        }
+    }
 
-            items(
-                items = state.weekTopTracks,
-                key = { "week_track_${it.track.id}" },
-            ) { trackWithCount ->
-                TopTrackItem(
-                    track = trackWithCount.track,
-                    playCount = trackWithCount.playCount,
-                    onClick = { onTrackClick(trackWithCount.track) },
-                )
-            }
+    if (period.topArtists.isNotEmpty()) {
+        item {
+            SectionHeader(
+                title = stringResource(R.string.top_artists),
+                icon = Icons.Default.Person,
+                modifier =
+                    period.topArtistsHeaderTestTag?.let { Modifier.testTag(it) } ?: Modifier,
+            )
         }
 
-        if (state.weekTopArtists.isNotEmpty()) {
-            item {
-                SectionHeader(
-                    title = stringResource(R.string.top_artists),
-                    icon = Icons.Default.Person,
-                    modifier = Modifier.testTag("insights_top_artists"),
-                )
-            }
-
-            items(
-                items = state.weekTopArtists,
-                key = { "week_artist_${it.artist}" },
-            ) { artistCount ->
-                TopArtistItem(artistCount = artistCount)
-            }
+        items(
+            items = period.topArtists,
+            key = { "${period.artistKeyPrefix}_${it.artist}" },
+        ) { artistCount ->
+            TopArtistItem(artistCount = artistCount)
         }
     }
 }

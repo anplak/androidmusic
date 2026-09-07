@@ -12,7 +12,6 @@ import com.anplak.androidmusic.data.FavoritesRepository
 import com.anplak.androidmusic.data.FavoritesRepositoryImpl
 import com.anplak.androidmusic.data.LibraryBrowseAggregator
 import com.anplak.androidmusic.data.LibraryFilter
-import com.anplak.androidmusic.data.LibraryFilterEngine
 import com.anplak.androidmusic.data.LibraryScanResult
 import com.anplak.androidmusic.data.LibrarySyncCoordinator
 import com.anplak.androidmusic.data.LibrarySyncCoordinatorFactory
@@ -75,39 +74,40 @@ class LibraryViewModel
         private val _scanSummary = MutableStateFlow<LibraryScanResult?>(null)
         val scanSummary: StateFlow<LibraryScanResult?> = _scanSummary.asStateFlow()
 
-        private var currentTracks: List<TrackInfo> = emptyList()
-        private var favoriteIds: Set<Long> = emptySet()
-        private var recentlyAddedIds: Set<Long> = emptySet()
-        private var filter: LibraryFilter = LibraryFilter()
-        private var localQuery: String = ""
-        private var isRefreshing: Boolean = false
-        private var syncFailed: Boolean = false
-        private var cachedArtists: List<ArtistSummary>? = null
-        private var cachedAlbums: List<AlbumSummary>? = null
-        private var browseTab: LibraryBrowseTab =
-            savedStateHandle.get<String>(KEY_BROWSE_TAB)
-                ?.let { runCatching { LibraryBrowseTab.valueOf(it) }.getOrNull() }
-                ?: LibraryBrowseTab.Tracks
+        private val assembler =
+            LibraryUiAssembler(
+                uiState = _uiState,
+                syncState = { syncCoordinator.syncState.value },
+            ).also { assembler ->
+                assembler.browseTab =
+                    savedStateHandle.get<String>(KEY_BROWSE_TAB)
+                        ?.let { runCatching { LibraryBrowseTab.valueOf(it) }.getOrNull() }
+                        ?: LibraryBrowseTab.Tracks
+            }
 
         init {
             viewModelScope.launch {
                 favoritesRepository.getAllFavoriteIds().collect { ids ->
-                    favoriteIds = ids
-                    if (shouldApplyFilters()) {
-                        applyFilters()
+                    assembler.favoriteIds = ids
+                    if (assembler.shouldApplyFilters()) {
+                        assembler.applyFilters()
                     }
                 }
             }
 
             viewModelScope.launch {
                 repository.observeCachedTracks().collect { cached ->
-                    currentTracks = cached
-                    recentlyAddedIds = loadRecentlyAddedIds()
-                    cachedArtists = null
-                    cachedAlbums = null
-                    if (shouldApplyFilters()) {
-                        rebuildAggregates()
-                        applyFilters()
+                    assembler.currentTracks = cached
+                    assembler.recentlyAddedIds =
+                        run {
+                            val sinceMs = System.currentTimeMillis() - RECENTLY_ADDED_WINDOW_MS
+                            trackDao.getTracksAddedSince(sinceMs).map { it.id }.toSet()
+                        }
+                    assembler.cachedArtists = null
+                    assembler.cachedAlbums = null
+                    if (assembler.shouldApplyFilters()) {
+                        assembler.rebuildAggregates()
+                        assembler.applyFilters()
                     }
                 }
             }
@@ -116,12 +116,14 @@ class LibraryViewModel
                 syncCoordinator.syncState.collect { state ->
                     when (state) {
                         LibrarySyncState.Idle -> Unit
-                        LibrarySyncState.Running -> updateSyncFlags(isRefreshing = true, syncFailed = false)
+                        LibrarySyncState.Running ->
+                            assembler.updateSyncFlags(isRefreshing = true, syncFailed = false)
                         is LibrarySyncState.Success -> {
-                            updateSyncFlags(isRefreshing = false, syncFailed = false)
+                            assembler.updateSyncFlags(isRefreshing = false, syncFailed = false)
                             _scanSummary.value = state.result
                         }
-                        is LibrarySyncState.Failed -> updateSyncFlags(isRefreshing = false, syncFailed = true)
+                        is LibrarySyncState.Failed ->
+                            assembler.updateSyncFlags(isRefreshing = false, syncFailed = true)
                     }
                 }
             }
@@ -131,9 +133,9 @@ class LibraryViewModel
                     _uiState.value = LibraryUiState.Loading
                     syncCoordinator.syncNow()
                 } else {
-                    currentTracks = repository.getCachedTracks()
-                    rebuildAggregates()
-                    applyFilters()
+                    assembler.currentTracks = repository.getCachedTracks()
+                    assembler.rebuildAggregates()
+                    assembler.applyFilters()
                     syncCoordinator.scheduleSync()
                 }
             }
@@ -142,52 +144,53 @@ class LibraryViewModel
         fun onLibraryVisible() {
             syncCoordinator.scheduleSync()
             viewModelScope.launch {
-                favoriteIds = favoritesRepository.getAllFavoriteIds().first()
-                refreshFavoriteUiState()
+                assembler.favoriteIds = favoritesRepository.getAllFavoriteIds().first()
+                assembler.refreshFavoriteUiState()
             }
         }
 
         fun setBrowseTab(tab: LibraryBrowseTab) {
-            browseTab = tab
+            assembler.browseTab = tab
             savedStateHandle[KEY_BROWSE_TAB] = tab.name
-            applyFilters()
+            assembler.applyFilters()
         }
 
         fun setFilter(newFilter: LibraryFilter) {
-            filter = newFilter
-            applyFilters()
+            assembler.filter = newFilter
+            assembler.applyFilters()
         }
 
         fun setLocalQuery(query: String) {
-            localQuery = query
-            applyFilters()
+            assembler.localQuery = query
+            assembler.applyFilters()
         }
 
         fun applyLibraryHint(query: String) {
-            localQuery = query
-            browseTab = LibraryBrowseTab.Tracks
-            savedStateHandle[KEY_BROWSE_TAB] = browseTab.name
-            applyFilters()
+            assembler.localQuery = query
+            assembler.browseTab = LibraryBrowseTab.Tracks
+            savedStateHandle[KEY_BROWSE_TAB] = assembler.browseTab.name
+            assembler.applyFilters()
         }
 
-        fun tracksForArtist(normalizedKey: String): List<TrackInfo> = LibraryBrowseAggregator.tracksForArtist(currentTracks, normalizedKey)
+        fun tracksForArtist(normalizedKey: String): List<TrackInfo> =
+            LibraryBrowseAggregator.tracksForArtist(assembler.currentTracks, normalizedKey)
 
         fun tracksForAlbum(summary: AlbumSummary): List<TrackInfo> =
             LibraryBrowseAggregator.tracksForAlbum(
-                currentTracks,
+                assembler.currentTracks,
                 summary.normalizedTitle,
                 summary.normalizedArtist,
             )
 
         fun toggleFavorite(trackId: Long) {
-            val track = currentTracks.find { it.id == trackId } ?: return
-            favoriteIds =
-                if (trackId in favoriteIds) {
-                    favoriteIds - trackId
+            val track = assembler.currentTracks.find { it.id == trackId } ?: return
+            assembler.favoriteIds =
+                if (trackId in assembler.favoriteIds) {
+                    assembler.favoriteIds - trackId
                 } else {
-                    favoriteIds + trackId
+                    assembler.favoriteIds + trackId
                 }
-            applyFilters()
+            assembler.applyFilters()
             viewModelScope.launch {
                 favoritesRepository.toggleFavorite(track)
             }
@@ -195,11 +198,11 @@ class LibraryViewModel
 
         fun refresh() {
             viewModelScope.launch {
-                syncFailed = false
-                if (currentTracks.isEmpty()) {
+                assembler.syncFailed = false
+                if (assembler.currentTracks.isEmpty()) {
                     _uiState.value = LibraryUiState.Loading
                 } else {
-                    updateSyncFlags(isRefreshing = true, syncFailed = false)
+                    assembler.updateSyncFlags(isRefreshing = true, syncFailed = false)
                 }
                 syncCoordinator.syncNow()
             }
@@ -207,78 +210,6 @@ class LibraryViewModel
 
         fun clearScanSummary() {
             _scanSummary.value = null
-        }
-
-        private suspend fun loadRecentlyAddedIds(): Set<Long> {
-            val sinceMs = System.currentTimeMillis() - RECENTLY_ADDED_WINDOW_MS
-            return trackDao.getTracksAddedSince(sinceMs).map { it.id }.toSet()
-        }
-
-        private fun rebuildAggregates() {
-            if (currentTracks.isEmpty()) {
-                cachedArtists = emptyList()
-                cachedAlbums = emptyList()
-                return
-            }
-            cachedArtists = LibraryBrowseAggregator.aggregateArtists(currentTracks)
-            cachedAlbums = LibraryBrowseAggregator.aggregateAlbums(currentTracks)
-        }
-
-        private fun shouldApplyFilters(): Boolean {
-            if (_uiState.value !is LibraryUiState.Loading) return true
-            if (currentTracks.isNotEmpty()) return true
-            return syncCoordinator.syncState.value !is LibrarySyncState.Running
-        }
-
-        private fun updateSyncFlags(
-            isRefreshing: Boolean,
-            syncFailed: Boolean,
-        ) {
-            this.isRefreshing = isRefreshing
-            this.syncFailed = syncFailed
-            refreshFavoriteUiState()
-        }
-
-        private fun refreshFavoriteUiState() {
-            if (shouldApplyFilters()) {
-                applyFilters()
-            }
-        }
-
-        private fun applyFilters() {
-            if (_uiState.value is LibraryUiState.Loading &&
-                currentTracks.isEmpty() &&
-                syncCoordinator.syncState.value is LibrarySyncState.Running
-            ) {
-                return
-            }
-
-            if (currentTracks.isEmpty()) {
-                _uiState.value = LibraryUiState.Empty
-                return
-            }
-
-            val filtered =
-                LibraryFilterEngine.apply(
-                    tracks = currentTracks,
-                    filter = filter,
-                    favoriteIds = favoriteIds,
-                    recentlyAddedIds = recentlyAddedIds,
-                ).filter { LibraryFilterEngine.matchesLocalQuery(it, localQuery) }
-
-            _uiState.value =
-                LibraryUiState.Content(
-                    tracks = filtered,
-                    isRefreshing = isRefreshing,
-                    syncFailed = syncFailed,
-                    favoriteIds = favoriteIds,
-                    filter = filter,
-                    localQuery = localQuery,
-                    showNoFilterResults = filtered.isEmpty() && browseTab == LibraryBrowseTab.Tracks,
-                    browseTab = browseTab,
-                    artists = cachedArtists.orEmpty(),
-                    albums = cachedAlbums.orEmpty(),
-                )
         }
 
         companion object {

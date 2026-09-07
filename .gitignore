@@ -23,4 +23,5 @@ build/
 gradle-app.setting
 !gradle-wrapper.jar
 .gradletasknamecache
+/app/keystores/*.keystore
 

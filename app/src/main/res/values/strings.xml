@@ -14,7 +14,6 @@
     <string name="dismiss">Dismiss</string>
     <string name="file_not_found">File not found or cannot be accessed</string>
     <string name="unsupported_format">Unsupported audio format</string>
-    <string name="playback_error">Playback error occurred</string>
     <!-- For You / Discovery -->
     <string name="for_you">For You</string>
     <string name="for_you_empty_title">No recommendations yet</string>
@@ -26,7 +25,6 @@
 
     <string name="library">Library</string>
     <string name="scanning_library">Scanning library…</string>
-    <string name="updating_library">Updating library…</string>
     <string name="library_sync_retry">Couldn\'t update library. Tap to retry.</string>
     <string name="no_music_found">No music found</string>
     <string name="no_music_found_description">Add some music files to your device to see them here.</string>
@@ -37,8 +35,6 @@
     <string name="remove_from_favorites">Remove from favorites</string>
     <string name="no_favorites">No favorites yet</string>
     <string name="no_favorites_description">Tap the heart icon on any track to add it to your favorites.</string>
-    <string name="added_to_favorites">Added to favorites</string>
-    <string name="removed_from_favorites">Removed from favorites</string>
     
     <!-- Playlists -->
     <string name="playlists">Playlists</string>
@@ -48,12 +44,8 @@
     <string name="new_playlist">New Playlist</string>
     <string name="playlist_name">Playlist name</string>
     <string name="delete_playlist">Delete playlist</string>
-    <string name="no_playlists">No playlists yet</string>
-    <string name="no_playlists_description">Create a playlist to organize your music.</string>
     <string name="empty_playlist">This playlist is empty</string>
     <string name="empty_playlist_description">Add tracks from your library to this playlist.</string>
-    <string name="added_to_playlist">Added to playlist</string>
-    <string name="removed_from_playlist">Removed from playlist</string>
     <string name="cancel">Cancel</string>
     <string name="create">Create</string>
     <string name="more_options">More options</string>
@@ -62,6 +54,10 @@
         <item quantity="other">%d tracks</item>
     </plurals>
     <string name="play_all">Play all</string>
+    <plurals name="tracks_added">
+        <item quantity="one">Added %d track</item>
+        <item quantity="other">Added %d tracks</item>
+    </plurals>
     
     <!-- Smart Playlists -->
     <string name="smart_playlists">Smart Playlists</string>
@@ -70,15 +66,12 @@
     <string name="recently_added">Recently Added</string>
     <string name="smart_playlist_description">Based on your listening history</string>
     <string name="smart_shuffle">Smart Shuffle</string>
-    <string name="smart_shuffle_description">Weighted shuffle favoring your favorites</string>
     <string name="your_playlists">Your Playlists</string>
     
     <!-- History -->
     <string name="history">History</string>
     <string name="no_history">No listening history yet</string>
     <string name="no_history_description">Your listening history will appear here after you play some music.</string>
-    <string name="played_at">Played at %s</string>
-    <string name="listened_for">Listened for %s</string>
     
     <!-- Insights -->
     <string name="insights">Insights</string>

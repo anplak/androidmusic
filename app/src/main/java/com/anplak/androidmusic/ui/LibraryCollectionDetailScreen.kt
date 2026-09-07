@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.DropdownMenu
@@ -23,6 +24,7 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -53,6 +55,7 @@ fun LibraryArtistDetailScreen(
     onBackClick: () -> Unit,
     onPlayAll: (List<TrackInfo>, Int) -> Unit,
     onAddToPlaylist: (TrackInfo) -> Unit,
+    onAddCollectionToPlaylist: () -> Unit,
     modifier: Modifier = Modifier,
     onExcludeArtist: ((String) -> Unit)? = null,
     viewModel: LibraryViewModel = viewModel(),
@@ -69,6 +72,7 @@ fun LibraryArtistDetailScreen(
         onBackClick = onBackClick,
         onPlayAll = onPlayAll,
         onAddToPlaylist = onAddToPlaylist,
+        onAddCollectionToPlaylist = onAddCollectionToPlaylist,
         onToggleFavorite = viewModel::toggleFavorite,
         onExcludeArtist = onExcludeArtist?.let { exclude -> { exclude(displayName) } },
         modifier = modifier,
@@ -82,6 +86,7 @@ fun LibraryAlbumDetailScreen(
     onBackClick: () -> Unit,
     onPlayAll: (List<TrackInfo>, Int) -> Unit,
     onAddToPlaylist: (TrackInfo) -> Unit,
+    onAddCollectionToPlaylist: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LibraryViewModel = viewModel(),
 ) {
@@ -97,6 +102,7 @@ fun LibraryAlbumDetailScreen(
         onBackClick = onBackClick,
         onPlayAll = onPlayAll,
         onAddToPlaylist = onAddToPlaylist,
+        onAddCollectionToPlaylist = onAddCollectionToPlaylist,
         onToggleFavorite = viewModel::toggleFavorite,
         onExcludeArtist = null,
         modifier = modifier,
@@ -113,6 +119,7 @@ private fun LibraryCollectionDetailContent(
     onBackClick: () -> Unit,
     onPlayAll: (List<TrackInfo>, Int) -> Unit,
     onAddToPlaylist: (TrackInfo) -> Unit,
+    onAddCollectionToPlaylist: () -> Unit,
     onToggleFavorite: (Long) -> Unit,
     onExcludeArtist: (() -> Unit)?,
     modifier: Modifier = Modifier,
@@ -214,7 +221,7 @@ private fun LibraryCollectionDetailContent(
                         Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.End,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     FilledTonalButton(
                         onClick = { onPlayAll(tracks, 0) },
@@ -226,6 +233,18 @@ private fun LibraryCollectionDetailContent(
                             modifier = Modifier.padding(end = 4.dp),
                         )
                         Text(text = stringResource(R.string.play_all))
+                    }
+
+                    OutlinedButton(
+                        onClick = onAddCollectionToPlaylist,
+                        modifier = Modifier.testTag("library_detail_add_to_playlist"),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.padding(end = 4.dp),
+                        )
+                        Text(text = stringResource(R.string.add_to_playlist))
                     }
                 }
                 LazyColumn(
