@@ -68,7 +68,10 @@ sealed class AppScreen {
 
     data object Insights : AppScreen()
 
-    data object Search : AppScreen()
+    data class Search(
+        val origin: SearchOrigin = SearchOrigin.Library,
+        val playlistId: Long? = null,
+    ) : AppScreen()
 
     data object LibraryIndex : AppScreen()
 
@@ -85,6 +88,12 @@ data class CollectionForPlaylistDialog(
     val trackIds: List<Long>,
 )
 
+enum class SearchOrigin {
+    Library,
+    Playlists,
+    PlaylistDetail,
+}
+
 data class MainTabCallbacks(
     val onTabSelected: (NavigationTab) -> Unit,
     val onTrackSelected: (List<TrackInfo>, Int) -> Unit,
@@ -93,7 +102,7 @@ data class MainTabCallbacks(
     val onSmartPlaylistSelected: (SmartPlaylistType) -> Unit,
     val onRecommendationRowSelected: (RecommendationRow) -> Unit,
     val onPlayRecommendationRow: (RecommendationRow) -> Unit,
-    val onOpenSearch: () -> Unit,
+    val onOpenSearch: (NavigationTab) -> Unit,
     val onOpenLibraryIndex: () -> Unit,
     val onArtistClick: (ArtistSummary) -> Unit,
     val onAlbumClick: (AlbumSummary) -> Unit,
@@ -253,6 +262,7 @@ private fun MusicPlayerAppContent(
                 discoveryViewModel = discoveryViewModel,
                 playbackViewModel = playbackViewModel,
                 onBack = goMainTabs,
+                onCurrentScreenChange = onCurrentScreenChange,
                 openNowPlaying = openNowPlaying,
             )
         }
@@ -307,6 +317,7 @@ private fun PlaybackDetailRoutes(
     discoveryViewModel: DiscoveryViewModel,
     playbackViewModel: PlaybackViewModel,
     onBack: () -> Unit,
+    onCurrentScreenChange: (AppScreen) -> Unit,
     openNowPlaying: () -> Unit,
 ) {
     when (currentScreen) {
@@ -319,6 +330,14 @@ private fun PlaybackDetailRoutes(
                 playbackViewModel = playbackViewModel,
                 onBack = onBack,
                 openNowPlaying = openNowPlaying,
+                onOpenSearch = {
+                    onCurrentScreenChange(
+                        AppScreen.Search(
+                            origin = SearchOrigin.PlaylistDetail,
+                            playlistId = currentScreen.playlistId,
+                        ),
+                    )
+                },
             )
         }
         is AppScreen.SmartPlaylistDetail -> {
@@ -366,16 +385,28 @@ private fun LibraryNavRoutes(
     when (currentScreen) {
         is AppScreen.Search -> {
             SearchRoute(
+                searchScreen = currentScreen,
                 showMiniPlayer = showMiniPlayer,
                 miniPlayer = miniPlayerSlot,
                 searchViewModel = searchViewModel,
                 playbackViewModel = playbackViewModel,
+                libraryViewModel = libraryViewModel,
                 onBack = onBack,
                 onPlaylistSelected = { onCurrentScreenChange(AppScreen.PlaylistDetail(it)) },
-                onNavigateToLibrary = { query ->
-                    onLibrarySearchHintChange(query)
-                    onCurrentTabChange(NavigationTab.Library)
-                    onCurrentScreenChange(AppScreen.MainTabs)
+                onArtistSelected = { artist ->
+                    onCurrentScreenChange(
+                        AppScreen.LibraryArtistDetail(
+                            artistKey = artist.normalizedKey,
+                            displayName = artist.displayName,
+                        ),
+                    )
+                },
+                onAlbumSelected = { album ->
+                    onCurrentScreenChange(AppScreen.LibraryAlbumDetail(album))
+                },
+                onAddTrackToPlaylist = { track ->
+                    onCurrentScreenChange(AppScreen.PlaylistDetail(currentScreen.playlistId ?: return@SearchRoute))
+                    onTrackForPlaylist(track)
                 },
                 openNowPlaying = openNowPlaying,
             )
@@ -465,7 +496,15 @@ private fun MainTabsHost(
                     playbackViewModel.startSmartShuffle(row.tracks)
                     openNowPlaying()
                 },
-                onOpenSearch = { onCurrentScreenChange(AppScreen.Search) },
+                onOpenSearch = { originTab ->
+                    val origin =
+                        when (originTab) {
+                            NavigationTab.Library -> SearchOrigin.Library
+                            NavigationTab.Playlists -> SearchOrigin.Playlists
+                            else -> SearchOrigin.Library
+                        }
+                    onCurrentScreenChange(AppScreen.Search(origin = origin))
+                },
                 onOpenLibraryIndex = { onCurrentScreenChange(AppScreen.LibraryIndex) },
                 onArtistClick = { artist ->
                     onCurrentScreenChange(
@@ -529,6 +568,7 @@ private fun PlaylistDetailRoute(
     playbackViewModel: PlaybackViewModel,
     onBack: () -> Unit,
     openNowPlaying: () -> Unit,
+    onOpenSearch: () -> Unit,
 ) {
     MiniPlayerOverlayHost(showMiniPlayer = showMiniPlayer, miniPlayer = miniPlayer) {
         PlaylistDetailScreen(
@@ -542,6 +582,7 @@ private fun PlaylistDetailRoute(
                 playbackViewModel.startSmartShuffle(tracks)
                 openNowPlaying()
             },
+            onOpenSearch = onOpenSearch,
             viewModel = playlistsViewModel,
         )
     }
@@ -593,13 +634,17 @@ private fun RecommendationDetailRoute(
 
 @Composable
 private fun SearchRoute(
+    searchScreen: AppScreen.Search,
     showMiniPlayer: Boolean,
     miniPlayer: @Composable () -> Unit,
     searchViewModel: SearchViewModel,
     playbackViewModel: PlaybackViewModel,
+    libraryViewModel: LibraryViewModel,
     onBack: () -> Unit,
     onPlaylistSelected: (Long) -> Unit,
-    onNavigateToLibrary: (String) -> Unit,
+    onArtistSelected: (ArtistSummary) -> Unit,
+    onAlbumSelected: (AlbumSummary) -> Unit,
+    onAddTrackToPlaylist: (TrackInfo) -> Unit,
     openNowPlaying: () -> Unit,
 ) {
     MiniPlayerOverlayHost(showMiniPlayer = showMiniPlayer, miniPlayer = miniPlayer) {
@@ -610,7 +655,26 @@ private fun SearchRoute(
                 openNowPlaying()
             },
             onPlaylistSelected = onPlaylistSelected,
-            onNavigateToLibrary = onNavigateToLibrary,
+            onArtistSelected = { artistKey, displayName ->
+                val artist =
+                    libraryViewModel.artistSummaryForKey(artistKey)
+                        ?: ArtistSummary(
+                            normalizedKey = artistKey,
+                            displayName = displayName,
+                            artworkUri = null,
+                            trackCount = libraryViewModel.tracksForArtist(artistKey).size,
+                        )
+                onArtistSelected(artist)
+            },
+            onAlbumSelected = { albumTitle, albumArtist ->
+                libraryViewModel.albumSummaryFor(albumTitle, albumArtist)?.let(onAlbumSelected)
+            },
+            onAddTrackToPlaylist =
+                if (searchScreen.origin == SearchOrigin.PlaylistDetail) {
+                    onAddTrackToPlaylist
+                } else {
+                    null
+                },
             viewModel = searchViewModel,
         )
     }
@@ -924,7 +988,7 @@ private fun MainTabsContent(
                         onAddToPlaylist = callbacks.onAddToPlaylist,
                         onArtistClick = callbacks.onArtistClick,
                         onAlbumClick = callbacks.onAlbumClick,
-                        onOpenSearch = callbacks.onOpenSearch,
+                        onOpenSearch = { callbacks.onOpenSearch(NavigationTab.Library) },
                         onOpenLibraryIndex = callbacks.onOpenLibraryIndex,
                         initialLocalQuery = librarySearchHint,
                         onConsumeLibraryHint = callbacks.onConsumeLibraryHint,
@@ -941,7 +1005,7 @@ private fun MainTabsContent(
                     PlaylistsScreen(
                         onPlaylistSelected = callbacks.onPlaylistSelected,
                         onSmartPlaylistSelected = callbacks.onSmartPlaylistSelected,
-                        onOpenSearch = callbacks.onOpenSearch,
+                        onOpenSearch = { callbacks.onOpenSearch(NavigationTab.Playlists) },
                         viewModel = playlistsViewModel,
                     )
                 }

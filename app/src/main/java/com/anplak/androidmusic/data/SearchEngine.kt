@@ -10,39 +10,15 @@ class SearchEngine {
         val trimmed = query.trim()
         if (trimmed.isEmpty()) return GroupedSearchResults(emptyList(), 0)
 
-        val artists =
-            raw.tracks
-                .map { it.artist.trim() }
-                .filter { it.isNotEmpty() }
-                .distinctBy { it.lowercase() }
-                .take(MAX_ARTISTS)
-                .map { artist ->
-                    SearchResultItem(
-                        id = "artist:$artist",
-                        kind = SearchResultKind.ARTIST,
-                        title = artist,
-                    )
-                }
+        val artists = raw.collectionMatches.artists.take(MAX_ARTISTS)
 
-        val albums =
-            raw.tracks
-                .filter { it.album.isNotBlank() }
-                .distinctBy { "${it.artist}|${it.album}".lowercase() }
-                .take(MAX_ALBUMS)
-                .map { track ->
-                    SearchResultItem(
-                        id = "album:${track.artist}|${track.album}",
-                        kind = SearchResultKind.ALBUM,
-                        title = track.album,
-                        subtitle = track.artist,
-                    )
-                }
+        val albums = raw.collectionMatches.albums.take(MAX_ALBUMS)
 
         val sections =
             listOfNotNull(
-                section(SECTION_TRACKS, raw.tracks.take(MAX_TRACKS).map { trackItem(it) }),
                 section(SECTION_ARTISTS, artists).takeIf { it.items.isNotEmpty() },
                 section(SECTION_ALBUMS, albums).takeIf { it.items.isNotEmpty() },
+                section(SECTION_TRACKS, raw.tracks.take(MAX_TRACKS).map { trackItem(it) }),
                 section(SECTION_PLAYLISTS, raw.playlists.take(MAX_PLAYLISTS).map { playlistItem(it) })
                     .takeIf { it.items.isNotEmpty() },
                 section(SECTION_HISTORY, raw.history.take(MAX_HISTORY).map { historyItem(it) })

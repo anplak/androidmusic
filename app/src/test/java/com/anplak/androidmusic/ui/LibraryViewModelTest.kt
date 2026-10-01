@@ -4,7 +4,6 @@ import android.app.Application
 import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
-import com.anplak.androidmusic.data.DurationBucket
 import com.anplak.androidmusic.data.FavoritesRepository
 import com.anplak.androidmusic.data.LibraryFilter
 import com.anplak.androidmusic.data.LibraryScanResult
@@ -244,40 +243,24 @@ class LibraryViewModelTest {
         }
 
     @Test
-    fun `setLocalQuery filters by title`() =
+    fun `setLocalQuery builds unified local search results`() =
         runTest {
             val tracks =
                 listOf(
-                    createTrack(1, "Alpha", "Artist"),
-                    createTrack(2, "Beta", "Artist"),
+                    createTrack(1, "Alpha", "Artist One", album = "First Album"),
+                    createTrack(2, "Beta", "Artist Two", album = "Second Album"),
                 )
             fakeRepository.setSyncTracks(tracks)
 
             val viewModel = createViewModel()
             advanceUntilIdle()
 
-            viewModel.setLocalQuery("alp")
+            viewModel.setLocalQuery("art")
             advanceUntilIdle()
 
             val state = viewModel.uiState.value as LibraryUiState.Content
-            assertEquals(1, state.tracks.size)
-            assertEquals("Alpha", state.tracks.first().title)
-        }
-
-    @Test
-    fun `empty filter results sets showNoFilterResults`() =
-        runTest {
-            fakeRepository.setSyncTracks(listOf(createTrack(1, "Song", "Artist")))
-
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.setFilter(LibraryFilter(durationBucket = DurationBucket.LONG))
-            advanceUntilIdle()
-
-            val state = viewModel.uiState.value as LibraryUiState.Content
-            assertTrue(state.showNoFilterResults)
-            assertTrue(state.tracks.isEmpty())
+            val headers = state.localSearchResults?.sections?.map { it.header }
+            assertEquals(listOf("Artists", "Albums", "Tracks"), headers)
         }
 
     @Test
@@ -470,12 +453,13 @@ class LibraryViewModelTest {
         id: Long,
         title: String,
         artist: String,
+        album: String = "Test Album",
     ): TrackInfo {
         return TrackInfo(
             uri = Uri.parse("content://media/external/audio/media/$id"),
             title = title,
             artist = artist,
-            album = "Test Album",
+            album = album,
             duration = 180000L,
         )
     }

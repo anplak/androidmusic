@@ -135,6 +135,7 @@ class LibraryScreenE2ETest {
      */
     @Test
     fun emptyLibrary_showsEmptyStateMessage() {
+        composeTestRule.waitForAppReady()
         composeTestRule.prepareLibraryTab()
 
         val hasEmptyState = composeTestRule.safeHasNodes(hasTestTag("empty_state"))

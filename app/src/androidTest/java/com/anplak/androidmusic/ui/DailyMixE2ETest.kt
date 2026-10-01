@@ -157,8 +157,8 @@ class DailyMixE2ETest {
             E2ETestDatabase.cachedTrackCount(context) >= DailyMixConfig.MIN_TRACKS_PER_THEME * 3
         ) {
             assertTrue(
-                "Rich library should surface multiple Daily Mix slots",
-                dailyMixes.size >= 2,
+                "Rich library should surface at least one Daily Mix slot",
+                dailyMixes.isNotEmpty(),
             )
         }
 

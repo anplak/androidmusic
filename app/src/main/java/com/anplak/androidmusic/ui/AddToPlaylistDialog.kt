@@ -49,7 +49,7 @@ fun AddToPlaylistDialog(
     viewModel: PlaylistsViewModel = viewModel(),
 ) {
     val playlists by viewModel.playlists.collectAsState()
-    var showCreateNew by remember { mutableStateOf(false) }
+    var showCreateNew by remember { mutableStateOf(playlists.isEmpty()) }
     var newPlaylistName by remember { mutableStateOf("") }
 
     AlertDialog(
@@ -83,7 +83,7 @@ fun AddToPlaylistDialog(
                     }
                 }
 
-                if (showCreateNew) {
+                if (showCreateNew || playlists.isEmpty()) {
                     OutlinedTextField(
                         value = newPlaylistName,
                         onValueChange = { newPlaylistName = it },
@@ -97,9 +97,26 @@ fun AddToPlaylistDialog(
                     )
                 }
 
+                if (!showCreateNew && playlists.isNotEmpty()) {
+                    Text(
+                        text = stringResource(R.string.create_new_playlist),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier =
+                            Modifier
+                                .padding(vertical = 8.dp)
+                                .clickable { showCreateNew = true }
+                                .testTag("create_new_playlist_option"),
+                    )
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                }
+
                 if (playlists.isNotEmpty()) {
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                }
 
+                if (playlists.isNotEmpty()) {
                     LazyColumn {
                         items(
                             items = playlists,
@@ -118,7 +135,7 @@ fun AddToPlaylistDialog(
             }
         },
         confirmButton = {
-            if (showCreateNew) {
+            if (showCreateNew || playlists.isEmpty()) {
                 TextButton(
                     onClick = {
                         if (newPlaylistName.isNotBlank()) {
@@ -126,7 +143,7 @@ fun AddToPlaylistDialog(
                             onDismiss()
                         }
                     },
-                    enabled = newPlaylistName.isNotBlank(),
+                    enabled = newPlaylistName.isNotBlank() && trackIds.isNotEmpty(),
                     modifier = Modifier.testTag("create_and_add_button"),
                 ) {
                     Text(stringResource(R.string.create))

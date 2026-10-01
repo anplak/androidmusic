@@ -172,6 +172,7 @@ fun LibraryScreen(
                                     onFilterChange = viewModel::setFilter,
                                     onLocalQueryChange = viewModel::setLocalQuery,
                                     onToggleFavorite = viewModel::toggleFavorite,
+                                    onOpenSearch = onOpenSearch,
                                 )
                             }
                             LibraryBrowseTab.Artists -> {
@@ -219,12 +220,14 @@ private fun LibraryTracksContent(
     onFilterChange: (LibraryFilter) -> Unit,
     onLocalQueryChange: (String) -> Unit,
     onToggleFavorite: (Long) -> Unit,
+    onOpenSearch: () -> Unit,
 ) {
     LibraryFilterBar(
         filter = state.filter,
         localQuery = state.localQuery,
         onFilterChange = onFilterChange,
         onLocalQueryChange = onLocalQueryChange,
+        onOpenSearch = onOpenSearch,
     )
     if (state.showNoFilterResults) {
         NoFilterResultsState()
@@ -256,6 +259,7 @@ private fun LibraryFilterBar(
     localQuery: String,
     onFilterChange: (LibraryFilter) -> Unit,
     onLocalQueryChange: (String) -> Unit,
+    onOpenSearch: () -> Unit,
 ) {
     val chips = libraryFilterChips(filter, onFilterChange)
 
