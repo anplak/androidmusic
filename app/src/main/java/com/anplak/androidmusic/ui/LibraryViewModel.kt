@@ -10,6 +10,7 @@ import com.anplak.androidmusic.data.AlbumSummary
 import com.anplak.androidmusic.data.ArtistSummary
 import com.anplak.androidmusic.data.FavoritesRepository
 import com.anplak.androidmusic.data.FavoritesRepositoryImpl
+import com.anplak.androidmusic.data.GroupedSearchResults
 import com.anplak.androidmusic.data.LibraryBrowseAggregator
 import com.anplak.androidmusic.data.LibraryFilter
 import com.anplak.androidmusic.data.LibraryScanResult
@@ -18,6 +19,7 @@ import com.anplak.androidmusic.data.LibrarySyncCoordinatorFactory
 import com.anplak.androidmusic.data.LibrarySyncState
 import com.anplak.androidmusic.data.MusicLibraryRepository
 import com.anplak.androidmusic.data.MusicLibraryRepositoryFactory
+import com.anplak.androidmusic.data.SearchEngine
 import com.anplak.androidmusic.data.db.AppDatabase
 import com.anplak.androidmusic.data.db.TrackDao
 import com.anplak.androidmusic.player.TrackInfo
@@ -49,6 +51,7 @@ sealed interface LibraryUiState {
         val browseTab: LibraryBrowseTab = LibraryBrowseTab.Tracks,
         val artists: List<ArtistSummary> = emptyList(),
         val albums: List<AlbumSummary> = emptyList(),
+        val localSearchResults: GroupedSearchResults? = null,
     ) : LibraryUiState
 
     data object Empty : LibraryUiState
@@ -78,6 +81,7 @@ class LibraryViewModel
             LibraryUiAssembler(
                 uiState = _uiState,
                 syncState = { syncCoordinator.syncState.value },
+                searchEngine = SearchEngine(),
             ).also { assembler ->
                 assembler.browseTab =
                     savedStateHandle.get<String>(KEY_BROWSE_TAB)
@@ -174,6 +178,18 @@ class LibraryViewModel
 
         fun tracksForArtist(normalizedKey: String): List<TrackInfo> =
             LibraryBrowseAggregator.tracksForArtist(assembler.currentTracks, normalizedKey)
+
+        fun artistSummaryForKey(normalizedKey: String): ArtistSummary? =
+            assembler.cachedArtists.orEmpty().firstOrNull { it.normalizedKey == normalizedKey }
+
+        fun albumSummaryFor(
+            displayTitle: String,
+            displayArtist: String,
+        ): AlbumSummary? =
+            assembler.cachedAlbums.orEmpty().firstOrNull {
+                it.displayTitle.equals(displayTitle, ignoreCase = true) &&
+                    it.displayArtist.equals(displayArtist, ignoreCase = true)
+            }
 
         fun tracksForAlbum(summary: AlbumSummary): List<TrackInfo> =
             LibraryBrowseAggregator.tracksForAlbum(

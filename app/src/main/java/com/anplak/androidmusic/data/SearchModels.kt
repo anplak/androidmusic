@@ -18,6 +18,14 @@ data class SearchResultItem(
     val trackId: Long? = null,
     val playlistId: Long? = null,
     val historyId: Long? = null,
+    val artistKey: String? = null,
+    val albumTitle: String? = null,
+    val albumArtist: String? = null,
+)
+
+data class SearchCollectionMatch(
+    val artists: List<SearchResultItem>,
+    val albums: List<SearchResultItem>,
 )
 
 data class SearchSection(
@@ -34,4 +42,5 @@ data class SearchRawResults(
     val tracks: List<TrackInfo>,
     val playlists: List<Playlist>,
     val history: List<PlayHistoryEntry>,
+    val collectionMatches: SearchCollectionMatch = SearchCollectionMatch(emptyList(), emptyList()),
 )

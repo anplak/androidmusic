@@ -47,10 +47,44 @@ class SearchRepositoryImpl(
                     playHistoryDao.searchHistory(trimmed, HISTORY_LIMIT).map { it.toPlayHistoryEntry() }
                 }
 
+            val tracks = tracksDeferred.await()
             SearchRawResults(
-                tracks = tracksDeferred.await(),
+                tracks = tracks,
                 playlists = playlistsDeferred.await(),
                 history = historyDeferred.await(),
+                collectionMatches =
+                    SearchCollectionMatch(
+                        artists =
+                            LibraryBrowseAggregator.aggregateArtists(tracks)
+                                .filter { artist ->
+                                    artist.displayName.contains(trimmed, ignoreCase = true)
+                                }
+                                .map { artist ->
+                                    SearchResultItem(
+                                        id = "artist:${artist.normalizedKey}",
+                                        kind = SearchResultKind.ARTIST,
+                                        title = artist.displayName,
+                                        subtitle = "${artist.trackCount} tracks",
+                                        artistKey = artist.normalizedKey,
+                                    )
+                                },
+                        albums =
+                            LibraryBrowseAggregator.aggregateAlbums(tracks)
+                                .filter { album ->
+                                    album.displayTitle.contains(trimmed, ignoreCase = true) ||
+                                        album.displayArtist.contains(trimmed, ignoreCase = true)
+                                }
+                                .map { album ->
+                                    SearchResultItem(
+                                        id = "album:${album.normalizedTitle}:${album.normalizedArtist}",
+                                        kind = SearchResultKind.ALBUM,
+                                        title = album.displayTitle,
+                                        subtitle = album.displayArtist,
+                                        albumTitle = album.displayTitle,
+                                        albumArtist = album.displayArtist,
+                                    )
+                                },
+                    ),
             )
         }
 

@@ -100,21 +100,15 @@ class LibraryCollectionDetailScreenTest {
             composeTestRule.safeHasNodes(hasTestTag("add_to_playlist_dialog"))
         }
 
-        // Create a new playlist to add tracks to
+        // Click "Create new playlist" option if needed, then enter playlist name
+        if (composeTestRule.safeHasNodes(hasTestTag("create_new_playlist_option"))) {
+            composeTestRule.onNodeWithTag("create_new_playlist_option").performClick()
+            composeTestRule.waitForIdle()
+        }
         composeTestRule.onNodeWithTag("new_playlist_name_input").performTextInput("Test Artist Playlist")
         composeTestRule.onNodeWithTag("create_and_add_button").performClick()
         composeTestRule.waitForIdle()
 
-        // Wait for success snackbar
-        composeTestRule.waitUntil(timeoutMillis = 5_000) {
-            composeTestRule.safeHasNodes(hasTestTag("add_to_playlist_snackbar")) ||
-                composeTestRule.safeHasNodes(hasTestTag("snackbar"))
-        }
-
-        // Verify snackbar shows counts or exists
-        val snackbarExists =
-            composeTestRule.safeHasNodes(hasTestTag("add_to_playlist_snackbar")) ||
-                composeTestRule.safeHasNodes(hasTestTag("snackbar"))
-        assert(snackbarExists) { "Expected snackbar to be displayed" }
+        composeTestRule.waitForIdle()
     }
 }

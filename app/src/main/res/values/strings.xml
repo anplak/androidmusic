@@ -54,6 +54,7 @@
         <item quantity="other">%d tracks</item>
     </plurals>
     <string name="play_all">Play all</string>
+    <string name="add_tracks">Add tracks</string>
     <plurals name="tracks_added">
         <item quantity="one">Added %d track</item>
         <item quantity="other">Added %d tracks</item>
@@ -140,6 +141,6 @@
     <string name="remove_artist_rule">Remove artist exclusion</string>
     <string name="exclude_artist_from_library">Exclude artist from library</string>
     <string name="scan_summary">Indexed %1$d · Skipped %2$d (long) · %3$d (folder) · %4$d (artist)</string>
+    <string name="create_new_playlist">Create new playlist</string>
     <string name="queue_position">Track %1$d of %2$d</string>
 </resources>
-

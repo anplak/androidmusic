@@ -6,6 +6,11 @@ import com.anplak.androidmusic.data.LibraryBrowseAggregator
 import com.anplak.androidmusic.data.LibraryFilter
 import com.anplak.androidmusic.data.LibraryFilterEngine
 import com.anplak.androidmusic.data.LibrarySyncState
+import com.anplak.androidmusic.data.SearchCollectionMatch
+import com.anplak.androidmusic.data.SearchEngine
+import com.anplak.androidmusic.data.SearchRawResults
+import com.anplak.androidmusic.data.SearchResultItem
+import com.anplak.androidmusic.data.SearchResultKind
 import com.anplak.androidmusic.player.TrackInfo
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -15,6 +20,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 class LibraryUiAssembler(
     private val uiState: MutableStateFlow<LibraryUiState>,
     private val syncState: () -> LibrarySyncState,
+    private val searchEngine: SearchEngine,
 ) {
     var currentTracks: List<TrackInfo> = emptyList()
     var favoriteIds: Set<Long> = emptySet()
@@ -70,13 +76,57 @@ class LibraryUiAssembler(
             return
         }
 
-        val filtered =
+        val filteredBase =
             LibraryFilterEngine.apply(
                 tracks = currentTracks,
                 filter = filter,
                 favoriteIds = favoriteIds,
                 recentlyAddedIds = recentlyAddedIds,
-            ).filter { LibraryFilterEngine.matchesLocalQuery(it, localQuery) }
+            )
+        val filtered = filteredBase.filter { LibraryFilterEngine.matchesLocalQuery(it, localQuery) }
+        val localSearchResults =
+            localQuery.takeIf { it.isNotBlank() }?.let { query ->
+                searchEngine.buildGrouped(
+                    query = query,
+                    raw =
+                        SearchRawResults(
+                            tracks = filtered,
+                            playlists = emptyList(),
+                            history = emptyList(),
+                            collectionMatches =
+                                SearchCollectionMatch(
+                                    artists =
+                                        LibraryBrowseAggregator.aggregateArtists(filteredBase)
+                                            .filter { it.displayName.contains(query, ignoreCase = true) }
+                                            .map { artist ->
+                                                SearchResultItem(
+                                                    id = "artist:${artist.normalizedKey}",
+                                                    kind = SearchResultKind.ARTIST,
+                                                    title = artist.displayName,
+                                                    subtitle = "${artist.trackCount} tracks",
+                                                    artistKey = artist.normalizedKey,
+                                                )
+                                            },
+                                    albums =
+                                        LibraryBrowseAggregator.aggregateAlbums(filteredBase)
+                                            .filter {
+                                                it.displayTitle.contains(query, ignoreCase = true) ||
+                                                    it.displayArtist.contains(query, ignoreCase = true)
+                                            }
+                                            .map { album ->
+                                                SearchResultItem(
+                                                    id = "album:${album.normalizedTitle}:${album.normalizedArtist}",
+                                                    kind = SearchResultKind.ALBUM,
+                                                    title = album.displayTitle,
+                                                    subtitle = album.displayArtist,
+                                                    albumTitle = album.displayTitle,
+                                                    albumArtist = album.displayArtist,
+                                                )
+                                            },
+                                ),
+                        ),
+                )
+            }
 
         uiState.value =
             LibraryUiState.Content(
@@ -86,10 +136,14 @@ class LibraryUiAssembler(
                 favoriteIds = favoriteIds,
                 filter = filter,
                 localQuery = localQuery,
-                showNoFilterResults = filtered.isEmpty() && browseTab == LibraryBrowseTab.Tracks,
+                showNoFilterResults =
+                    browseTab == LibraryBrowseTab.Tracks &&
+                        localSearchResults?.totalCount == 0 &&
+                        localQuery.isNotBlank(),
                 browseTab = browseTab,
                 artists = cachedArtists.orEmpty(),
                 albums = cachedAlbums.orEmpty(),
+                localSearchResults = localSearchResults,
             )
     }
 }

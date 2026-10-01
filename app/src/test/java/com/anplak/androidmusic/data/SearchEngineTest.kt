@@ -37,6 +37,29 @@ class SearchEngineTest {
                     ),
                 playlists = emptyList(),
                 history = emptyList(),
+                collectionMatches =
+                    SearchCollectionMatch(
+                        artists =
+                            listOf(
+                                SearchResultItem(
+                                    id = "artist:michael jackson",
+                                    kind = SearchResultKind.ARTIST,
+                                    title = "Michael Jackson",
+                                    artistKey = "michael jackson",
+                                ),
+                            ),
+                        albums =
+                            listOf(
+                                SearchResultItem(
+                                    id = "album:album:michael jackson",
+                                    kind = SearchResultKind.ALBUM,
+                                    title = "Album",
+                                    subtitle = "Michael Jackson",
+                                    albumTitle = "Album",
+                                    albumArtist = "Michael Jackson",
+                                ),
+                            ),
+                    ),
             )
         val result = engine.buildGrouped("beat", raw)
         val headers = result.sections.map { it.header }
@@ -68,6 +91,53 @@ class SearchEngineTest {
         assertTrue(result.sections.any { it.header == SearchEngine.SECTION_HISTORY })
     }
 
+    @Test
+    fun `buildGrouped returns sections in correct order artists first albums then tracks`() {
+        val raw =
+            SearchRawResults(
+                tracks =
+                    listOf(
+                        track(1, "Beat It", "Michael Jackson"),
+                        track(2, "Billie Jean", "Michael Jackson"),
+                        track(3, "Thriller", "Michael Jackson"),
+                    ),
+                playlists = emptyList(),
+                history = emptyList(),
+                collectionMatches =
+                    SearchCollectionMatch(
+                        artists =
+                            listOf(
+                                SearchResultItem(
+                                    id = "artist:michael jackson",
+                                    kind = SearchResultKind.ARTIST,
+                                    title = "Michael Jackson",
+                                    artistKey = "michael jackson",
+                                ),
+                            ),
+                        albums =
+                            listOf(
+                                SearchResultItem(
+                                    id = "album:album:michael jackson",
+                                    kind = SearchResultKind.ALBUM,
+                                    title = "Album",
+                                    subtitle = "Michael Jackson",
+                                    albumTitle = "Album",
+                                    albumArtist = "Michael Jackson",
+                                ),
+                            ),
+                    ),
+            )
+
+        val result = engine.buildGrouped("beat", raw)
+
+        // Verify sections are in correct order: ARTISTS, ALBUMS, TRACKS
+        val headers = result.sections.map { it.header }
+        assertEquals(3, headers.size)
+        assertEquals(SearchEngine.SECTION_ARTISTS, headers[0])
+        assertEquals(SearchEngine.SECTION_ALBUMS, headers[1])
+        assertEquals(SearchEngine.SECTION_TRACKS, headers[2])
+    }
+
     private fun sampleRaw() =
         SearchRawResults(
             tracks = listOf(track(1, "A", "B")),
@@ -79,12 +149,13 @@ class SearchEngineTest {
         id: Long,
         title: String,
         artist: String,
+        album: String = "Album",
     ): TrackInfo {
         return TrackInfo(
             uri = Uri.parse("content://media/external/audio/media/$id"),
             title = title,
             artist = artist,
-            album = "Album",
+            album = album,
             duration = 240_000L,
         )
     }

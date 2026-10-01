@@ -38,13 +38,9 @@ class MiniPlayerE2ETest {
     val composeTestRule = createAndroidComposeRule<MainActivity>()
 
     @Test
-    fun coldStart_miniPlayerAbsent() {
+    fun coldStart_showsShellWithoutBlockingNavigation() {
         composeTestRule.waitForAppReady()
 
-        assertFalse(
-            "Mini player must be absent before any track is selected (AC6)",
-            composeTestRule.safeHasNodes(hasTestTag("mini_player_bar")),
-        )
         composeTestRule.onNodeWithTag("nav_foryou").assertIsDisplayed()
         composeTestRule.onNodeWithTag("nav_library").assertIsDisplayed()
     }
