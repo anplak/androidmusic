@@ -26,6 +26,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -281,15 +282,43 @@ class LibraryViewModelTest {
         }
 
     @Test
-    fun `scan summary exposed when sync completes`() =
+    fun `successful sync clears refresh and failure flags`() =
         runTest {
-            fakeRepository.setSyncTracks(listOf(createTrack(1, "Song One", "Artist A")))
+            val tracks = listOf(createTrack(1, "Song One", "Artist A"))
+            fakeRepository.setCachedTracks(tracks)
+            fakeRepository.setSyncTracks(tracks)
 
             val viewModel = createViewModel()
             advanceUntilIdle()
 
-            val summary = viewModel.scanSummary.value
-            assertEquals(1, summary?.indexedCount)
+            val state = viewModel.uiState.value as LibraryUiState.Content
+            assertFalse(state.isRefreshing)
+            assertFalse(state.syncFailed)
+            assertEquals(1, state.tracks.size)
+        }
+
+    @Test
+    fun `retry clears failure flag and restarts sync`() =
+        runTest {
+            val tracks = listOf(createTrack(1, "Song One", "Artist A"))
+            fakeRepository.setCachedTracks(tracks)
+            fakeRepository.setSyncTracks(tracks)
+            fakeRepository.shouldFailSync = true
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertTrue((viewModel.uiState.value as LibraryUiState.Content).syncFailed)
+
+            fakeRepository.shouldFailSync = false
+            fakeRepository.resetSyncCallCount()
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value as LibraryUiState.Content
+            assertFalse(state.syncFailed)
+            assertFalse(state.isRefreshing)
+            assertEquals(1, fakeRepository.syncLibraryCallCount)
         }
 
     @Test

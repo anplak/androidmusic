@@ -4,6 +4,7 @@ import android.Manifest
 import android.os.Build
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -231,6 +232,43 @@ class LibraryScreenE2ETest {
         val hasEmptyState = composeTestRule.safeHasNodes(hasTestTag("empty_state"))
         assert(hasTrackList || hasEmptyState) {
             "Library should remain in a valid state after rapid tab switches"
+        }
+    }
+
+    /**
+     * Scheduled sync completes without a success snackbar, and the refresh indicator
+     * does not shift the track list.
+     */
+    @Test
+    fun backgroundSync_doesNotShowSuccessSnackbar() {
+        composeTestRule.prepareLibraryTab()
+
+        val hasTrackList = composeTestRule.safeHasNodes(hasTestTag("track_list"))
+        val trackListTop =
+            if (hasTrackList) {
+                composeTestRule.onNodeWithTag("track_list").fetchSemanticsNode().boundsInRoot.top
+            } else {
+                null
+            }
+
+        composeTestRule.navigateToForYou()
+        composeTestRule.navigateToLibrary()
+
+        if (trackListTop != null && composeTestRule.safeHasNodes(hasTestTag("library_refresh_indicator"))) {
+            val topAfterRefresh =
+                composeTestRule.onNodeWithTag("track_list").fetchSemanticsNode().boundsInRoot.top
+            assert(trackListTop == topAfterRefresh) {
+                "Progress indicator should not shift the track list"
+            }
+        }
+
+        composeTestRule.waitForLibraryReindexSettled()
+
+        assert(!composeTestRule.safeHasNodes(hasTestTag("scan_summary"))) {
+            "Successful sync must not show a scan summary snackbar"
+        }
+        assert(!composeTestRule.safeHasNodes(hasText("· Skipped", substring = true))) {
+            "Successful sync must not show indexed and skipped counts"
         }
     }
 }

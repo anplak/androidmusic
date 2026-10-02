@@ -54,6 +54,10 @@ class LibraryIndexE2ETest {
         composeTestRule.openLibraryIndexFromLibrary()
 
         composeTestRule.onNodeWithTag("library_index").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("library_index_helper").assertIsDisplayed()
+        composeTestRule
+            .onNodeWithText("Files matching these rules are left out of your Library.")
+            .assertIsDisplayed()
         composeTestRule.onNodeWithText("Max track duration").assertIsDisplayed()
         composeTestRule.onNodeWithText("Tracks longer than 10 minutes are not indexed", substring = true)
             .assertIsDisplayed()

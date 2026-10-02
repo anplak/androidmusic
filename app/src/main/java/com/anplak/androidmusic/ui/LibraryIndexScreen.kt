@@ -105,6 +105,15 @@ fun LibraryIndexScreen(
             verticalArrangement = Arrangement.spacedBy(Dimens.trackItemSpacing),
         ) {
             item {
+                Text(
+                    text = stringResource(R.string.library_index_helper),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.testTag("library_index_helper"),
+                )
+            }
+
+            item {
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.max_track_duration)) },
                     supportingContent = {

@@ -24,8 +24,9 @@
     <string name="unknown_artist">Unknown Artist</string>
 
     <string name="library">Library</string>
-    <string name="scanning_library">Scanning library…</string>
-    <string name="library_sync_retry">Couldn\'t update library. Tap to retry.</string>
+    <string name="finding_music">Finding music on this device…</string>
+    <string name="library_sync_failed">Couldn\'t update library</string>
+    <string name="retry">Retry</string>
     <string name="no_music_found">No music found</string>
     <string name="no_music_found_description">Add some music files to your device to see them here.</string>
     
@@ -140,7 +141,7 @@
     <string name="exclude_unknown_artist">Exclude Unknown Artist</string>
     <string name="remove_artist_rule">Remove artist exclusion</string>
     <string name="exclude_artist_from_library">Exclude artist from library</string>
-    <string name="scan_summary">Indexed %1$d · Skipped %2$d (long) · %3$d (folder) · %4$d (artist)</string>
+    <string name="library_index_helper">Files matching these rules are left out of your Library.</string>
     <string name="create_new_playlist">Create new playlist</string>
     <string name="queue_position">Track %1$d of %2$d</string>
 </resources>
