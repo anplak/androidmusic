@@ -39,6 +39,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anplak.androidmusic.R
 import com.anplak.androidmusic.data.AlbumSummary
@@ -47,11 +49,15 @@ import com.anplak.androidmusic.data.RecommendationRow
 import com.anplak.androidmusic.data.SmartPlaylistType
 import com.anplak.androidmusic.player.TrackInfo
 
-enum class NavigationTab(val icon: ImageVector, val labelResId: Int) {
+enum class NavigationTab(
+    val icon: ImageVector,
+    val labelResId: Int,
+    val contentDescriptionResId: Int = labelResId,
+) {
     ForYou(Icons.Default.Explore, R.string.for_you),
     Library(Icons.Default.LibraryMusic, R.string.library),
-    Favorites(Icons.Default.Favorite, R.string.favorites),
-    Playlists(Icons.AutoMirrored.Filled.QueueMusic, R.string.playlists),
+    Favorites(Icons.Default.Favorite, R.string.liked, R.string.favorites),
+    Playlists(Icons.AutoMirrored.Filled.QueueMusic, R.string.lists, R.string.playlists),
     History(Icons.Default.History, R.string.history),
 }
 
@@ -881,9 +887,17 @@ private fun MainTabsContent(
                     NavigationTab.entries.forEach { tab ->
                         NavigationBarItem(
                             icon = {
-                                Icon(tab.icon, contentDescription = stringResource(tab.labelResId))
+                                Icon(
+                                    tab.icon,
+                                    contentDescription = stringResource(tab.contentDescriptionResId),
+                                )
                             },
-                            label = { Text(stringResource(tab.labelResId)) },
+                            label = {
+                                Text(
+                                    stringResource(tab.labelResId),
+                                    modifier = Modifier.semantics { contentDescription = "" },
+                                )
+                            },
                             selected = currentTab == tab,
                             onClick = {
                                 callbacks.onTabSelected(tab)
