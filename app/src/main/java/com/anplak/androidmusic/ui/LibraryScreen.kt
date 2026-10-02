@@ -7,9 +7,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -28,8 +30,6 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -38,13 +38,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -70,9 +71,6 @@ fun LibraryScreen(
     viewModel: LibraryViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val scanSummary by viewModel.scanSummary.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
-    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.onLibraryVisible()
@@ -82,21 +80,6 @@ fun LibraryScreen(
         initialLocalQuery?.let { hint ->
             viewModel.applyLibraryHint(hint)
             onConsumeLibraryHint()
-        }
-    }
-
-    LaunchedEffect(scanSummary) {
-        scanSummary?.let { result ->
-            val message =
-                context.getString(
-                    R.string.scan_summary,
-                    result.indexedCount,
-                    result.skippedDurationCount,
-                    result.skippedFolderCount,
-                    result.skippedArtistCount,
-                )
-            snackbarHostState.showSnackbar(message)
-            viewModel.clearScanSummary()
         }
     }
 
@@ -124,12 +107,6 @@ fun LibraryScreen(
                 }
             }
         },
-        snackbarHost = {
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier.testTag("scan_summary"),
-            )
-        },
         modifier = modifier,
     ) { paddingValues ->
         Box(
@@ -147,21 +124,9 @@ fun LibraryScreen(
                             selected = state.browseTab,
                             onTabSelected = viewModel::setBrowseTab,
                         )
-                        if (state.isRefreshing) {
-                            LinearProgressIndicator(
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .testTag("library_refresh_indicator"),
-                            )
-                        }
+                        LibraryRefreshSlot(isRefreshing = state.isRefreshing)
                         if (state.syncFailed) {
-                            TextButton(
-                                onClick = { viewModel.refresh() },
-                                modifier = Modifier.testTag("library_sync_retry"),
-                            ) {
-                                Text(stringResource(R.string.library_sync_retry))
-                            }
+                            LibrarySyncFailedRow(onRetry = viewModel::refresh)
                         }
                         when (state.browseTab) {
                             LibraryBrowseTab.Tracks -> {
@@ -461,6 +426,52 @@ private fun toggleDuration(
 }
 
 @Composable
+private fun LibraryRefreshSlot(isRefreshing: Boolean) {
+    Box(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(4.dp)
+                .testTag("library_refresh_slot"),
+    ) {
+        if (isRefreshing) {
+            LinearProgressIndicator(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .testTag("library_refresh_indicator"),
+            )
+        }
+    }
+}
+
+@Composable
+private fun LibrarySyncFailedRow(onRetry: () -> Unit) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp)
+                .semantics { liveRegion = LiveRegionMode.Polite }
+                .testTag("library_sync_failed"),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(
+            text = stringResource(R.string.library_sync_failed),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.error,
+        )
+        TextButton(
+            onClick = onRetry,
+            modifier = Modifier.testTag("library_sync_retry"),
+        ) {
+            Text(stringResource(R.string.retry))
+        }
+    }
+}
+
+@Composable
 private fun LoadingState() {
     Box(
         modifier =
@@ -475,7 +486,7 @@ private fun LoadingState() {
         ) {
             CircularProgressIndicator(modifier = Modifier.testTag("loading_indicator"))
             Text(
-                text = stringResource(R.string.scanning_library),
+                text = stringResource(R.string.finding_music),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

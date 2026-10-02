@@ -13,7 +13,6 @@ import com.anplak.androidmusic.data.FavoritesRepositoryImpl
 import com.anplak.androidmusic.data.GroupedSearchResults
 import com.anplak.androidmusic.data.LibraryBrowseAggregator
 import com.anplak.androidmusic.data.LibraryFilter
-import com.anplak.androidmusic.data.LibraryScanResult
 import com.anplak.androidmusic.data.LibrarySyncCoordinator
 import com.anplak.androidmusic.data.LibrarySyncCoordinatorFactory
 import com.anplak.androidmusic.data.LibrarySyncState
@@ -74,9 +73,6 @@ class LibraryViewModel
         private val _uiState = MutableStateFlow<LibraryUiState>(LibraryUiState.Loading)
         val uiState: StateFlow<LibraryUiState> = _uiState.asStateFlow()
 
-        private val _scanSummary = MutableStateFlow<LibraryScanResult?>(null)
-        val scanSummary: StateFlow<LibraryScanResult?> = _scanSummary.asStateFlow()
-
         private val assembler =
             LibraryUiAssembler(
                 uiState = _uiState,
@@ -122,10 +118,8 @@ class LibraryViewModel
                         LibrarySyncState.Idle -> Unit
                         LibrarySyncState.Running ->
                             assembler.updateSyncFlags(isRefreshing = true, syncFailed = false)
-                        is LibrarySyncState.Success -> {
+                        is LibrarySyncState.Success ->
                             assembler.updateSyncFlags(isRefreshing = false, syncFailed = false)
-                            _scanSummary.value = state.result
-                        }
                         is LibrarySyncState.Failed ->
                             assembler.updateSyncFlags(isRefreshing = false, syncFailed = true)
                     }
@@ -222,10 +216,6 @@ class LibraryViewModel
                 }
                 syncCoordinator.syncNow()
             }
-        }
-
-        fun clearScanSummary() {
-            _scanSummary.value = null
         }
 
         companion object {

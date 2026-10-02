@@ -190,12 +190,12 @@ fun MainActivityComposeRule.returnFromLibraryIndex() {
     waitForLibraryContent()
 }
 
-/** Scan summary snackbar or settled library list after re-index. */
+/** Settled library list, empty library, or inline sync failure after re-index. */
 fun MainActivityComposeRule.waitForLibraryReindexSettled() {
     waitUntil(timeoutMillis = 30_000) {
-        safeHasNodes(hasTestTag("scan_summary")) ||
-            safeHasNodes(hasTestTag("track_list")) ||
-            safeHasNodes(hasTestTag("empty_state"))
+        safeHasNodes(hasTestTag("track_list")) ||
+            safeHasNodes(hasTestTag("empty_state")) ||
+            safeHasNodes(hasTestTag("library_sync_failed"))
     }
 }
 

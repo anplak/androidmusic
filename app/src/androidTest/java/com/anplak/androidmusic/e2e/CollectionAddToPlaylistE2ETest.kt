@@ -5,7 +5,6 @@ import android.os.Build
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.hasTestTag
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -342,5 +341,4 @@ class CollectionAddToPlaylistE2ETest {
     private fun getTrackCountFromDetailScreen(): Int {
         return collectTrackTitlesFromDetailScreen().size
     }
-
 }
