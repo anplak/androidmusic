@@ -184,6 +184,13 @@ class AudioPlayer(
         _queueState.value = QueueState()
     }
 
+    fun currentMediaId(): String? = controller?.currentMediaItem?.mediaId
+
+    fun queueMediaIds(): List<String> =
+        controller?.let { player ->
+            List(player.mediaItemCount) { index -> player.getMediaItemAt(index).mediaId }
+        }.orEmpty()
+
     fun release() {
         stopPositionUpdates()
         controller?.removeListener(playerListener)

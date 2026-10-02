@@ -101,6 +101,10 @@ fun MainActivityComposeRule.switchLibraryBrowseTab(tab: LibraryBrowseTab) {
 }
 
 fun MainActivityComposeRule.navigateToLibraryArtistsTab() {
+    // Ensure we're on the Library screen first
+    if (!safeHasNodes(hasTestTag("library_tab_tracks"))) {
+        navigateToLibrary()
+    }
     switchLibraryBrowseTab(LibraryBrowseTab.Artists)
     waitUntil(timeoutMillis = 15_000) {
         safeHasNodes(hasTestTag("artist_list"))
@@ -108,6 +112,10 @@ fun MainActivityComposeRule.navigateToLibraryArtistsTab() {
 }
 
 fun MainActivityComposeRule.navigateToLibraryAlbumsTab() {
+    // Ensure we're on the Library screen first
+    if (!safeHasNodes(hasTestTag("library_tab_tracks"))) {
+        navigateToLibrary()
+    }
     switchLibraryBrowseTab(LibraryBrowseTab.Albums)
     waitUntil(timeoutMillis = 15_000) {
         safeHasNodes(hasTestTag("album_list"))

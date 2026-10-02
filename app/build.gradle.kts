@@ -1,3 +1,6 @@
+import java.io.File
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -6,31 +9,31 @@ plugins {
     alias(libs.plugins.detekt)
 }
 
-import java.io.File
-import java.util.Properties
-
 fun Properties.loadFromLocalProperties(propName: String): String? {
     return this[propName]?.toString()?.trim()
 }
 
 fun getKeystorePassword(): String {
-    val localProps = Properties().apply {
-        File("local.properties").inputStream().use { load(it) }
-    }
+    val localProps =
+        Properties().apply {
+            File("local.properties").inputStream().use { load(it) }
+        }
     return localProps.loadFromLocalProperties("keystore.password") ?: "androidmusic"
 }
 
 fun getKeystoreAlias(): String {
-    val localProps = Properties().apply {
-        File("local.properties").inputStream().use { load(it) }
-    }
+    val localProps =
+        Properties().apply {
+            File("local.properties").inputStream().use { load(it) }
+        }
     return localProps.loadFromLocalProperties("keystore.alias") ?: "androidmusic"
 }
 
 fun getKeystoreKeyPassword(): String {
-    val localProps = Properties().apply {
-        File("local.properties").inputStream().use { load(it) }
-    }
+    val localProps =
+        Properties().apply {
+            File("local.properties").inputStream().use { load(it) }
+        }
     return localProps.loadFromLocalProperties("keystore.key.password") ?: "androidmusic"
 }
 

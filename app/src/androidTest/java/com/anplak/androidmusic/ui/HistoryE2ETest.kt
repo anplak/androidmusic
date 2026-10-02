@@ -159,7 +159,7 @@ class HistoryE2ETest {
         composeTestRule.returnToMainShell()
         composeTestRule.navigateToHistory()
 
-        if (!composeTestRule.safeHasNodes(hasTestTag("history_list"))) {
+        if (!composeTestRule.waitForHistoryList()) {
             return
         }
 

@@ -12,6 +12,7 @@ import com.anplak.androidmusic.data.PlayHistoryRepositoryImpl
 import com.anplak.androidmusic.data.TrackStatsRepository
 import com.anplak.androidmusic.data.TrackStatsRepositoryImpl
 import com.anplak.androidmusic.data.db.AppDatabase
+import com.anplak.androidmusic.data.db.TrackEntity
 import com.anplak.androidmusic.player.AudioPlayer
 import com.anplak.androidmusic.player.PlaybackController
 import com.anplak.androidmusic.player.PlaybackSessionRecorder
@@ -19,6 +20,7 @@ import com.anplak.androidmusic.player.PlaybackStatsTracker
 import com.anplak.androidmusic.player.PlayerError
 import com.anplak.androidmusic.player.SmartShuffleGenerator
 import com.anplak.androidmusic.player.TrackInfo
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -88,27 +90,29 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                 audioPlayer.queueState,
                 favoriteStatusFlow,
             ) { playbackState, queueState, isFavorite ->
+                Triple(playbackState, queueState, isFavorite)
+            }.collect { (playbackState, queueState, isFavorite) ->
                 val queue = playbackController.queue
                 val currentTrack =
                     if (queueState.queueSize > 0 && queue.tracks.isNotEmpty()) {
                         queue.tracks.getOrNull(queueState.currentIndex)
                     } else {
-                        null
+                        restoreTrackFromController(queueState.currentIndex)
                     }
 
-                PlaybackUiState(
-                    selectedTrack = currentTrack,
-                    isPlaying = playbackState.isPlaying,
-                    currentPosition = playbackState.currentPosition,
-                    duration = playbackState.duration,
-                    error = playbackState.error,
-                    queuePosition = if (queueState.queueSize > 0) queueState.currentIndex + 1 else 0,
-                    queueSize = queueState.queueSize,
-                    hasNext = queueState.hasNext,
-                    hasPrevious = queueState.hasPrevious,
-                    isFavorite = isFavorite,
-                )
-            }.collect { state ->
+                val state =
+                    PlaybackUiState(
+                        selectedTrack = currentTrack,
+                        isPlaying = playbackState.isPlaying,
+                        currentPosition = playbackState.currentPosition,
+                        duration = playbackState.duration,
+                        error = playbackState.error,
+                        queuePosition = if (queueState.queueSize > 0) queueState.currentIndex + 1 else 0,
+                        queueSize = queueState.queueSize,
+                        hasNext = queueState.hasNext,
+                        hasPrevious = queueState.hasPrevious,
+                        isFavorite = isFavorite,
+                    )
                 sessionRecorder.onUiStateTick(
                     trackId = state.selectedTrack?.id,
                     isPlaying = state.isPlaying,
@@ -176,6 +180,28 @@ class PlaybackViewModel(application: Application) : AndroidViewModel(application
                 onTrackSelected(shuffledTracks, 0)
             }
         }
+    }
+
+    private suspend fun restoreTrackFromController(index: Int): TrackInfo? {
+        val mediaIds = audioPlayer.queueMediaIds()
+        if (mediaIds.isEmpty()) return null
+        val mediaId = mediaIds.getOrNull(index) ?: audioPlayer.currentMediaId() ?: return null
+        val trackId = mediaId.substringAfterLast('/').toLongOrNull() ?: return null
+        return runCatching {
+            kotlinx.coroutines.withContext(Dispatchers.IO) {
+                database.trackDao().getById(trackId)
+            }
+        }.getOrNull()?.toTrackInfo()
+    }
+
+    private fun TrackEntity.toTrackInfo(): TrackInfo {
+        return TrackInfo(
+            uri = TrackInfo.uriFromId(id),
+            title = title,
+            artist = artist,
+            album = album,
+            duration = duration,
+        )
     }
 
     override fun onCleared() {

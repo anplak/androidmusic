@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -71,6 +72,7 @@ fun PlaylistDetailScreen(
     onBackClick: () -> Unit,
     onPlayAll: (List<TrackInfo>, Int) -> Unit,
     onSmartShufflePlay: (List<TrackInfo>) -> Unit,
+    onOpenSearch: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: PlaylistsViewModel = viewModel(),
 ) {
@@ -151,6 +153,7 @@ fun PlaylistDetailScreen(
                             }
                         },
                         onToggleMenu = { showMenu = !showMenu },
+                        onAddTracks = onOpenSearch,
                     ),
             )
 
@@ -399,6 +402,7 @@ data class PlaylistDetailActions(
     val onMergePlaylist: () -> Unit,
     val onGenerateMix: () -> Unit,
     val onToggleMenu: () -> Unit,
+    val onAddTracks: () -> Unit,
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -521,15 +525,26 @@ private fun PlaylistDetailContent(
             )
         },
         floatingActionButton = {
-            if (tracks.isNotEmpty()) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 FloatingActionButton(
-                    onClick = actions.onPlayAll,
-                    modifier = Modifier.testTag("play_all_fab"),
+                    onClick = actions.onAddTracks,
+                    modifier = Modifier.testTag("add_tracks_fab"),
                 ) {
                     Icon(
-                        imageVector = Icons.Default.PlayArrow,
-                        contentDescription = stringResource(R.string.play_all),
+                        imageVector = Icons.Default.Add,
+                        contentDescription = stringResource(R.string.add_tracks),
                     )
+                }
+                if (tracks.isNotEmpty()) {
+                    FloatingActionButton(
+                        onClick = actions.onPlayAll,
+                        modifier = Modifier.testTag("play_all_fab"),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PlayArrow,
+                            contentDescription = stringResource(R.string.play_all),
+                        )
+                    }
                 }
             }
         },

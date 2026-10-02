@@ -52,7 +52,9 @@ fun SearchScreen(
     onBackClick: () -> Unit,
     onTrackSelected: (List<TrackInfo>, Int) -> Unit,
     onPlaylistSelected: (Long) -> Unit,
-    onNavigateToLibrary: (String) -> Unit,
+    onArtistSelected: (String, String) -> Unit,
+    onAlbumSelected: (String, String) -> Unit,
+    onAddTrackToPlaylist: ((TrackInfo) -> Unit)? = null,
     modifier: Modifier = Modifier,
     viewModel: SearchViewModel = viewModel(),
 ) {
@@ -122,13 +124,14 @@ fun SearchScreen(
                     SearchResultsContent(
                         sections = state.grouped.sections,
                         onItemClick = { item ->
-                            viewModel.onSubmit(queryText)
                             handleSearchResultClick(
                                 item = item,
                                 viewModel = viewModel,
                                 onTrackSelected = onTrackSelected,
                                 onPlaylistSelected = onPlaylistSelected,
-                                onNavigateToLibrary = onNavigateToLibrary,
+                                onArtistSelected = onArtistSelected,
+                                onAlbumSelected = onAlbumSelected,
+                                onAddTrackToPlaylist = onAddTrackToPlaylist,
                             )
                         },
                     )
@@ -144,22 +147,32 @@ private fun handleSearchResultClick(
     viewModel: SearchViewModel,
     onTrackSelected: (List<TrackInfo>, Int) -> Unit,
     onPlaylistSelected: (Long) -> Unit,
-    onNavigateToLibrary: (String) -> Unit,
+    onArtistSelected: (String, String) -> Unit,
+    onAlbumSelected: (String, String) -> Unit,
+    onAddTrackToPlaylist: ((TrackInfo) -> Unit)?,
 ) {
     when (item.kind) {
         SearchResultKind.TRACK,
         SearchResultKind.HISTORY,
         -> {
             val track = viewModel.resolveTrack(item) ?: return
-            onTrackSelected(listOf(track), 0)
+            if (onAddTrackToPlaylist != null) {
+                onAddTrackToPlaylist(track)
+            } else {
+                onTrackSelected(listOf(track), 0)
+            }
         }
         SearchResultKind.PLAYLIST -> {
             item.playlistId?.let(onPlaylistSelected)
         }
-        SearchResultKind.ARTIST,
-        SearchResultKind.ALBUM,
-        -> {
-            viewModel.libraryQueryForItem(item)?.let(onNavigateToLibrary)
+        SearchResultKind.ARTIST -> {
+            val artistKey = item.artistKey ?: return
+            onArtistSelected(artistKey, item.title)
+        }
+        SearchResultKind.ALBUM -> {
+            val albumTitle = item.albumTitle ?: return
+            val albumArtist = item.albumArtist ?: item.subtitle ?: return
+            onAlbumSelected(albumTitle, albumArtist)
         }
     }
 }
@@ -294,7 +307,8 @@ private fun SearchResultsContent(
                                     SearchResultKind.TRACK -> "search_result_track"
                                     SearchResultKind.HISTORY -> "search_result_history"
                                     SearchResultKind.PLAYLIST -> "search_result_playlist"
-                                    else -> "search_result_${item.id}"
+                                    SearchResultKind.ARTIST -> "search_result_artist"
+                                    SearchResultKind.ALBUM -> "search_result_album"
                                 },
                             ),
                 )
