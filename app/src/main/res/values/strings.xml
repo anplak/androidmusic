@@ -109,6 +109,8 @@
     <string name="library_tab_tracks">Tracks</string>
     <string name="library_tab_artists">Artists</string>
     <string name="library_tab_albums">Albums</string>
+    <string name="library_liked_songs">Liked songs</string>
+    <string name="library_artist_no_albums_or_likes">No albums or liked songs for this artist.</string>
     <string name="search_section_tracks">Tracks</string>
     <string name="search_section_artists">Artists</string>
     <string name="search_section_albums">Albums</string>

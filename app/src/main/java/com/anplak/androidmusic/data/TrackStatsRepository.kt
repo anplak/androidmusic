@@ -50,6 +50,8 @@ interface TrackStatsRepository {
      */
     fun observeStats(trackId: Long): Flow<TrackStats?>
 
+    fun observeLastPlayedAt(): Flow<Map<Long, Long>>
+
     /**
      * Gets all stats ordered by play count (descending).
      */
@@ -83,6 +85,9 @@ class TrackStatsRepositoryImpl(
     override fun observeStats(trackId: Long): Flow<TrackStats?> {
         return trackStatsDao.observeStatsForTrack(trackId).map { it?.toTrackStats() }
     }
+
+    override fun observeLastPlayedAt(): Flow<Map<Long, Long>> =
+        trackStatsDao.observeLastPlayedAt().map { rows -> rows.associate { it.trackId to it.lastPlayedAt } }
 
     override suspend fun getAllStatsOrderedByPlayCount(): List<TrackStats> {
         return trackStatsDao.getAllStatsOrderedByPlayCount().map { it.toTrackStats() }

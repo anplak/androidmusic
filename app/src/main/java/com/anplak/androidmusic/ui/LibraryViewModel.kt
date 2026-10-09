@@ -19,6 +19,8 @@ import com.anplak.androidmusic.data.LibrarySyncState
 import com.anplak.androidmusic.data.MusicLibraryRepository
 import com.anplak.androidmusic.data.MusicLibraryRepositoryFactory
 import com.anplak.androidmusic.data.SearchEngine
+import com.anplak.androidmusic.data.TrackStatsRepository
+import com.anplak.androidmusic.data.TrackStatsRepositoryImpl
 import com.anplak.androidmusic.data.db.AppDatabase
 import com.anplak.androidmusic.data.db.TrackDao
 import com.anplak.androidmusic.player.TrackInfo
@@ -31,8 +33,8 @@ import kotlinx.coroutines.launch
 enum class LibraryBrowseTab(
     @StringRes val labelResId: Int,
 ) {
-    Tracks(R.string.library_tab_tracks),
     Artists(R.string.library_tab_artists),
+    Tracks(R.string.library_tab_tracks),
     Albums(R.string.library_tab_albums),
 }
 
@@ -47,7 +49,8 @@ sealed interface LibraryUiState {
         val filter: LibraryFilter = LibraryFilter(),
         val localQuery: String = "",
         val showNoFilterResults: Boolean = false,
-        val browseTab: LibraryBrowseTab = LibraryBrowseTab.Tracks,
+        val browseTab: LibraryBrowseTab = LibraryBrowseTab.Artists,
+        val lastPlayedAtByTrackId: Map<Long, Long> = emptyMap(),
         val artists: List<ArtistSummary> = emptyList(),
         val albums: List<AlbumSummary> = emptyList(),
         val localSearchResults: GroupedSearchResults? = null,
@@ -69,6 +72,8 @@ class LibraryViewModel
             ),
         private val trackDao: TrackDao = AppDatabase.getInstance(application).trackDao(),
         private val syncCoordinator: LibrarySyncCoordinator = LibrarySyncCoordinatorFactory.get(application),
+        private val trackStatsRepository: TrackStatsRepository =
+            TrackStatsRepositoryImpl(AppDatabase.getInstance(application).trackStatsDao()),
     ) : AndroidViewModel(application) {
         private val _uiState = MutableStateFlow<LibraryUiState>(LibraryUiState.Loading)
         val uiState: StateFlow<LibraryUiState> = _uiState.asStateFlow()
@@ -82,10 +87,16 @@ class LibraryViewModel
                 assembler.browseTab =
                     savedStateHandle.get<String>(KEY_BROWSE_TAB)
                         ?.let { runCatching { LibraryBrowseTab.valueOf(it) }.getOrNull() }
-                        ?: LibraryBrowseTab.Tracks
+                        ?: LibraryBrowseTab.Artists
             }
 
         init {
+            viewModelScope.launch {
+                trackStatsRepository.observeLastPlayedAt().collect { timestamps ->
+                    assembler.lastPlayedAtByTrackId = timestamps
+                    assembler.refreshFavoriteUiState()
+                }
+            }
             viewModelScope.launch {
                 favoritesRepository.getAllFavoriteIds().collect { ids ->
                     assembler.favoriteIds = ids
@@ -152,6 +163,21 @@ class LibraryViewModel
             savedStateHandle[KEY_BROWSE_TAB] = tab.name
             assembler.applyFilters()
         }
+
+        fun showArtistsTab() = setBrowseTab(LibraryBrowseTab.Artists)
+
+        fun albumsForArtist(normalizedKey: String): List<AlbumSummary> {
+            val artistTracks = tracksForArtist(normalizedKey)
+            return LibraryBrowseAggregator.sortAlbumsByLastPlayed(
+                LibraryBrowseAggregator.aggregateAlbums(artistTracks),
+                artistTracks,
+                assembler.lastPlayedAtByTrackId,
+            ).filterNot { it.displayTitle == LibraryBrowseAggregator.UNKNOWN_ALBUM }
+                .map { it.copy(normalizedArtist = normalizedKey) }
+        }
+
+        fun likedTracksForArtist(normalizedKey: String): List<TrackInfo> =
+            tracksForArtist(normalizedKey).filter { it.id in assembler.favoriteIds }
 
         fun setFilter(newFilter: LibraryFilter) {
             assembler.filter = newFilter

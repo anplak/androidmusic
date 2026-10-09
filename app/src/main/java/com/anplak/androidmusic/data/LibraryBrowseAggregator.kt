@@ -62,6 +62,28 @@ object LibraryBrowseAggregator {
             .sortedWith(compareBy({ it.displayTitle.lowercase() }, { it.displayArtist.lowercase() }))
     }
 
+    fun sortAlbumsByLastPlayed(
+        albums: List<AlbumSummary>,
+        tracks: List<TrackInfo>,
+        lastPlayedAtByTrackId: Map<Long, Long>,
+    ): List<AlbumSummary> {
+        val byTitle = tracks.groupBy { albumTitle(it).lowercase() }
+        val recency =
+            albums.associateWith { album ->
+                byTitle[album.normalizedTitle].orEmpty()
+                    .asSequence()
+                    .filter { album.normalizedArtist.isEmpty() || normalizeArtistKey(it.artist) == album.normalizedArtist }
+                    .mapNotNull { lastPlayedAtByTrackId[it.id] }
+                    .maxOrNull()
+            }
+        return albums.sortedWith(
+            compareByDescending<AlbumSummary> { recency[it] != null }
+                .thenByDescending { recency[it] }
+                .thenBy { it.displayTitle.lowercase() }
+                .thenBy { it.displayArtist.lowercase() },
+        )
+    }
+
     fun tracksForArtist(
         tracks: List<TrackInfo>,
         normalizedKey: String,

@@ -235,6 +235,58 @@ class LibraryBrowseAggregatorTest {
         assertNull(artists.first().artworkUri)
     }
 
+    @Test
+    fun `album recency uses newest member and puts never played albums last`() {
+        val tracks =
+            listOf(
+                track(1, album = "Alpha"),
+                track(2, album = "Alpha"),
+                track(3, album = "Beta"),
+                track(4, album = "Never"),
+                track(5, album = ""),
+            )
+        val albums = LibraryBrowseAggregator.aggregateAlbums(tracks)
+        val sorted = LibraryBrowseAggregator.sortAlbumsByLastPlayed(albums, tracks, mapOf(1L to 10L, 2L to 30L, 3L to 20L))
+        assertEquals(listOf("Alpha", "Beta", "Never", "Unknown Album"), sorted.map { it.displayTitle })
+    }
+
+    @Test
+    fun `equal recency and never played albums sort by title then artist`() {
+        val tracks =
+            listOf(
+                track(1, album = "Beta", artist = "Zebra"),
+                track(2, album = "Beta", artist = "Alpha"),
+                track(3, album = "Alpha"),
+            )
+        val albums = LibraryBrowseAggregator.aggregateAlbums(tracks).reversed()
+        val expected = listOf("Artist", "Alpha", "Zebra")
+        assertEquals(expected, LibraryBrowseAggregator.sortAlbumsByLastPlayed(albums, tracks, emptyMap()).map { it.displayArtist })
+        assertEquals(
+            expected,
+            LibraryBrowseAggregator.sortAlbumsByLastPlayed(
+                albums,
+                tracks,
+                mapOf(1L to 100L, 2L to 100L, 3L to 100L),
+            ).map {
+                it.displayArtist
+            },
+        )
+    }
+
+    @Test
+    fun `homonymous albums keep independent recency`() {
+        val tracks = listOf(track(1, artist = "Alpha"), track(2, artist = "Beta"))
+        val albums = LibraryBrowseAggregator.aggregateAlbums(tracks)
+        assertEquals(
+            listOf("Beta", "Alpha"),
+            LibraryBrowseAggregator.sortAlbumsByLastPlayed(albums, tracks, mapOf(2L to 1L)).map {
+                it.displayArtist
+            },
+        )
+        val artistTracks = LibraryBrowseAggregator.tracksForArtist(tracks, "alpha")
+        assertEquals(1, LibraryBrowseAggregator.aggregateAlbums(artistTracks).single().trackCount)
+    }
+
     private fun track(
         id: Long,
         title: String = "Song $id",

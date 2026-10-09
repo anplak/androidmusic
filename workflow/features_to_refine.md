@@ -1,5 +1,10 @@
 # Features to refine
 
+## Library improvements
+- first and default tab should be "Artists"
+- In Artists tab, when click on artist, it should display this artist albums (not tracks in plain list), ordered by "recently played". After albums listm it should display liked songs of this artist
+- in Albums tab, albums should be sorted by "recently played"
+
 ## UX bugs/improvements
 - daily mix "because you listen to.." - too much of single artist, all mixes should have at most 50% 
 - smart shuffle from a song - should not stop current one, but continue playing, after it ends - switch to smart shuffle queue

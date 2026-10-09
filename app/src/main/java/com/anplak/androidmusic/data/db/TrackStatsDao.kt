@@ -6,6 +6,8 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
+data class TrackLastPlayed(val trackId: Long, val lastPlayedAt: Long)
+
 @Dao
 interface TrackStatsDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
@@ -66,6 +68,9 @@ interface TrackStatsDao {
     """,
     )
     fun getRecentlyPlayedTrackIds(limit: Int): Flow<List<Long>>
+
+    @Query("SELECT trackId, lastPlayedAt FROM track_stats WHERE lastPlayedAt IS NOT NULL")
+    fun observeLastPlayedAt(): Flow<List<TrackLastPlayed>>
 
     @Query("SELECT * FROM track_stats WHERE playCount > 0 ORDER BY playCount DESC")
     suspend fun getAllStatsOrderedByPlayCount(): List<TrackStatsEntity>

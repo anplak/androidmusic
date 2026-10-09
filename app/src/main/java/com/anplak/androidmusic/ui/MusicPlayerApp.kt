@@ -33,6 +33,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -124,7 +125,8 @@ fun MusicPlayerApp(
     val uiState by playbackViewModel.uiState.collectAsState()
     val permissionState = rememberAudioPermissionState()
 
-    var currentTab by remember { mutableStateOf(NavigationTab.ForYou) }
+    var currentTabName by rememberSaveable { mutableStateOf(NavigationTab.ForYou.name) }
+    val currentTab = NavigationTab.valueOf(currentTabName)
     var currentScreen by remember { mutableStateOf<AppScreen>(AppScreen.MainTabs) }
     var screenBeforeNowPlaying by remember { mutableStateOf<AppScreen>(AppScreen.MainTabs) }
     var trackForPlaylistDialog by remember { mutableStateOf<TrackInfo?>(null) }
@@ -176,7 +178,7 @@ fun MusicPlayerApp(
                 libraryViewModel = libraryViewModel,
                 libraryIndexViewModel = libraryIndexViewModel,
                 openNowPlaying = ::openNowPlaying,
-                onCurrentTabChange = { currentTab = it },
+                onCurrentTabChange = { currentTabName = it.name },
                 onCurrentScreenChange = { currentScreen = it },
                 onLibrarySearchHintChange = { librarySearchHint = it },
                 onTrackForPlaylist = { trackForPlaylistDialog = it },
@@ -423,6 +425,7 @@ private fun LibraryNavRoutes(
         is AppScreen.LibraryArtistDetail -> {
             LibraryArtistDetailRoute(
                 args = currentScreen,
+                onAlbumClick = { onCurrentScreenChange(AppScreen.LibraryAlbumDetail(it)) },
                 showMiniPlayer = showMiniPlayer,
                 miniPlayer = miniPlayerSlot,
                 libraryViewModel = libraryViewModel,
@@ -704,6 +707,7 @@ private fun LibraryIndexRoute(
 @Composable
 private fun LibraryArtistDetailRoute(
     args: AppScreen.LibraryArtistDetail,
+    onAlbumClick: (AlbumSummary) -> Unit,
     showMiniPlayer: Boolean,
     miniPlayer: @Composable () -> Unit,
     libraryViewModel: LibraryViewModel,
@@ -718,6 +722,7 @@ private fun LibraryArtistDetailRoute(
         LibraryArtistDetailScreen(
             artistKey = args.artistKey,
             displayName = args.displayName,
+            onAlbumClick = onAlbumClick,
             onBackClick = onBack,
             onPlayAll = { tracks, index ->
                 playbackViewModel.onTrackSelected(tracks, index)
@@ -950,6 +955,9 @@ private fun MainTabsContent(
                             label = { Text(stringResource(tab.labelResId)) },
                             selected = currentTab == tab,
                             onClick = {
+                                if (tab == NavigationTab.Library && currentTab != NavigationTab.Library) {
+                                    libraryViewModel.showArtistsTab()
+                                }
                                 callbacks.onTabSelected(tab)
                                 when (tab) {
                                     NavigationTab.ForYou -> discoveryViewModel.onForYouVisible()
