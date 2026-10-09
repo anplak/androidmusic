@@ -45,6 +45,8 @@ class PlaybackSessionRecorderTest {
 
         override fun observeStats(trackId: Long): Flow<TrackStats?> = emptyFlow()
 
+        override fun observeLastPlayedAt(): Flow<Map<Long, Long>> = flowOf(emptyMap())
+
         override suspend fun getAllStatsOrderedByPlayCount(): List<TrackStats> = emptyList()
     }
 

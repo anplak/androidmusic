@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -58,10 +59,13 @@ fun LibraryArtistDetailScreen(
     onAddCollectionToPlaylist: () -> Unit,
     modifier: Modifier = Modifier,
     onExcludeArtist: ((String) -> Unit)? = null,
+    onAlbumClick: (AlbumSummary) -> Unit = {},
     viewModel: LibraryViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val tracks = remember(artistKey, uiState) { viewModel.tracksForArtist(artistKey) }
+    val albums = remember(artistKey, uiState) { viewModel.albumsForArtist(artistKey) }
+    val likedTracks = remember(artistKey, uiState) { viewModel.likedTracksForArtist(artistKey) }
     val favoriteIds = (uiState as? LibraryUiState.Content)?.favoriteIds.orEmpty()
 
     LibraryCollectionDetailContent(
@@ -76,6 +80,16 @@ fun LibraryArtistDetailScreen(
         onToggleFavorite = viewModel::toggleFavorite,
         onExcludeArtist = onExcludeArtist?.let { exclude -> { exclude(displayName) } },
         modifier = modifier,
+        detailContent = {
+            ArtistAlbumsAndLikes(
+                albums = albums,
+                likedTracks = likedTracks,
+                onAlbumClick = onAlbumClick,
+                onPlayAll = onPlayAll,
+                onToggleFavorite = viewModel::toggleFavorite,
+                onAddToPlaylist = onAddToPlaylist,
+            )
+        },
     )
 }
 
@@ -123,6 +137,7 @@ private fun LibraryCollectionDetailContent(
     onToggleFavorite: (Long) -> Unit,
     onExcludeArtist: (() -> Unit)?,
     modifier: Modifier = Modifier,
+    detailContent: (@Composable () -> Unit)? = null,
 ) {
     var showOverflowMenu by remember { mutableStateOf(false) }
 
@@ -201,7 +216,7 @@ private fun LibraryCollectionDetailContent(
                     .fillMaxSize()
                     .padding(paddingValues),
         ) {
-            if (tracks.isEmpty()) {
+            if (tracks.isEmpty() && detailContent == null) {
                 Box(
                     modifier =
                         Modifier
@@ -247,26 +262,30 @@ private fun LibraryCollectionDetailContent(
                         Text(text = stringResource(R.string.add_to_playlist))
                     }
                 }
-                LazyColumn(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .testTag("library_detail_track_list"),
-                    contentPadding = PaddingValues(vertical = 8.dp),
-                ) {
-                    itemsIndexed(
-                        items = tracks,
-                        key = { _, track -> track.uri.toString() },
-                    ) { index, track ->
-                        TrackListItem(
-                            track = track,
-                            index = index,
-                            isFavorite = favoriteIds.contains(track.id),
-                            onClick = { onPlayAll(tracks, index) },
-                            onToggleFavorite = { onToggleFavorite(track.id) },
-                            onAddToPlaylist = { onAddToPlaylist(track) },
-                            testTagPrefix = "library_detail_track",
-                        )
+                if (detailContent != null) {
+                    detailContent()
+                } else {
+                    LazyColumn(
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .testTag("library_detail_track_list"),
+                        contentPadding = PaddingValues(vertical = 8.dp),
+                    ) {
+                        itemsIndexed(
+                            items = tracks,
+                            key = { _, track -> track.uri.toString() },
+                        ) { index, track ->
+                            TrackListItem(
+                                track = track,
+                                index = index,
+                                isFavorite = favoriteIds.contains(track.id),
+                                onClick = { onPlayAll(tracks, index) },
+                                onToggleFavorite = { onToggleFavorite(track.id) },
+                                onAddToPlaylist = { onAddToPlaylist(track) },
+                                testTagPrefix = "library_detail_track",
+                            )
+                        }
                     }
                 }
             }

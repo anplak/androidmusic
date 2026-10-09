@@ -99,7 +99,7 @@ class LibraryBrowseE2ETest {
     }
 
     @Test
-    fun artistDetail_openFromList_showsTracksAndPlayAll() {
+    fun artistDetail_openFromList_showsAlbumsOrEmptyAndPlayAll() {
         composeTestRule.prepareLibraryTab()
         if (!composeTestRule.hasLibraryTracks()) return
 
@@ -108,7 +108,12 @@ class LibraryBrowseE2ETest {
 
         composeTestRule.waitForLibraryDetailSettled()
         composeTestRule.onNodeWithTag("library_detail_play_all").assertIsDisplayed()
-        composeTestRule.onNodeWithTag("library_detail_track_list").assertIsDisplayed()
+        assert(!composeTestRule.safeHasNodes(hasTestTag("library_detail_track_list")))
+        if (composeTestRule.safeHasNodes(hasTestTag("artist_album_list"))) {
+            composeTestRule.onNodeWithTag("artist_album_list").assertIsDisplayed()
+        } else {
+            composeTestRule.onNodeWithTag("library_detail_empty").assertIsDisplayed()
+        }
     }
 
     @Test
@@ -127,16 +132,16 @@ class LibraryBrowseE2ETest {
     }
 
     @Test
-    fun artistDetail_tapTrack_navigatesToNowPlaying() {
+    fun artistDetail_tapAlbum_thenTrack_navigatesToNowPlaying() {
         composeTestRule.prepareLibraryTab()
         if (!composeTestRule.hasLibraryTracks()) return
 
         composeTestRule.navigateToLibraryArtistsTab()
         composeTestRule.clickFirstWithTagPrefix("artist_item_")
         composeTestRule.waitForLibraryDetailSettled()
-
-        if (!composeTestRule.safeHasNodes(hasTestTag("library_detail_track_item_0"))) return
-
+        if (!composeTestRule.safeHasNodes(hasTestTagPrefix("album_item_"))) return
+        composeTestRule.clickFirstWithTagPrefix("album_item_")
+        composeTestRule.waitForLibraryDetailSettled()
         composeTestRule.onNodeWithTag("library_detail_track_item_0").performClick()
         composeTestRule.waitUntil(timeoutMillis = 5_000) {
             composeTestRule.safeHasNodes(hasTestTag("play_pause_button"))

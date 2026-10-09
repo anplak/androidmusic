@@ -1,5 +1,6 @@
 package com.anplak.androidmusic.data
 
+import com.anplak.androidmusic.data.db.TrackLastPlayed
 import com.anplak.androidmusic.data.db.TrackStatsDao
 import com.anplak.androidmusic.data.db.TrackStatsEntity
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -123,6 +124,19 @@ class TrackStatsRepositoryTest {
         }
 
     @Test
+    fun `observeLastPlayedAt maps played tracks to timestamps`() =
+        runTest {
+            fakeTrackStatsDao.setAllStats(
+                listOf(
+                    TrackStatsEntity(1L, lastPlayedAt = 100L),
+                    TrackStatsEntity(2L, lastPlayedAt = null),
+                    TrackStatsEntity(3L, lastPlayedAt = 200L),
+                ),
+            )
+            assertEquals(mapOf(1L to 100L, 3L to 200L), repository.observeLastPlayedAt().first())
+        }
+
+    @Test
     fun `TrackStats completionRatio calculates correctly`() {
         val stats =
             TrackStats(
@@ -212,6 +226,9 @@ class FakeTrackStatsDao : TrackStatsDao {
     override fun getMostPlayedTrackIds(limit: Int): Flow<List<Long>> = MutableStateFlow(allStats.take(limit).map { it.trackId })
 
     override fun getRecentlyPlayedTrackIds(limit: Int): Flow<List<Long>> = MutableStateFlow(allStats.take(limit).map { it.trackId })
+
+    override fun observeLastPlayedAt(): Flow<List<TrackLastPlayed>> =
+        MutableStateFlow(allStats.mapNotNull { stats -> stats.lastPlayedAt?.let { TrackLastPlayed(stats.trackId, it) } })
 
     override suspend fun getAllStatsOrderedByPlayCount(): List<TrackStatsEntity> = allStats
 

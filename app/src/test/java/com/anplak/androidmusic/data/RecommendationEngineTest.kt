@@ -247,6 +247,8 @@ class RecommendationEngineTest {
 
         override fun observeStats(trackId: Long) = kotlinx.coroutines.flow.flowOf(TrackStats(trackId, 0, null, 0, 0))
 
+        override fun observeLastPlayedAt() = kotlinx.coroutines.flow.flowOf(emptyMap<Long, Long>())
+
         override suspend fun getAllStatsOrderedByPlayCount(): List<TrackStats> = emptyList()
     }
 }

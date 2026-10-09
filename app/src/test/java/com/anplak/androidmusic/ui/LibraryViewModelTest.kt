@@ -9,6 +9,8 @@ import com.anplak.androidmusic.data.LibraryFilter
 import com.anplak.androidmusic.data.LibraryScanResult
 import com.anplak.androidmusic.data.LibrarySyncCoordinator
 import com.anplak.androidmusic.data.MusicLibraryRepository
+import com.anplak.androidmusic.data.TrackStats
+import com.anplak.androidmusic.data.TrackStatsRepository
 import com.anplak.androidmusic.data.db.TrackDao
 import com.anplak.androidmusic.data.db.TrackEntity
 import com.anplak.androidmusic.player.TrackInfo
@@ -41,6 +43,7 @@ class LibraryViewModelTest {
     private lateinit var fakeRepository: FakeMusicLibraryRepository
     private lateinit var fakeFavoritesRepository: FakeFavoritesRepository
     private lateinit var fakeTrackDao: FakeTrackDao
+    private val lastPlayedAt = MutableStateFlow<Map<Long, Long>>(emptyMap())
     private lateinit var syncCoordinator: LibrarySyncCoordinator
 
     @Before
@@ -50,6 +53,7 @@ class LibraryViewModelTest {
         fakeRepository = FakeMusicLibraryRepository()
         fakeFavoritesRepository = FakeFavoritesRepository()
         fakeTrackDao = FakeTrackDao()
+        lastPlayedAt.value = emptyMap()
         syncCoordinator =
             LibrarySyncCoordinator(
                 repository = fakeRepository,
@@ -440,13 +444,13 @@ class LibraryViewModelTest {
                 createViewModel(
                     savedStateHandle =
                         SavedStateHandle(
-                            mapOf(LibraryViewModel.KEY_BROWSE_TAB to LibraryBrowseTab.Artists.name),
+                            mapOf(LibraryViewModel.KEY_BROWSE_TAB to LibraryBrowseTab.Albums.name),
                         ),
                 )
             advanceUntilIdle()
 
             val state = viewModel.uiState.value as LibraryUiState.Content
-            assertEquals(LibraryBrowseTab.Artists, state.browseTab)
+            assertEquals(LibraryBrowseTab.Albums, state.browseTab)
         }
 
     @Test
@@ -467,6 +471,76 @@ class LibraryViewModelTest {
             assertEquals("Alpha", artistTracks.first().title)
         }
 
+    @Test
+    fun `library defaults to Artists and fresh visit resets saved tab`() =
+        runTest {
+            fakeRepository.setSyncTracks(listOf(createTrack(1, "Song", "Artist")))
+            val handle = SavedStateHandle()
+            val viewModel = createViewModel(handle)
+            advanceUntilIdle()
+            assertEquals(listOf(LibraryBrowseTab.Artists, LibraryBrowseTab.Tracks, LibraryBrowseTab.Albums), LibraryBrowseTab.entries)
+            assertEquals(LibraryBrowseTab.Artists, (viewModel.uiState.value as LibraryUiState.Content).browseTab)
+            viewModel.setBrowseTab(LibraryBrowseTab.Tracks)
+            viewModel.onLibraryVisible()
+            advanceUntilIdle()
+            assertEquals(LibraryBrowseTab.Tracks, (viewModel.uiState.value as LibraryUiState.Content).browseTab)
+            viewModel.showArtistsTab()
+            assertEquals(LibraryBrowseTab.Artists.name, handle.get<String>(LibraryViewModel.KEY_BROWSE_TAB))
+            assertEquals(LibraryBrowseTab.Artists, (viewModel.uiState.value as LibraryUiState.Content).browseTab)
+        }
+
+    @Test
+    fun `stats updates reorder albums without syncing and keep artist album tracks scoped`() =
+        runTest {
+            val tracks =
+                listOf(
+                    createTrack(1, "Alpha song", "Artist A", "Alpha"),
+                    createTrack(2, "Beta song", "Artist A", "Beta"),
+                    createTrack(3, "Other song", "Artist B", "Alpha"),
+                    createTrack(4, "No album", "Artist A", ""),
+                )
+            fakeRepository.setSyncTracks(tracks)
+            lastPlayedAt.value = mapOf(1L to 100L, 2L to 200L)
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+            fakeRepository.resetSyncCallCount()
+            assertEquals("Beta", (viewModel.uiState.value as LibraryUiState.Content).albums.first().displayTitle)
+            assertEquals(listOf("Beta", "Alpha"), viewModel.albumsForArtist("artist a").map { it.displayTitle })
+            val alpha = viewModel.albumsForArtist("artist a").last()
+            assertEquals(listOf(1L), viewModel.tracksForAlbum(alpha).map { it.id })
+            lastPlayedAt.value = mapOf(1L to 300L, 2L to 200L)
+            advanceUntilIdle()
+            assertEquals("Alpha", (viewModel.uiState.value as LibraryUiState.Content).albums.first().displayTitle)
+            assertEquals(listOf("Alpha", "Beta"), viewModel.albumsForArtist("artist a").map { it.displayTitle })
+            assertEquals(0, fakeRepository.syncLibraryCallCount)
+        }
+
+    @Test
+    fun `artist likes duplicate album members and support likes only and empty artists`() =
+        runTest {
+            fakeRepository.setSyncTracks(
+                listOf(
+                    createTrack(1, "Zebra", "Artist A", "Album"),
+                    createTrack(2, "Alpha", "Artist A", "Album"),
+                    createTrack(3, "Single", "Artist B", ""),
+                    createTrack(4, "Unliked", "Artist C", ""),
+                ),
+            )
+            fakeFavoritesRepository.setFavoriteIds(setOf(1L, 2L, 3L))
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+            assertEquals(listOf(2L, 1L), viewModel.likedTracksForArtist("artist a").map { it.id })
+            assertEquals(2, viewModel.tracksForAlbum(viewModel.albumsForArtist("artist a").single()).size)
+            assertTrue(viewModel.albumsForArtist("artist b").isEmpty())
+            assertEquals(listOf(3L), viewModel.likedTracksForArtist("artist b").map { it.id })
+            assertTrue(viewModel.albumsForArtist("artist c").isEmpty())
+            assertTrue(viewModel.likedTracksForArtist("artist c").isEmpty())
+            fakeFavoritesRepository.setFavoriteIds(emptySet())
+            advanceUntilIdle()
+            assertTrue(viewModel.likedTracksForArtist("artist a").isEmpty())
+            assertEquals(1, viewModel.albumsForArtist("artist a").size)
+        }
+
     private fun createViewModel(savedStateHandle: SavedStateHandle = SavedStateHandle()): LibraryViewModel {
         return LibraryViewModel(
             application = application,
@@ -475,6 +549,25 @@ class LibraryViewModelTest {
             favoritesRepository = fakeFavoritesRepository,
             trackDao = fakeTrackDao,
             syncCoordinator = syncCoordinator,
+            trackStatsRepository =
+                object : TrackStatsRepository {
+                    override fun observeLastPlayedAt(): Flow<Map<Long, Long>> = lastPlayedAt
+
+                    override fun observeStats(trackId: Long): Flow<TrackStats?> = MutableStateFlow(null)
+
+                    override suspend fun getStats(trackId: Long): TrackStats? = null
+
+                    override suspend fun getAllStatsOrderedByPlayCount(): List<TrackStats> = emptyList()
+
+                    override suspend fun recordQualifiedPlay(
+                        trackId: Long,
+                        timestamp: Long,
+                    ) = Unit
+
+                    override suspend fun recordCompletion(trackId: Long) = Unit
+
+                    override suspend fun recordSkip(trackId: Long) = Unit
+                },
         )
     }
 

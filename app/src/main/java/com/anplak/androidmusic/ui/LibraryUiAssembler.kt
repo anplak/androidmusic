@@ -31,7 +31,8 @@ class LibraryUiAssembler(
     var syncFailed: Boolean = false
     var cachedArtists: List<ArtistSummary>? = null
     var cachedAlbums: List<AlbumSummary>? = null
-    var browseTab: LibraryBrowseTab = LibraryBrowseTab.Tracks
+    var browseTab: LibraryBrowseTab = LibraryBrowseTab.Artists
+    var lastPlayedAtByTrackId: Map<Long, Long> = emptyMap()
 
     fun rebuildAggregates() {
         if (currentTracks.isEmpty()) {
@@ -142,7 +143,8 @@ class LibraryUiAssembler(
                         localQuery.isNotBlank(),
                 browseTab = browseTab,
                 artists = cachedArtists.orEmpty(),
-                albums = cachedAlbums.orEmpty(),
+                albums = LibraryBrowseAggregator.sortAlbumsByLastPlayed(cachedAlbums.orEmpty(), currentTracks, lastPlayedAtByTrackId),
+                lastPlayedAtByTrackId = lastPlayedAtByTrackId,
                 localSearchResults = localSearchResults,
             )
     }

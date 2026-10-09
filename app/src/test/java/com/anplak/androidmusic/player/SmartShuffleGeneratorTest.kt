@@ -189,5 +189,8 @@ private class FakeStatsRepo : TrackStatsRepository {
 
     override fun observeStats(trackId: Long): Flow<TrackStats?> = MutableStateFlow(allStats.find { it.trackId == trackId })
 
+    override fun observeLastPlayedAt(): Flow<Map<Long, Long>> =
+        MutableStateFlow(allStats.mapNotNull { stats -> stats.lastPlayedAt?.let { stats.trackId to it } }.toMap())
+
     override suspend fun getAllStatsOrderedByPlayCount(): List<TrackStats> = allStats
 }

@@ -93,7 +93,10 @@ fun MainActivityComposeRule.prepareLibraryTab() {
     navigateToLibrary()
 }
 
-fun MainActivityComposeRule.hasLibraryTracks(): Boolean = safeHasNodes(hasTestTag("track_list"))
+fun MainActivityComposeRule.hasLibraryTracks(): Boolean =
+    safeHasNodes(hasTestTag("track_list")) ||
+        safeHasNodes(hasTestTag("artist_list")) ||
+        safeHasNodes(hasTestTag("album_list"))
 
 fun MainActivityComposeRule.switchLibraryBrowseTab(tab: LibraryBrowseTab) {
     onNodeWithTag("library_tab_${tab.name.lowercase()}").performClick()
@@ -125,6 +128,7 @@ fun MainActivityComposeRule.navigateToLibraryAlbumsTab() {
 fun MainActivityComposeRule.waitForLibraryDetailSettled() {
     waitUntil(timeoutMillis = 15_000) {
         safeHasNodes(hasTestTag("library_detail_track_list")) ||
+            safeHasNodes(hasTestTag("artist_album_list")) ||
             safeHasNodes(hasTestTag("library_detail_empty"))
     }
 }
@@ -193,7 +197,7 @@ fun MainActivityComposeRule.returnFromLibraryIndex() {
 /** Settled library list, empty library, or inline sync failure after re-index. */
 fun MainActivityComposeRule.waitForLibraryReindexSettled() {
     waitUntil(timeoutMillis = 30_000) {
-        safeHasNodes(hasTestTag("track_list")) ||
+        hasLibraryTracks() ||
             safeHasNodes(hasTestTag("empty_state")) ||
             safeHasNodes(hasTestTag("library_sync_failed"))
     }

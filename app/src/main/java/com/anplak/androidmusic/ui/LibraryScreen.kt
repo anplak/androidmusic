@@ -382,40 +382,48 @@ private fun AlbumList(
                 "album_${album.normalizedTitle}_${album.normalizedArtist}"
             },
         ) { album ->
-            ListItem(
-                headlineContent = {
-                    Text(
-                        text = album.displayTitle,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                },
-                supportingContent = {
-                    Text(
-                        text = album.displayArtist,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                },
-                leadingContent = {
-                    MediaArtwork(
-                        uri = album.artworkUri,
-                        contentDescription = album.displayTitle,
-                        fallbackLabel = album.displayTitle,
-                        modifier = Modifier.size(Dimens.listArtworkSize),
-                    )
-                },
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .clickable { onAlbumClick(album) }
-                        .testTag(
-                            "album_item_${album.normalizedTitle}_${album.normalizedArtist}",
-                        ),
-            )
+            AlbumListItem(album, onAlbumClick)
         }
     }
+}
+
+@Composable
+internal fun AlbumListItem(
+    album: AlbumSummary,
+    onAlbumClick: (AlbumSummary) -> Unit,
+) {
+    ListItem(
+        headlineContent = {
+            Text(
+                text = album.displayTitle,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        },
+        supportingContent = {
+            Text(
+                text = album.displayArtist,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        },
+        leadingContent = {
+            MediaArtwork(
+                uri = album.artworkUri,
+                contentDescription = album.displayTitle,
+                fallbackLabel = album.displayTitle,
+                modifier = Modifier.size(Dimens.listArtworkSize),
+            )
+        },
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable { onAlbumClick(album) }
+                .testTag(
+                    "album_item_${album.normalizedTitle}_${album.normalizedArtist}",
+                ),
+    )
 }
 
 private fun toggleDuration(
