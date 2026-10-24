@@ -9,6 +9,8 @@
 - daily mix "because you listen to.." - too much of single artist, all mixes should have at most 50% 
 - smart shuffle from a song - should not stop current one, but continue playing, after it ends - switch to smart shuffle queue
 - from player view - should have references to play queue (including last few songs recently played)
+- mixes in "For You" view should be unique every day 
+
 
 ## AppFunctions integration
 use android integration with gemini to run app intents in mcp style
