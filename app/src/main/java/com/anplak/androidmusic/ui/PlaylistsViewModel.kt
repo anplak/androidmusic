@@ -140,6 +140,7 @@ class PlaylistsViewModel
                 favoritesRepository = favoritesRepository,
                 musicLibraryRepository = musicLibraryRepository,
                 smartPlaylistRepository = smartPlaylistRepository,
+                playlistRepository = playlistRepository,
                 autoMixGenerator = autoMixGenerator,
                 editState = _editState,
                 createPlaylistWithTracks = { name, trackIds ->

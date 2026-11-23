@@ -33,6 +33,7 @@ data class RecommendationInputs(
     val coOccurrenceBySeed: Map<Long, List<Long>>,
     val lastSessionTrackIds: List<Long>,
     val userPlaylists: List<PlaylistSummary>,
+    val playlistIdsByTrack: Map<Long, Set<Long>> = emptyMap(),
 )
 
 fun interface RecommendationClock {

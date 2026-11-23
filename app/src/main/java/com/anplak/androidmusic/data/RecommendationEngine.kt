@@ -1,6 +1,7 @@
 package com.anplak.androidmusic.data
 
 import com.anplak.androidmusic.player.AutoMixGenerator
+import com.anplak.androidmusic.player.MixArtistLimiter
 import com.anplak.androidmusic.player.TrackInfo
 import kotlin.random.Random
 
@@ -53,6 +54,7 @@ class RecommendationEngine(
         val rows = mutableListOf<RecommendationRow>()
 
         for (selection in selections) {
+            val available = inputs.library.filter { it.id !in usedTrackIds }
             val pool =
                 DailyMixThemePicker.poolFor(selection, inputs.library, daySeed)
                     .filter { it.id !in usedTrackIds }
@@ -65,14 +67,18 @@ class RecommendationEngine(
                         autoMixGenerator.fromFavoriteArtist(
                             artist = selection.artistSeed!!,
                             libraryTracks = pool,
+                            candidateTracks = available,
                             limit = DailyMixConfig.DAILY_MIX_LIMIT,
                             random = slotRandom,
+                            playlistIdsByTrack = inputs.playlistIdsByTrack,
                         )
                     else ->
                         autoMixGenerator.fromSmartPlaylist(
                             pool,
                             DailyMixConfig.DAILY_MIX_LIMIT,
                             random = slotRandom,
+                            playlistIdsByTrack = inputs.playlistIdsByTrack,
+                            candidateTracks = available,
                         )
                 }
             if (tracks.isEmpty()) continue
@@ -106,7 +112,14 @@ class RecommendationEngine(
         val seeds = (favoriteTracks + topTracks).distinctBy { it.id }.take(MAX_BECAUSE_ROWS)
         return seeds.mapNotNull { seed ->
             val coPlayed = inputs.coOccurrenceBySeed[seed.id].orEmpty()
-            val similar = similarTracks(seed, inputs.library, coPlayed, DETAIL_LIMIT)
+            val similar =
+                similarTracks(
+                    seed = seed,
+                    library = inputs.library,
+                    coPlayed = coPlayed,
+                    limit = DETAIL_LIMIT,
+                    playlistIdsByTrack = inputs.playlistIdsByTrack,
+                )
             if (similar.isEmpty()) return@mapNotNull null
 
             val label = seed.artist.ifBlank { seed.title }
@@ -137,7 +150,9 @@ class RecommendationEngine(
                 autoMixGenerator.fromFavoriteTrack(
                     seed = seed,
                     libraryTracks = inputs.library,
+                    candidateTracks = inputs.library,
                     limit = QUICK_MIX_LIMIT,
+                    playlistIdsByTrack = inputs.playlistIdsByTrack,
                 )
             RecommendationRow(
                 id = "quick_mix_${seed.id}_$index",
@@ -155,6 +170,7 @@ class RecommendationEngine(
         library: List<TrackInfo>,
         coPlayed: List<Long>,
         limit: Int,
+        playlistIdsByTrack: Map<Long, Set<Long>>,
     ): List<TrackInfo> {
         val libraryById = library.associateBy { it.id }
         val byCo = coPlayed.mapNotNull { libraryById[it] }
@@ -166,9 +182,17 @@ class RecommendationEngine(
             library.filter {
                 it.artist.equals(seed.artist, ignoreCase = true) && it.id != seed.id
             }
-        return (listOf(seed) + byCo + sameAlbum + sameArtist)
-            .distinctBy { it.id }
-            .take(limit)
+        val preferred =
+            (listOf(seed) + byCo + sameAlbum + sameArtist)
+                .distinctBy { it.id }
+        return MixArtistLimiter.limit(
+            preferred = preferred,
+            candidates = library,
+            limit = limit,
+            playlistIdsByTrack = playlistIdsByTrack,
+            randomTierOrder = library.sortedBy { it.id },
+            leadArtist = seed.artist,
+        )
     }
 
     companion object {

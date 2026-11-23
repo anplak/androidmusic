@@ -16,11 +16,16 @@ import com.anplak.androidmusic.data.TrackStatsRepositoryImpl
 import com.anplak.androidmusic.data.db.AppDatabase
 import com.anplak.androidmusic.player.AutoMixGenerator
 import com.anplak.androidmusic.player.SmartShuffleGenerator
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 sealed interface ForYouUiState {
     data object Loading : ForYouUiState
@@ -92,12 +97,15 @@ class DiscoveryViewModel
 
         fun refresh() {
             refreshJob?.cancel()
-            refreshJob =
+            val job =
                 viewModelScope.launch {
-                    _uiState.value = ForYouUiState.Loading
+                    if (cachedRows.isEmpty()) {
+                        _uiState.value = ForYouUiState.Loading
+                    }
                     runCatching {
                         val inputs = repository.loadInputs()
-                        val rows = engine.buildRows(inputs)
+                        val rows = withContext(Dispatchers.Default) { engine.buildRows(inputs) }
+                        ensureActive()
                         cachedRows = rows
                         lastRefreshedLibrarySize = inputs.library.size
                         _uiState.value =
@@ -106,11 +114,14 @@ class DiscoveryViewModel
                                 else -> ForYouUiState.Content(rows)
                             }
                     }.onFailure { error ->
+                        if (error is CancellationException) throw error
+                        if (!isActive) return@onFailure
                         _uiState.value =
                             ForYouUiState.Error(
                                 error.message ?: "Failed to load recommendations",
                             )
                     }
                 }
+            refreshJob = job
         }
     }

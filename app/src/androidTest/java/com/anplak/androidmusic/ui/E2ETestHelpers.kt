@@ -146,6 +146,19 @@ fun MainActivityComposeRule.preparePlaylistsTab() {
 fun MainActivityComposeRule.navigateToLibrary() {
     onNodeWithTag("nav_library").performClick()
     waitForLibraryContent()
+    showLibraryTracksTab()
+}
+
+private fun MainActivityComposeRule.showLibraryTracksTab() {
+    if (!safeHasNodes(hasTestTag("library_tab_tracks"))) return
+    if (safeHasNodes(hasTestTag("track_list")) || safeHasNodes(hasTestTag("library_search_field"))) return
+    switchLibraryBrowseTab(LibraryBrowseTab.Tracks)
+    waitUntil(timeoutMillis = 15_000) {
+        safeHasNodes(hasTestTag("track_list")) ||
+            safeHasNodes(hasTestTag("library_search_field")) ||
+            safeHasNodes(hasTestTag("library_no_filter_results")) ||
+            safeHasNodes(hasTestTag("empty_state"))
+    }
 }
 
 /** Waits until the Library tab has loaded (list, empty, or filter UI). */
@@ -346,9 +359,25 @@ fun MainActivityComposeRule.waitForForYouSettled() {
         !safeHasNodes(hasTestTag("for_you_loading")) &&
             (
                 safeHasNodes(hasTestTag("for_you_list")) ||
-                    safeHasNodes(hasTestTag("for_you_empty")) ||
-                    safeHasNodes(hasTestTag("for_you_error"))
+                    safeHasNodes(hasTestTag("for_you_empty"))
             )
+    }
+}
+
+fun MainActivityComposeRule.queueTotal(): Int? {
+    if (!safeHasNodes(hasTestTag("queue_position"))) return null
+    return try {
+        val text =
+            onNodeWithTag("queue_position")
+                .fetchSemanticsNode()
+                .config
+                .getOrNull(SemanticsProperties.Text)
+                ?.firstOrNull()
+                ?.text
+                ?: return null
+        Regex("""of\s+(\d+)""").find(text)?.groupValues?.get(1)?.toIntOrNull()
+    } catch (_: Exception) {
+        null
     }
 }
 

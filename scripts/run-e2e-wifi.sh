@@ -50,6 +50,9 @@ echo "Using device: $ANDROID_SERIAL"
 
 adb -s "$ANDROID_SERIAL" wait-for-device
 adb -s "$ANDROID_SERIAL" shell input keyevent KEYCODE_WAKEUP || true
+adb -s "$ANDROID_SERIAL" shell svc power stayon true || true
+adb -s "$ANDROID_SERIAL" shell settings put system screen_off_timeout 1800000 || true
+adb -s "$ANDROID_SERIAL" shell wm dismiss-keyguard || true
 
 E2E_PACKAGE="com.anplak.androidmusic.ui"
 echo "Running E2E tests in $E2E_PACKAGE ..."

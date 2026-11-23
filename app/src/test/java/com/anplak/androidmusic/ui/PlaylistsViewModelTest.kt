@@ -495,4 +495,6 @@ class TestPlaylistRepository : PlaylistRepository {
         lastAddedTrackIds = trackIds
         return addTracksResult
     }
+
+    override suspend fun getPlaylistMemberships(): Map<Long, Set<Long>> = emptyMap()
 }

@@ -85,6 +85,8 @@ interface PlaylistRepository {
         playlistId: Long,
         trackIds: List<Long>,
     ): PlaylistOperationResult
+
+    suspend fun getPlaylistMemberships(): Map<Long, Set<Long>>
 }
 
 class PlaylistRepositoryImpl(
@@ -257,6 +259,11 @@ class PlaylistRepositoryImpl(
             }
         playlistDao.addTracksToPlaylist(refs)
     }
+
+    override suspend fun getPlaylistMemberships(): Map<Long, Set<Long>> =
+        playlistDao.getAllMemberships()
+            .groupBy { it.trackId }
+            .mapValues { (_, rows) -> rows.map { it.playlistId }.toSet() }
 }
 
 private fun PlaylistWithTrackCount.toPlaylist(): Playlist {
