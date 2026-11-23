@@ -60,6 +60,51 @@ object E2ETestRecommendations {
     fun libraryMeetsDailyMixMinimum(context: Context): Boolean =
         E2ETestDatabase.cachedTrackCount(context) >= DailyMixConfig.MIN_TRACKS_PER_THEME
 
+    fun namedLibraryArtistCount(context: Context): Int =
+        runBlocking {
+            AppDatabase.getInstance(context)
+                .trackDao()
+                .getAll()
+                .mapNotNull { artistKey(it.artist) }
+                .distinct()
+                .size
+        }
+
+    fun artistDiversityViolations(rows: List<RecommendationRow>): List<String> =
+        rows
+            .filter {
+                it.type == RecommendationRowType.DAILY_MIX ||
+                    it.type == RecommendationRowType.QUICK_MIX ||
+                    it.type == RecommendationRowType.BECAUSE_YOU_LISTEN
+            }.filter { it.tracks.size >= 4 }
+            .mapNotNull { row ->
+                val named = row.tracks.mapNotNull { artistKey(it.artist) }.distinct().size
+                if (named >= 3) null else "${row.id} has $named named artists"
+            }
+
+    fun artistCapViolations(rows: List<RecommendationRow>): List<String> =
+        rows
+            .filter {
+                it.type == RecommendationRowType.DAILY_MIX ||
+                    it.type == RecommendationRowType.QUICK_MIX ||
+                    it.type == RecommendationRowType.BECAUSE_YOU_LISTEN
+            }.flatMap { row -> violationsFor(row) }
+
+    private fun violationsFor(row: RecommendationRow): List<String> {
+        if (row.tracks.size < 2) return emptyList()
+        val cap = row.tracks.size / 2
+        return row.tracks
+            .mapNotNull { artistKey(it.artist) }
+            .groupingBy { it }
+            .eachCount()
+            .filter { (_, count) -> count > cap }
+            .map { (artist, count) ->
+                "$artist has $count of ${row.tracks.size} in ${row.id}"
+            }
+    }
+
+    private fun artistKey(artist: String): String? = artist.trim().takeIf { it.isNotEmpty() }?.lowercase()
+
     fun dailyMixTrackIdsOverlap(rows: List<RecommendationRow>): Boolean {
         val dailyMixes = rows.filter { it.type == RecommendationRowType.DAILY_MIX }
         if (dailyMixes.size < 2) return false

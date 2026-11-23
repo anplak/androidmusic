@@ -17,6 +17,11 @@ data class PlaylistWithTrackCount(
     val trackCount: Int,
 )
 
+data class PlaylistMembership(
+    val playlistId: Long,
+    val trackId: Long,
+)
+
 @Dao
 interface PlaylistDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -124,6 +129,9 @@ interface PlaylistDao {
 
     @Query("SELECT COUNT(*) FROM playlist_tracks WHERE playlistId = :playlistId")
     fun getPlaylistTrackCount(playlistId: Long): Flow<Int>
+
+    @Query("SELECT playlistId, trackId FROM playlist_tracks")
+    suspend fun getAllMemberships(): List<PlaylistMembership>
 
     @Query("SELECT EXISTS(SELECT 1 FROM playlist_tracks WHERE playlistId = :playlistId AND trackId = :trackId)")
     suspend fun isTrackInPlaylist(

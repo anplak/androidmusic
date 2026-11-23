@@ -197,7 +197,21 @@ class DailyMixE2ETest {
         composeTestRule.onNodeWithTag("for_you_play_mix_${dailyMix.id}").performClick()
         composeTestRule.waitUntil(timeoutMillis = 10_000) {
             composeTestRule.safeHasNodes(hasTestTag("now_playing_screen")) &&
-                composeTestRule.safeHasNodes(hasTestTag("play_pause_button"))
+                composeTestRule.safeHasNodes(hasTestTag("play_pause_button")) &&
+                composeTestRule.queueTotal() == dailyMix.tracks.size
         }
+    }
+
+    @Test
+    fun test08_generatedMixes_capAnyArtistAtHalf() {
+        if (!prepareForYouWithLibrary()) return
+        if (E2ETestRecommendations.namedLibraryArtistCount(context) <= 1) return
+
+        val rows = E2ETestRecommendations.buildRows(context)
+        val violations = E2ETestRecommendations.artistCapViolations(rows)
+        assertTrue(violations.joinToString(), violations.isEmpty())
+        if (E2ETestRecommendations.namedLibraryArtistCount(context) < 4) return
+        val diversity = E2ETestRecommendations.artistDiversityViolations(rows)
+        assertTrue(diversity.joinToString(), diversity.isEmpty())
     }
 }

@@ -134,21 +134,21 @@ class FakeSmartPlaylistRepository : SmartPlaylistRepository {
     }
 
     override fun getMostPlayed(limit: Int): Flow<List<TrackInfo>> {
-        return MutableStateFlow(tracksMap[SmartPlaylistType.MOST_PLAYED] ?: emptyList())
+        return MutableStateFlow(tracksMap[SmartPlaylistType.MOST_PLAYED].orEmpty())
     }
 
     override fun getRecentlyPlayed(limit: Int): Flow<List<TrackInfo>> {
-        return MutableStateFlow(tracksMap[SmartPlaylistType.RECENTLY_PLAYED] ?: emptyList())
+        return MutableStateFlow(tracksMap[SmartPlaylistType.RECENTLY_PLAYED].orEmpty())
     }
 
     override fun getRecentlyAdded(limit: Int): Flow<List<TrackInfo>> {
-        return MutableStateFlow(tracksMap[SmartPlaylistType.RECENTLY_ADDED] ?: emptyList())
+        return MutableStateFlow(tracksMap[SmartPlaylistType.RECENTLY_ADDED].orEmpty())
     }
 
     override fun getTracksForType(
         type: SmartPlaylistType,
         limit: Int,
     ): Flow<List<TrackInfo>> {
-        return MutableStateFlow(tracksMap[type] ?: emptyList())
+        return MutableStateFlow(tracksMap[type].orEmpty())
     }
 }

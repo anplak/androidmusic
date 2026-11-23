@@ -64,6 +64,7 @@ class RecommendationRepositoryImpl(
             coOccurrenceBySeed = coOccurrenceBySeed,
             lastSessionTrackIds = lastSessionTrackIds,
             userPlaylists = userPlaylists,
+            playlistIdsByTrack = playlistRepository.getPlaylistMemberships(),
         )
     }
 

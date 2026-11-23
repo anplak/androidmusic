@@ -2,6 +2,7 @@ package com.anplak.androidmusic.data
 
 import com.anplak.androidmusic.data.db.PlaylistDao
 import com.anplak.androidmusic.data.db.PlaylistEntity
+import com.anplak.androidmusic.data.db.PlaylistMembership
 import com.anplak.androidmusic.data.db.PlaylistTrackCrossRef
 import com.anplak.androidmusic.data.db.PlaylistWithTrackCount
 import com.anplak.androidmusic.data.db.TrackEntity
@@ -371,6 +372,23 @@ class PlaylistRepositoryTest {
 
             assertEquals(99L, result.playlistId)
         }
+
+    @Test
+    fun `getPlaylistMemberships groups playlist ids by track`() =
+        runTest {
+            fakePlaylistDao.setPlaylistTrackRefs(
+                listOf(
+                    PlaylistTrackCrossRef(playlistId = 1L, trackId = 10L, position = 0),
+                    PlaylistTrackCrossRef(playlistId = 2L, trackId = 10L, position = 0),
+                    PlaylistTrackCrossRef(playlistId = 2L, trackId = 11L, position = 1),
+                ),
+            )
+
+            val memberships = repository.getPlaylistMemberships()
+
+            assertEquals(setOf(1L, 2L), memberships[10L])
+            assertEquals(setOf(2L), memberships[11L])
+        }
 }
 
 class FakePlaylistDao : PlaylistDao {
@@ -566,7 +584,10 @@ class FakePlaylistDao : PlaylistDao {
         playlistId: Long,
         trackIds: List<Long>,
     ): List<Long> {
-        val existing = existingTrackIds[playlistId] ?: emptySet()
+        val existing = existingTrackIds[playlistId].orEmpty()
         return trackIds.filter { it in existing }
     }
+
+    override suspend fun getAllMemberships(): List<PlaylistMembership> =
+        playlistTrackRefs.map { PlaylistMembership(playlistId = it.playlistId, trackId = it.trackId) }
 }

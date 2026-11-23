@@ -54,8 +54,8 @@ fun SearchScreen(
     onPlaylistSelected: (Long) -> Unit,
     onArtistSelected: (String, String) -> Unit,
     onAlbumSelected: (String, String) -> Unit,
-    onAddTrackToPlaylist: ((TrackInfo) -> Unit)? = null,
     modifier: Modifier = Modifier,
+    onAddTrackToPlaylist: ((TrackInfo) -> Unit)? = null,
     viewModel: SearchViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()

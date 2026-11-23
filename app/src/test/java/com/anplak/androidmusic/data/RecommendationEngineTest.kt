@@ -140,7 +140,140 @@ class RecommendationEngineTest {
             assertEquals(1, because.size)
             assertTrue(because[0].title.contains("Star Artist"))
             assertTrue(because[0].tracks.any { it.id == 10L })
-            assertTrue(because[0].tracks.any { it.id == 11L })
+            assertTrue(because[0].tracks.any { it.id == 12L })
+            assertArtistCap(because[0].tracks)
+        }
+
+    @Test
+    fun `because row prefers related other artists and keeps the seed`() =
+        runTest {
+            val seed =
+                track(
+                    id = 1,
+                    title = "Seed",
+                    artist = "Star Artist",
+                    year = 1991,
+                    dateAddedSec = epochSec(2020, 5, 10),
+                )
+            val sameArtist = (2L..20L).map { track(it, "Star $it", "Star Artist", year = 1991) }
+            val unrelated = track(21, "Unrelated", "Unrelated Artist")
+            val decade = track(30, "Decade", "Decade Artist", year = 1994)
+            val playlistSibling =
+                track(
+                    id = 40,
+                    title = "Playlist",
+                    artist = "Playlist Artist",
+                    year = 2005,
+                    dateAddedSec = epochSec(2010, 1, 1),
+                )
+            val sameMonth =
+                track(
+                    id = 50,
+                    title = "Month",
+                    artist = "Month Artist",
+                    dateAddedSec = epochSec(2020, 5, 20),
+                )
+            val library = listOf(seed) + sameArtist + unrelated + decade + playlistSibling + sameMonth
+            val rows =
+                engine.buildRows(
+                    emptyInputs(
+                        library = library,
+                        topTracks30d = listOf(1L),
+                        playlistIdsByTrack = mapOf(1L to setOf(7L), 40L to setOf(7L)),
+                    ),
+                )
+
+            val because = rows.first { it.type == RecommendationRowType.BECAUSE_YOU_LISTEN }
+            val ids = because.tracks.map { it.id }
+            assertEquals(1L, ids.first())
+            assertArtistCap(because.tracks)
+            assertTrue(because.tracks.count { it.artist == "Star Artist" } <= because.tracks.size / 2)
+            assertTrue(because.tracks.map { it.artist }.filter { it != "Star Artist" }.distinct().size > 1)
+            assertTrue(ids.indexOf(40L) < ids.indexOf(30L))
+            assertTrue(ids.indexOf(30L) < ids.indexOf(50L))
+            assertTrue(ids.indexOf(50L) < ids.indexOf(21L))
+        }
+
+    @Test
+    fun `because row keeps a one song library`() =
+        runTest {
+            val seed = track(1, "Only", "Solo")
+            val rows =
+                engine.buildRows(
+                    emptyInputs(
+                        library = listOf(seed),
+                        topTracks30d = listOf(1L),
+                    ),
+                )
+
+            val because = rows.filter { it.type == RecommendationRowType.BECAUSE_YOU_LISTEN }
+            assertEquals(1, because.size)
+            assertEquals(listOf(1L), because[0].tracks.map { it.id })
+        }
+
+    @Test
+    fun `daily mix top artist slot includes another artist`() =
+        runTest {
+            val star = (1L..12L).map { track(it, "Star $it", "Star Artist") }
+            val others = (13L..32L).map { track(it, "Other $it", "Other Artist") }
+            val rows =
+                engine.buildRows(
+                    emptyInputs(
+                        library = star + others,
+                        topArtists30d = listOf("Star Artist"),
+                    ),
+                )
+
+            val daily = rows.filter { it.type == RecommendationRowType.DAILY_MIX }
+            val starMix = daily.first { it.subtitle == "Star Artist" }
+            assertTrue(starMix.title.startsWith("Daily Mix"))
+            assertEquals("Star Artist", starMix.tracks.first().artist)
+            assertTrue(starMix.tracks.any { it.artist == "Other Artist" })
+            assertTrue(starMix.tracks.count { it.artist == "Star Artist" } <= starMix.tracks.size / 2)
+            assertArtistCap(starMix.tracks)
+        }
+
+    @Test
+    fun `decade daily mix leaves a one artist pool when the library has others`() =
+        runTest {
+            val decade = (1L..30L).map { track(it, "Decade $it", "Decade Artist", year = 1985) }
+            val others = (31L..60L).map { track(it, "Other $it", "Other Artist $it") }
+            val rows =
+                engine.buildRows(
+                    emptyInputs(
+                        library = decade + others,
+                        topArtists30d = listOf("Decade Artist"),
+                    ),
+                )
+
+            val decadeMix = rows.first { it.subtitle == "80s gems" }
+            assertTrue(decadeMix.title.startsWith("Daily Mix"))
+            assertTrue(decadeMix.id.startsWith("daily_mix_"))
+            assertTrue(decadeMix.tracks.count { it.artist == "Decade Artist" } < decadeMix.tracks.size / 2)
+            assertTrue(decadeMix.tracks.map { it.artist }.distinct().size >= 3)
+            assertArtistCap(decadeMix.tracks)
+        }
+
+    @Test
+    fun `quick mix caps the favorite artist`() =
+        runTest {
+            val favorite = track(1, "Favorite", "Star Artist")
+            val stars = (2L..20L).map { track(it, "Star $it", "Star Artist") }
+            val others = (21L..40L).map { track(it, "Other $it", "Other Artist $it") }
+            val rows =
+                engine.buildRows(
+                    emptyInputs(
+                        library = listOf(favorite) + stars + others,
+                        favorites = setOf(1L),
+                    ),
+                )
+
+            val quick = rows.filter { it.type == RecommendationRowType.QUICK_MIX }
+            assertEquals(1, quick.size)
+            assertEquals(1L, quick[0].tracks.first().id)
+            assertTrue(quick[0].tracks.count { it.artist == "Star Artist" } <= quick[0].tracks.size / 2)
+            assertTrue(quick[0].tracks.map { it.artist }.filter { it != "Star Artist" }.distinct().size > 1)
+            assertArtistCap(quick[0].tracks)
         }
 
     @Test
@@ -158,12 +291,13 @@ class RecommendationEngineTest {
             val continueRow = rows.find { it.type == RecommendationRowType.CONTINUE_LISTENING }
             assertNotNull(continueRow)
             assertEquals(3, continueRow!!.tracks.size)
+            assertEquals(listOf("Artist", "Artist", "Artist"), continueRow.tracks.map { it.artist })
         }
 
     private fun richLibrary(): List<TrackInfo> {
-        val decadeTracks = (1L..12L).map { track(it, "Decade $it", "Decade Artist", year = 1985) }
+        val decadeTracks = (1L..30L).map { track(it, "Decade $it", "Decade Artist", year = 1985) }
         val recentTracks =
-            (13L..24L).map {
+            (31L..60L).map {
                 track(
                     id = it,
                     title = "Recent $it",
@@ -173,7 +307,7 @@ class RecommendationEngineTest {
                 )
             }
         val artistTracks =
-            (25L..36L).map {
+            (61L..90L).map {
                 track(it, "Artist track $it", "Top Artist A", year = 1995)
             }
         return decadeTracks + recentTracks + artistTracks
@@ -191,6 +325,7 @@ class RecommendationEngineTest {
         topTracks30d: List<Long> = emptyList(),
         coOccurrenceBySeed: Map<Long, List<Long>> = emptyMap(),
         lastSessionTrackIds: List<Long> = emptyList(),
+        playlistIdsByTrack: Map<Long, Set<Long>> = emptyMap(),
     ) = RecommendationInputs(
         library = library,
         favorites = favorites,
@@ -200,7 +335,26 @@ class RecommendationEngineTest {
         coOccurrenceBySeed = coOccurrenceBySeed,
         lastSessionTrackIds = lastSessionTrackIds,
         userPlaylists = emptyList(),
+        playlistIdsByTrack = playlistIdsByTrack,
     )
+
+    private fun epochSec(
+        year: Int,
+        month: Int,
+        day: Int,
+    ): Long = LocalDate.of(year, month, day).atStartOfDay(zoneId).toEpochSecond()
+
+    private fun assertArtistCap(tracks: List<TrackInfo>) {
+        if (tracks.size <= 1) return
+        val cap = tracks.size / 2
+        val counts =
+            tracks
+                .mapNotNull { track ->
+                    track.artist.trim().takeIf { it.isNotEmpty() }?.lowercase()
+                }.groupingBy { it }
+                .eachCount()
+        counts.values.forEach { count -> assertTrue("$count exceeds $cap", count <= cap) }
+    }
 
     private fun track(
         id: Long,
